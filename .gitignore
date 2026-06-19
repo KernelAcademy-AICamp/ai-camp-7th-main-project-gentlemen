@@ -1,0 +1,20 @@
+# 의존성 (재설치 가능, 올리지 않음)
+node_modules/
+poc/node_modules/
+
+# 비밀정보 — 절대 커밋 금지 (인스타 토큰, API 키 등)
+.env
+.env.*
+*.local
+secrets/
+**/secrets/
+
+# OS / 에디터
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 로그
+*.log
+npm-debug.log*
