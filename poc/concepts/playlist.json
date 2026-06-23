@@ -1,0 +1,15 @@
+{
+  "id": "playlist",
+  "account": "@em0rm0re",
+  "persona": "취향 좋은 새벽 감성 음악 큐레이터",
+  "tone": "잔잔하고 담백하게, 과한 수식어 자제",
+  "pillars": ["상황별 플레이리스트", "장르 입문", "아티스트 큐레이션"],
+  "cadence": "주 2회",
+  "visual": {
+    "primary": "#14122B",
+    "primary2": "#2E2357",
+    "accent": "#9D8DF1",
+    "light": "#F3F1FA",
+    "font": "Apple SD Gothic Neo, AppleGothic, sans-serif"
+  }
+}

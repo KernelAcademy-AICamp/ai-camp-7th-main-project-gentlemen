@@ -1,10 +1,14 @@
 // 인스타그램 연동·발행 테스트 (Instagram API with Instagram Login)
 // 토큰이 준비되면 실행. 단계별로 안전하게 확인.
 //
-// 실행 예:
-//   IG_TOKEN="..." IG_USER_ID="..." node ig-test.js verify
-//   IG_TOKEN="..." IG_USER_ID="..." IMAGE_URL="https://.../slide.png" node ig-test.js post-image
-//   IG_TOKEN="..." IG_USER_ID="..." IMAGE_URLS="url1,url2,url3" node ig-test.js post-carousel
+// 실행 예 (.env 사용 시):  node --env-file=.env ig-test.js <명령>
+//   verify          연결 확인 (계정 정보/ user_id 출력)
+//   stage-image     [안전] 단일 이미지 컨테이너 생성까지만 — 실제 게시 안 함
+//   stage-carousel  [안전] 카드뉴스 컨테이너 생성까지만 — 실제 게시 안 함
+//   post-image      ⚠️ 단일 이미지 실제 발행(공개 게시)
+//   post-carousel   ⚠️ 카드뉴스(캐러셀) 실제 발행(공개 게시)
+//
+// 이미지 URL은 .env 의 IMAGE_URL / IMAGE_URLS 로 전달.
 //
 // ⚠️ 토큰은 절대 공개 저장소에 올리지 말 것. 환경변수로만 전달.
 
@@ -60,6 +64,39 @@ async function waitFinished(creationId, tries = 20) {
 
     const igId = USER_ID || me.user_id;
 
+    // ── 안전 모드: 컨테이너 생성까지만(실제 게시 안 함) ──
+    // 계정에 아무것도 안 올라감. 발행 파이프라인이 작동하는지만 검증.
+    if (cmd === "stage-image") {
+      const imageUrl = process.env.IMAGE_URL;
+      if (!imageUrl) throw new Error("IMAGE_URL 환경변수가 필요합니다 (공개 접근 가능한 이미지 URL).");
+      console.log("\n[1/2] 컨테이너 생성(게시 안 함)...");
+      const c = await api(`/${igId}/media`, { image_url: imageUrl, caption: "1K Builder 스테이징 테스트" }, "POST");
+      console.log("[2/2] 처리 대기(FINISHED)...");
+      await waitFinished(c.id);
+      console.log("✅ 컨테이너 준비 완료! (실제 게시 안 함) creation_id:", c.id);
+      console.log("   → 이미지 URL 인식 + 처리까지 정상. 계정엔 아무것도 안 올라갔습니다.");
+      return;
+    }
+
+    if (cmd === "stage-carousel") {
+      const urls = (process.env.IMAGE_URLS || "").split(",").map((s) => s.trim()).filter(Boolean);
+      if (urls.length < 2) throw new Error("IMAGE_URLS 에 콤마로 구분된 2장 이상의 공개 이미지 URL이 필요합니다.");
+      console.log(`\n[1/3] 자식 컨테이너 ${urls.length}개 생성...`);
+      const children = [];
+      for (const u of urls) {
+        const c = await api(`/${igId}/media`, { image_url: u, is_carousel_item: "true" }, "POST");
+        children.push(c.id);
+        console.log("   - 슬라이드 컨테이너:", c.id);
+      }
+      console.log("[2/3] 부모 캐러셀 컨테이너 생성...");
+      const parent = await api(`/${igId}/media`, { media_type: "CAROUSEL", children: children.join(","), caption: "1K Builder 카드뉴스 스테이징 테스트" }, "POST");
+      console.log("[3/3] 처리 대기(FINISHED)...");
+      await waitFinished(parent.id);
+      console.log("✅ 캐러셀 컨테이너 준비 완료! (실제 게시 안 함) creation_id:", parent.id);
+      console.log("   → 카드 여러 장 인식 + 처리까지 정상. 계정엔 아무것도 안 올라갔습니다.");
+      return;
+    }
+
     if (cmd === "post-image") {
       const imageUrl = process.env.IMAGE_URL;
       if (!imageUrl) throw new Error("IMAGE_URL 환경변수가 필요합니다 (공개 접근 가능한 이미지 URL).");
@@ -93,7 +130,24 @@ async function waitFinished(creationId, tries = 20) {
       return;
     }
 
-    console.error("알 수 없는 명령:", cmd, "(verify | post-image | post-carousel)");
+    if (cmd === "delete-media") {
+      const mediaId = process.env.MEDIA_ID || process.argv[3];
+      if (!mediaId) throw new Error("MEDIA_ID 환경변수(또는 인자)가 필요합니다. 삭제할 게시물 ID.");
+      console.log(`\n게시물 삭제 시도: ${mediaId}`);
+      const url = new URL(`${BASE}/${mediaId}`);
+      url.search = new URLSearchParams({ access_token: TOKEN }).toString();
+      const res = await fetch(url, { method: "DELETE" });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok && (json.success === true || Object.keys(json).length === 0)) {
+        console.log("✅ 삭제 성공 — API로 게시물 삭제됨:", JSON.stringify(json));
+      } else {
+        console.log(`⚠️ 삭제 실패/미지원 (HTTP ${res.status}):`, JSON.stringify(json.error || json, null, 2));
+        console.log("   → 인스타 API가 미디어 삭제를 지원하지 않으면, 앱에서 수동 삭제해야 합니다.");
+      }
+      return;
+    }
+
+    console.error("알 수 없는 명령:", cmd, "(verify | stage-image | stage-carousel | post-image | post-carousel | delete-media)");
   } catch (e) {
     console.error("\n중단:", e.message);
     process.exit(1);

@@ -1,4 +1,4 @@
-# 1K Builder — 기술 설계 문서 (Technical Design)
+# Kup — 기술 설계 문서 (Technical Design)
 
 > **목적**: PRD/SPEC를 "실제로 어떻게 만드는가"로 번역한 문서. 개발 비전공자도 전체 그림과 각 기능의 작동 원리, 필요한 기술·API를 이해할 수 있도록 작성.
 > **작성 기준**: 2026년 6월 인스타그램/Meta API 정책 실검증 반영.

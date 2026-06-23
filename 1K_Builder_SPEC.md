@@ -1,4 +1,4 @@
-# 1K Builder — SPEC (Source of Truth)
+# Kup — SPEC (Source of Truth)
 
 > **문서 성격**: OpenSpec 방식의 단일 living spec. 구현 들어가기 전·도중에 팀(3인)과 AI 코딩 어시스턴트(Claude Code 등)가 **이 문서 하나만 읽고도 기획 방향을 잃지 않도록** 하는 권위 있는 참조 문서.
 > **읽는 순서**: ① Proposal(왜) → ② Design 결정(어떻게) → ③ Requirements(무엇을) → ④ KPI → ⑤ Out of Scope → ⑥ 결정 대기 → ⑦ Decision Log.

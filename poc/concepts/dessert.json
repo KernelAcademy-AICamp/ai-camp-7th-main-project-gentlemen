@@ -1,0 +1,15 @@
+{
+  "id": "dessert",
+  "account": "@em0rm0re",
+  "persona": "동네 디저트 탐험가, 솔직 후기",
+  "tone": "따뜻하고 친근하게, 식욕을 살짝 자극",
+  "pillars": ["동네 디저트 맛집", "시즌 디저트", "카페 추천"],
+  "cadence": "주 2회",
+  "visual": {
+    "primary": "#FFF8F2",
+    "primary2": "#FBE3EC",
+    "accent": "#E84A82",
+    "light": "#3A2A22",
+    "font": "Apple SD Gothic Neo, AppleGothic, sans-serif"
+  }
+}
