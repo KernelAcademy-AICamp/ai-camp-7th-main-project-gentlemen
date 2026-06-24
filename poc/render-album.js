@@ -51,7 +51,7 @@ function css() {
   .foot{position:absolute;left:96px;right:96px;bottom:70px;display:flex;justify-content:space-between;
         font-size:27px;opacity:0.6;border-top:1px solid rgba(255,255,255,0.18);padding-top:26px;}
   .ai{position:absolute;left:96px;top:96px;font-size:24px;opacity:0.55;letter-spacing:3px;}
-  .dots{position:absolute;right:96px;top:104px;display:flex;gap:14px;}
+  .dots{position:absolute;right:96px;top:100px;display:flex;gap:14px;align-items:center;}
   .dot{width:12px;height:12px;border-radius:50%;background:${b.light};opacity:0.3;}
   .dot.on{opacity:1;background:${b.accent};width:30px;border-radius:6px;}
 
@@ -70,13 +70,13 @@ function css() {
   .body .art{width:620px;height:620px;border-radius:28px;background-size:cover;background-position:center;
              box-shadow:0 40px 80px rgba(0,0,0,0.55);margin:40px auto 0;align-self:center;}
   .body .art.ph{display:flex;align-items:center;justify-content:center;background:${b.accent}33;font-size:120px;}
-  .body .idx{position:absolute;top:96px;right:96px;font-size:30px;font-weight:800;color:${b.accent};opacity:0.9;}
+  .body .idx{position:absolute;top:150px;right:96px;font-size:30px;font-weight:800;color:${b.accent};opacity:0.9;}
   .body .info{margin-top:54px;}
   .body .title{font-size:72px;font-weight:800;line-height:1.15;letter-spacing:-1px;text-wrap:balance;}
   .body .artist{font-size:40px;color:${b.accent};font-weight:700;margin-top:14px;}
   .body .reason{font-size:40px;opacity:0.86;line-height:1.5;margin-top:26px;
                 border-left:4px solid ${b.accent};padding-left:26px;}
-  .vbadge{position:absolute;top:96px;left:96px;font-size:22px;opacity:0.7;}
+  .vbadge{position:absolute;top:138px;left:96px;font-size:22px;opacity:0.7;}
 
   /* OUTRO */
   .outro .wrap{justify-content:center;}
