@@ -2,7 +2,7 @@
 
 > 기획자(비개발자)가 기술 설계를 이해하기 위해 모은 질문과 답변 모음.
 > 작성 기준: 2026년 6월. 인스타/Meta·Claude·Gemini·Canva 등 최신 사실 검증 반영.
-> 메인 설계 문서: `1K_Builder_기술설계.md` 참조.
+> 메인 설계 문서: `Kup_기술설계.md` 참조.
 
 ---
 
@@ -219,4 +219,4 @@
 - [Claude Design (Anthropic)](https://www.anthropic.com/news/claude-design-anthropic-labs) · [Canva×Claude Design](https://www.canva.com/newsroom/news/canva-claude-design/)
 - [Canva Connect API 문서](https://www.canva.dev/docs/connect/)
 - [Kling Open Platform](https://app.klingai.com/global/dev/document-api/quickStart/productIntroduction/overview) · [Higgsfield Cloud API](https://cloud.higgsfield.ai/)
-- [Gemini API 가격](https://ai.google.dev/gemini-api/docs/pricing) · Claude 가격은 `1K_Builder_기술설계.md` 참조
+- [Gemini API 가격](https://ai.google.dev/gemini-api/docs/pricing) · Claude 가격은 `Kup_기술설계.md` 참조

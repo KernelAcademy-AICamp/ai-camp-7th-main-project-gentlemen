@@ -70,7 +70,7 @@ async function waitFinished(creationId, tries = 20) {
       const imageUrl = process.env.IMAGE_URL;
       if (!imageUrl) throw new Error("IMAGE_URL 환경변수가 필요합니다 (공개 접근 가능한 이미지 URL).");
       console.log("\n[1/2] 컨테이너 생성(게시 안 함)...");
-      const c = await api(`/${igId}/media`, { image_url: imageUrl, caption: "1K Builder 스테이징 테스트" }, "POST");
+      const c = await api(`/${igId}/media`, { image_url: imageUrl, caption: "Kup 스테이징 테스트" }, "POST");
       console.log("[2/2] 처리 대기(FINISHED)...");
       await waitFinished(c.id);
       console.log("✅ 컨테이너 준비 완료! (실제 게시 안 함) creation_id:", c.id);
@@ -89,7 +89,7 @@ async function waitFinished(creationId, tries = 20) {
         console.log("   - 슬라이드 컨테이너:", c.id);
       }
       console.log("[2/3] 부모 캐러셀 컨테이너 생성...");
-      const parent = await api(`/${igId}/media`, { media_type: "CAROUSEL", children: children.join(","), caption: "1K Builder 카드뉴스 스테이징 테스트" }, "POST");
+      const parent = await api(`/${igId}/media`, { media_type: "CAROUSEL", children: children.join(","), caption: "Kup 카드뉴스 스테이징 테스트" }, "POST");
       console.log("[3/3] 처리 대기(FINISHED)...");
       await waitFinished(parent.id);
       console.log("✅ 캐러셀 컨테이너 준비 완료! (실제 게시 안 함) creation_id:", parent.id);
@@ -101,7 +101,7 @@ async function waitFinished(creationId, tries = 20) {
       const imageUrl = process.env.IMAGE_URL;
       if (!imageUrl) throw new Error("IMAGE_URL 환경변수가 필요합니다 (공개 접근 가능한 이미지 URL).");
       console.log("\n[1/3] 컨테이너 생성...");
-      const c = await api(`/${igId}/media`, { image_url: imageUrl, caption: "1K Builder 테스트 게시물 · AI 생성/검수됨" }, "POST");
+      const c = await api(`/${igId}/media`, { image_url: imageUrl, caption: "Kup 테스트 게시물 · AI 생성/검수됨" }, "POST");
       console.log("[2/3] 처리 대기(FINISHED)...");
       await waitFinished(c.id);
       console.log("[3/3] 게시...");
@@ -121,7 +121,7 @@ async function waitFinished(creationId, tries = 20) {
         console.log("   - 슬라이드 컨테이너:", c.id);
       }
       console.log("[2/4] 부모 캐러셀 컨테이너 생성...");
-      const parent = await api(`/${igId}/media`, { media_type: "CAROUSEL", children: children.join(","), caption: "1K Builder 카드뉴스 테스트 · AI 생성/검수됨" }, "POST");
+      const parent = await api(`/${igId}/media`, { media_type: "CAROUSEL", children: children.join(","), caption: "Kup 카드뉴스 테스트 · AI 생성/검수됨" }, "POST");
       console.log("[3/4] 처리 대기(FINISHED)...");
       await waitFinished(parent.id);
       console.log("[4/4] 게시...");
