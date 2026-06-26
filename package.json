@@ -1,0 +1,45 @@
+{
+  "name": "kup",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Kup — 인스타 카드뉴스 AI 서비스 (프론트+API: Vercel / 워커: Railway)",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "worker": "tsx workers/index.ts",
+    "worker:dev": "tsx watch workers/index.ts"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.5.2",
+    "@supabase/supabase-js": "^2.45.4",
+    "bullmq": "^5.34.0",
+    "ioredis": "5.10.1",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.17.0",
+    "eslint-config-next": "^15.1.0",
+    "tailwindcss": "^4.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "comment:overrides": "bullmq가 ioredis 5.10.1을 정확히 핀 → 단일 사본으로 dedupe(타입 충돌 방지)",
+  "overrides": {
+    "ioredis": "5.10.1"
+  }
+}

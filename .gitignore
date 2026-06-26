@@ -5,9 +5,22 @@ poc/node_modules/
 # 비밀정보 — 절대 커밋 금지 (인스타 토큰, API 키 등)
 .env
 .env.*
+!.env.example
 *.local
 secrets/
 **/secrets/
+
+# Next.js / 빌드 산출물
+.next/
+out/
+build/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+
+# Supabase 로컬 CLI
+supabase/.branches/
+supabase/.temp/
 
 # OS / 에디터
 .DS_Store
