@@ -10,6 +10,10 @@ poc/node_modules/
 secrets/
 **/secrets/
 
+# 비공개 문서 — 실제 인터뷰이 식별정보 등 공개 부적합 (로컬에만 보관)
+docs/product/instagram_interview_PRD_synthesis.md
+docs/private/
+
 # Next.js / 빌드 산출물
 .next/
 out/
