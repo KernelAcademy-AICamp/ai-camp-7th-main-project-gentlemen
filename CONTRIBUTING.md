@@ -38,7 +38,7 @@ quality: 디저트 고위험 프롬프트 보강
 
 | 영역 | 담당 | 디렉토리 |
 |---|---|---|
-| 품질(A) | 카드뉴스 | `lib/generate/` `lib/llm/` `lib/render/` `poc/` |
+| 품질(A) | 카드뉴스 | `lib/generate/` `lib/llm/` `lib/render/` |
 | 백엔드(B) | 인프라 | `workers/` `supabase/` `lib/db/` `lib/supabase/` |
 | 프론트(C) | UI | `app/` |
 | 리드(D) | 통합 | 루트 설정·CI·배포·아래 공유 계약 |
