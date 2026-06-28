@@ -14,7 +14,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "worker": "tsx workers/index.ts",
-    "worker:dev": "tsx watch workers/index.ts"
+    "worker:dev": "tsx watch workers/index.ts",
+    "gen": "tsx scripts/generate-deck.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
@@ -24,6 +25,7 @@
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "sharp": "^0.33.5",
     "zod": "^3.24.1"
   },
   "devDependencies": {

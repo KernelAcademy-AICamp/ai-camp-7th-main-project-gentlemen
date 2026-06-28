@@ -49,6 +49,9 @@ export const deckSchema = z
     slides: z.array(slideSchema).min(3).max(10),
     caption: z.string().max(2200),
     hashtags: z.array(z.string().regex(/^#\S+$/)).min(5).max(10),
+    // 리드마그넷 운영 키(§4): outro.cta·발행 후 lead_rules.keyword·댓글 웹훅 매칭이 모두 이 값으로 연결.
+    // outro.cta 안에만 묻혀 있던 PoC 대비 최상위로 승격 → 발행/웹훅이 자동 연결됨.
+    leadKeyword: z.string().min(1).max(20),
     ai_flags: z.array(z.string()).default([]),
     risk_level: riskLevelSchema,
   })
@@ -60,6 +63,14 @@ export const deckSchema = z
     }
     if (last?.kind !== "outro") {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: "마지막 슬라이드는 outro여야 함", path: ["slides"] });
+    }
+    // §4 일관성: outro.cta 는 leadKeyword 를 포함해야 발행→웹훅 트리거가 맞물린다.
+    if (last?.kind === "outro" && !last.cta.includes(deck.leadKeyword)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `outro.cta("${last.cta}")에 leadKeyword("${deck.leadKeyword}")가 포함돼야 함`,
+        path: ["slides", deck.slides.length - 1, "cta"],
+      });
     }
   });
 
