@@ -23,10 +23,23 @@ console.log("──────────────────────�
 // 예약 대기 중인 잡들의 실행 예정 시각도 보여준다.
 const delayed = await publishQueue.getJobs(["delayed"]);
 if (delayed.length) {
-  console.log("⏳ 예약 대기 중인 잡:");
+  console.log("⏳ 예약/대기 중인 잡:");
   for (const job of delayed) {
-    const fireAt = new Date(job.data.scheduledAtISO).toLocaleTimeString();
-    console.log(`   - ${job.id} | ${job.data.label} | 실행예정 ${fireAt}`);
+    const when = job.data?.scheduledAtISO
+      ? new Date(job.data.scheduledAtISO).toLocaleTimeString()
+      : "(반복 다음 회차)";
+    console.log(`   - ${job.id} | ${job.name} | ${job.data?.label ?? ""} | ${when}`);
+  }
+  console.log("──────────────────────────────────────────────");
+}
+
+// 등록된 cron(반복) 스케줄러도 보여준다.
+const schedulers = await publishQueue.getJobSchedulers();
+if (schedulers.length) {
+  console.log("🔁 cron 스케줄러:");
+  for (const s of schedulers) {
+    const next = s.next ? new Date(s.next).toLocaleTimeString() : "?";
+    console.log(`   - ${s.key} | 패턴 ${s.pattern ?? s.every} | 다음 ${next}`);
   }
   console.log("──────────────────────────────────────────────");
 }

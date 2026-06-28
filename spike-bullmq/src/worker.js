@@ -17,6 +17,20 @@ const worker = new Worker(
   QUEUE_NAME,
   async (job) => {
     const now = new Date();
+
+    // cron(반복) 잡: 매일 04:00 인사이트 수집 (cron.js가 등록)
+    if (job.name === "insights-collect") {
+      console.log("");
+      console.log("📈 [인사이트 수집 STUB] (cron 반복 실행)");
+      console.log(`   잡 ID    : ${job.id}`);
+      console.log(`   라벨     : ${job.data.label}`);
+      console.log(`   실행시각 : ${now.toLocaleTimeString()}`);
+      console.log("   → (실서비스라면 여기서 Graph API Insights 수집 → DB 스냅샷)");
+      console.log("");
+      return { collectedAt: now.toISOString() };
+    }
+
+    // delayed(1회 예약) 잡: 발행 (schedule.js가 등록)
     const scheduled = new Date(job.data.scheduledAtISO);
     const lateMs = now.getTime() - scheduled.getTime();
 

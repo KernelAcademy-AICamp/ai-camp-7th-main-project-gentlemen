@@ -10,6 +10,7 @@
     "redis:reset": "docker compose down -v",
     "worker": "node src/worker.js",
     "schedule": "node src/schedule.js",
+    "cron": "node src/cron.js",
     "status": "node src/status.js"
   },
   "dependencies": {

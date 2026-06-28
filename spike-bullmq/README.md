@@ -24,10 +24,14 @@ spike-bullmq/
   src/
     connection.js      Redis 연결 (REDIS_URL 환경변수 하나로 로컬↔배포 전환)
     queue.js           예약이 줄 서는 큐
-    schedule.js        예약 1건 넣기 (= "N초 뒤 발행")
-    worker.js          잡을 꺼내 실행 (발행은 아직 콘솔 stub)
-    status.js          큐 현황 보기 (예약이 살아있나 눈으로 확인)
+    schedule.js        예약 1건 넣기 (= "N초 뒤 발행", delayed 잡)
+    cron.js            반복 스케줄 등록 (= "매일 04:00 인사이트 수집", repeat 잡)
+    worker.js          잡을 꺼내 실행 (발행/인사이트 stub, job.name으로 구분)
+    status.js          큐 현황 + cron 스케줄러 보기 (예약이 살아있나 눈으로 확인)
 ```
+
+- **delayed 잡** (schedule.js): "한 번, N초 뒤" — 예약 발행용.
+- **cron(repeat) 잡** (cron.js): "패턴마다 자동 반복" — 인사이트 04:00 수집·토큰 갱신용. BullMQ Job Scheduler 사용.
 
 ## 실행법
 
@@ -41,10 +45,15 @@ npm run redis:up
 # 2) 워커 켜기 (이 창은 켜둔 채로)
 npm run worker
 
-# 3) 다른 창에서 예약 넣기
+# 3) 다른 창에서 예약(delayed) 넣기
 npm run schedule -- 10 "테스트 글"   # 10초 뒤 발행 예약
 
-# 큐 현황 보기 (언제든)
+# 3') cron(반복) 등록 — 인사이트 수집형
+npm run cron -- "*/10 * * * * *"     # 10초마다(테스트). 워커 창에 반복 실행이 찍힘
+npm run cron -- "0 0 4 * * *"        # 운영: 매일 04:00 (Asia/Seoul)
+npm run cron -- stop                 # cron 제거
+
+# 큐 현황 + cron 스케줄러 보기 (언제든)
 npm run status
 
 # 정리
@@ -59,6 +68,7 @@ npm run redis:reset    # 데이터까지 완전 초기화
 | 1 | Docker로 Redis 기동 (`PONG`) | ✅ |
 | 2 | 예약 잡이 정해진 시각에 실행 | ✅ 오차 **0.1초** |
 | 3 ★ | **워커 강제 종료(crash) → 워커 부재 28초 → 재시작** | ✅ 잡이 Redis에 살아남아 **재시작 즉시 실행** |
+| 4 | **cron(repeat) 잡** — `*/5초` 패턴 반복 실행 (2026-06-29) | ✅ :22→:25→:30→:35 자동 반복, delayed와 동시 처리 |
 
 **3단계 상세 (핵심 증명):**
 1. 워커를 `taskkill /F`로 강제 종료 (정상 종료 아닌 crash 시뮬레이션)
