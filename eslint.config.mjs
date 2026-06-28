@@ -12,8 +12,7 @@ const compat = new FlatCompat({
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
-    // PoC와 워커는 Next ESLint 규칙 대상에서 제외(별도 런타임/스타일)
-    ignores: ["poc/**", ".next/**", "node_modules/**"],
+    ignores: [".next/**", "node_modules/**"],
   },
 ];
 

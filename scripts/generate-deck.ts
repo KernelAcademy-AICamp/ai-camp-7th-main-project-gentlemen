@@ -9,7 +9,7 @@ import { renderDeck } from "@/lib/render/deck-renderer";
  * 생성 파이프라인 엔드투엔드 CLI — 컨셉만 주면 deck JSON + 슬라이드 PNG 가 로컬에서 나온다.
  * (Phase 2 완료 기준: 입구→렌더 완전 연결. 기본 mock 공급자라 API 키 불필요.)
  *
- *   npm run gen                              # poc/concepts/playlist.json
+ *   npm run gen                              # examples/concepts/baking.json
  *   npm run gen -- <concept.json>
  *   npm run gen -- <concept.json> --topic "직접 지정한 주제" --out out/test
  *   npm run gen -- --save                    # deck→DB 영속화(로컬 Supabase 필요)
@@ -40,7 +40,7 @@ function parseArgs(argv: string[]) {
 
 async function main() {
   const { positional, flags } = parseArgs(process.argv.slice(2));
-  const conceptPath = positional[0] ?? "poc/concepts/playlist.json";
+  const conceptPath = positional[0] ?? "examples/concepts/baking.json";
 
   if (!fs.existsSync(conceptPath)) {
     console.error(`❌ 컨셉 파일 없음: ${conceptPath}`);
