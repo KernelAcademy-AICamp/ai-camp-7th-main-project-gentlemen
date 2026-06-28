@@ -1,3 +1,4 @@
+import "@/scripts/load-env"; // ⚠️ 최우선 — lib/env.ts 검증 전에 process.env 채움
 import fs from "node:fs";
 import path from "node:path";
 import { conceptSchema } from "@/lib/concept-schema";
@@ -11,6 +12,7 @@ import { renderDeck } from "@/lib/render/deck-renderer";
  *   npm run gen                              # poc/concepts/playlist.json
  *   npm run gen -- <concept.json>
  *   npm run gen -- <concept.json> --topic "직접 지정한 주제" --out out/test
+ *   npm run gen -- --save                    # deck→DB 영속화(로컬 Supabase 필요)
  *   LLM_PROVIDER=mock npm run gen            # 공급자 선택(현재 mock만)
  */
 
@@ -73,6 +75,25 @@ async function main() {
   console.log(`\n── 계측(벤치 입력) ──`);
   console.log(`   토큰   : in ${usage.inputTokens} / out ${usage.outputTokens} (mock 추정치)`);
   console.log(`   시간   : 총 ${timings.totalMs}ms ${JSON.stringify(timings.perStageMs)}`);
+
+  // --save: 실제 영속화(Task 6). dev 채널 보장 → decks 저장 → 왕복 검증.
+  if (flags.save !== undefined) {
+    const { createAdminClient } = await import("@/lib/supabase/admin");
+    const { ensureDevChannel } = await import("@/lib/db/dev-seed");
+    const { saveDeck, getDeckRow, deckFromRow } = await import("@/lib/db/decks");
+
+    const db = createAdminClient();
+    const channelId = await ensureDevChannel(db, concept);
+    const deckId = await saveDeck(db, channelId, deck);
+    const restored = deckFromRow(await getDeckRow(db, deckId), concept.id);
+
+    console.log(`\n── DB 영속화 ──`);
+    console.log(`   channel : ${channelId} (컨셉 잠금 = channel_configs)`);
+    console.log(`   deck    : ${deckId} (status=produced)`);
+    console.log(
+      `   왕복✓   : topic="${restored.topic}" · slides=${restored.slides.length} · risk=${restored.risk_level}`,
+    );
+  }
 }
 
 main().catch((e) => {
