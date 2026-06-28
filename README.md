@@ -1,3 +1,5 @@
+[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/ERWdZ46N)
+
 # Kup
 
 갓 시작한 1인 인플루언서를 위한 **인스타 카드뉴스 AI**. AI가 카드뉴스를 기획·생성하고,
@@ -81,8 +83,7 @@ lib/
 workers/     BullMQ 워커(발행·cron)         ← 백엔드(B)
 supabase/    config + 마이그레이션          ← 백엔드(B)
 scripts/     CLI(생성 등)
-poc/         검증 완료 PoC(발행·DM·렌더) — 레퍼런스
-spike-bullmq/ 예약/cron 내구성 스파이크
+spike-bullmq/ 예약/cron 내구성 스파이크(참고용)
 docs/        기획·기술 문서
 ```
 
