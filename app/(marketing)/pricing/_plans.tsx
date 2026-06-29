@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
+import { AuthButton } from "../_components/auth-modal";
 
 /** 요금제 플랜 + 월/연 토글 (와이어프레임 setBilling). 연 결제 -30%. */
 const PLANS = [
@@ -44,9 +44,7 @@ export function PricingPlans() {
                 </li>
               ))}
             </ul>
-            <Link href={p.href} className={`btn ${p.featured ? "primary" : "line"} block`}>
-              {p.cta}
-            </Link>
+            <AuthButton className={`btn ${p.featured ? "primary" : "line"} block`}>{p.cta}</AuthButton>
           </div>
         ))}
       </div>

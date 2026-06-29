@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { AuthButton } from "../_components/auth-modal";
 
 /** 주요 기능 — 와이어프레임 page-features. 기능 4개 상세. */
 const FEATURES = [
@@ -42,9 +42,7 @@ export default function FeaturesPage() {
       ))}
 
       <div style={{ textAlign: "center", marginTop: 48 }}>
-        <Link href="/login" className="btn primary lg">
-          무료로 시작하기
-        </Link>
+        <AuthButton className="btn primary lg">무료로 시작하기</AuthButton>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuthButton } from "./_components/auth-modal";
 
 /**
  * 홍보 홈 ("/") — 와이어프레임 page-home.
@@ -19,9 +20,7 @@ export default function HomePage() {
             </h1>
             <p className="lead">흩어진 인스타 작업을 KUP 하나로, AI 초안을 내가 다듬어 올려요.</p>
             <div className="hero-actions">
-              <Link href="/login" className="btn primary lg">
-                무료로 시작하기
-              </Link>
+              <AuthButton className="btn primary lg">무료로 시작하기</AuthButton>
               <Link href="/features" className="btn line lg">
                 주요 기능 보기
               </Link>
@@ -174,9 +173,7 @@ export default function HomePage() {
           <div className="ctaband" style={{ textAlign: "center", padding: "48px 24px", background: "var(--bg2)", borderRadius: "var(--radius-lg)" }}>
             <h2>오늘 첫 콘텐츠, AI랑 같이</h2>
             <p className="lead" style={{ margin: "12px auto 24px" }}>카드 등록 없이 바로 시작할 수 있어요.</p>
-            <Link href="/login" className="btn primary lg">
-              무료로 시작하기
-            </Link>
+            <AuthButton className="btn primary lg">무료로 시작하기</AuthButton>
           </div>
         </div>
       </div>
