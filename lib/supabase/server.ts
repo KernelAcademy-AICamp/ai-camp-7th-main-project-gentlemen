@@ -9,10 +9,11 @@ import type { Database } from "@/lib/db/database.types";
  */
 export async function createClient() {
   const cookieStore = await cookies();
+  const env = publicEnv();
 
   return createServerClient<Database>(
-    publicEnv.NEXT_PUBLIC_SUPABASE_URL,
-    publicEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {

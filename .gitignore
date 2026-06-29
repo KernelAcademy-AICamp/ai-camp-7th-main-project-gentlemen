@@ -2,6 +2,10 @@
 node_modules/
 poc/node_modules/
 
+# poc — 팀원 테스트 키트. 공개 레포 제외(팀 결정 9562b9d). 비밀(.env) 노출 방지 + zip으로 직접 배포.
+poc/
+poc.zip
+
 # 비밀정보 — 절대 커밋 금지 (인스타 토큰, API 키 등)
 .env
 .env.*

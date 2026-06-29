@@ -7,8 +7,9 @@ import type { Database } from "@/lib/db/database.types";
  * anon 키 + RLS로 본인 데이터만 접근(데이터모델 §6).
  */
 export function createClient() {
+  const env = publicEnv();
   return createBrowserClient<Database>(
-    publicEnv.NEXT_PUBLIC_SUPABASE_URL,
-    publicEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
 }
