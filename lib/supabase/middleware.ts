@@ -10,9 +10,10 @@ import { publicEnv } from "@/lib/env";
 export async function updateSession(request: NextRequest): Promise<NextResponse> {
   let response = NextResponse.next({ request });
 
+  const env = publicEnv(); // dev 리팩터: publicEnv 는 lazy 함수
   const supabase = createServerClient(
-    publicEnv.NEXT_PUBLIC_SUPABASE_URL,
-    publicEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
         getAll() {
