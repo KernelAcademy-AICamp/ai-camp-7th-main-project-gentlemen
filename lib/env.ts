@@ -44,7 +44,17 @@ function read<T extends z.ZodTypeAny>(schema: T, source: NodeJS.ProcessEnv): z.i
   return parsed.data;
 }
 
-export const publicEnv = read(publicSchema, process.env);
+/**
+ * 공개(NEXT_PUBLIC_*) 환경. 브라우저에서도 안전.
+ * (lazy: 모듈 import만으로 빌드가 키 부재로 깨지지 않게 — serverEnv 와 동일 패턴)
+ */
+let _publicEnv: z.infer<typeof publicSchema> | null = null;
+export function publicEnv() {
+  if (!_publicEnv) {
+    _publicEnv = read(publicSchema, process.env);
+  }
+  return _publicEnv;
+}
 
 /**
  * 서버/워커 전용 환경. 클라이언트 컴포넌트에서 import 금지.
