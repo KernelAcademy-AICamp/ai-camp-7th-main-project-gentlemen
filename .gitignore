@@ -2,6 +2,10 @@
 node_modules/
 poc/node_modules/
 
+# poc — 팀원 테스트 키트. 공개 레포 제외(팀 결정 9562b9d). 비밀(.env) 노출 방지 + zip으로 직접 배포.
+poc/
+poc.zip
+
 # 비밀정보 — 절대 커밋 금지 (인스타 토큰, API 키 등)
 .env
 .env.*
@@ -9,6 +13,10 @@ poc/node_modules/
 *.local
 secrets/
 **/secrets/
+
+# 비공개 문서 — 실제 인터뷰이 식별정보 등 공개 부적합 (로컬에만 보관)
+docs/product/instagram_interview_PRD_synthesis.md
+docs/private/
 
 # Next.js / 빌드 산출물
 .next/

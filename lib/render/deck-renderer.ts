@@ -5,7 +5,7 @@ import type { Concept } from "@/lib/concept-schema";
 import type { Deck, Slide } from "@/lib/deck-schema";
 
 /**
- * 카드뉴스 렌더러 — poc/render-deck.js(검증됨)를 TS로 이식. 로직·치수 동일.
+ * 카드뉴스 렌더러 — 검증 PoC의 SVG 렌더(sharp)를 TS로 이식. 로직·치수 동일.
  * [컨셉(브랜드) + deck(카피)] → 브랜드 템플릿 SVG → PNG(1080×1350).
  * 글자수 wrap 상한은 deck-schema SLIDE_LIMITS 와 짝(생성이 상한을 지키면 안 깨짐).
  * 추후 디자인 자유도가 필요하면 Playwright(HTML/CSS)로 승급(기술설계 4.1).

@@ -4,7 +4,7 @@ import { captureException } from "@/lib/sentry";
 
 /**
  * publish 잡 처리기 — 스텁(Task 3).
- * 실제 로직은 Phase 5에서 PoC `poc/ig-test.js`의 2단계 발행을 이식:
+ * 실제 로직은 Phase 5에서 검증 PoC의 2단계 발행을 이식:
  *   1) deck → 렌더 PNG 공개 URL 확보
  *   2) IG 컨테이너 생성 → FINISHED 폴링 → 게시
  *   3) posts 기록 + challenge_logs upsert + schedules.status='done'
