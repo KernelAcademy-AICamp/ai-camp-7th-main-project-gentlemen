@@ -11,6 +11,13 @@ const COMPARE = [
   ["우선 고객 지원", "—", "—", "✓"],
 ];
 
+/** 비교표 셀 강조: ✓ → yes(초록), — → no(흐림) */
+function cellClass(v: string | undefined): string {
+  if (v === "✓") return "yes";
+  if (v === "—") return "no";
+  return "";
+}
+
 export default function PricingPage() {
   return (
     <div className="wrap section">
@@ -26,13 +33,13 @@ export default function PricingPage() {
         <div className="sec-head center" style={{ marginBottom: 24 }}>
           <h3 style={{ fontSize: 22 }}>플랜 비교</h3>
         </div>
-        <div className="tbl-wrap" style={{ maxWidth: 760, margin: "0 auto" }}>
-          <table className="tbl">
+        <div style={{ maxWidth: 760, margin: "0 auto" }}>
+          <table className="cmp">
             <thead>
               <tr>
                 <th>기능</th>
                 <th>베이직</th>
-                <th>프로</th>
+                <th className="colhi">프로</th>
                 <th>프리미엄</th>
               </tr>
             </thead>
@@ -40,9 +47,9 @@ export default function PricingPage() {
               {COMPARE.map((row) => (
                 <tr key={row[0]}>
                   <td>{row[0]}</td>
-                  <td>{row[1]}</td>
-                  <td style={{ fontWeight: 700 }}>{row[2]}</td>
-                  <td>{row[3]}</td>
+                  <td className={cellClass(row[1])}>{row[1]}</td>
+                  <td className={`colhi ${cellClass(row[2])}`}>{row[2]}</td>
+                  <td className={cellClass(row[3])}>{row[3]}</td>
                 </tr>
               ))}
             </tbody>
