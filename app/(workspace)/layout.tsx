@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Sidebar } from "./_components/sidebar";
 import { AccountProvider } from "./_state/account";
 import { RequireAccount, DemoReset } from "./_components/account-gate";
+import { ProfileMenu } from "./_components/profile-menu";
 
 /**
  * 워크스페이스 셸 (와이어프레임 #ws) — 로그인 후 모든 작업이 얹히는 단일 셸.
@@ -27,9 +28,7 @@ export default function WorkspaceLayout({ children }: { children: React.ReactNod
             </div>
             <div className="wsh-right">
               <span className="plan-badge">베이직</span>
-              <button className="avatar" aria-label="프로필">
-                로
-              </button>
+              <ProfileMenu />
             </div>
           </header>
           <Sidebar />
