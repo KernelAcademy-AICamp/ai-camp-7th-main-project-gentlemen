@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { AuthButton } from "./auth-modal";
 
 /**
  * 홍보 사이트 GNB (와이어프레임 .gnb). 모바일 햄버거 토글.
@@ -30,12 +31,8 @@ export function Gnb() {
           ))}
         </nav>
         <div className="gnb-cta">
-          <Link href="/login" className="btn ghost">
-            로그인
-          </Link>
-          <Link href="/login" className="btn primary">
-            시작하기
-          </Link>
+          <AuthButton className="btn ghost">로그인</AuthButton>
+          <AuthButton className="btn primary">시작하기</AuthButton>
         </div>
         <button className="gnb-burger" onClick={() => setOpen((v) => !v)} aria-label="메뉴">
           ☰
@@ -48,12 +45,8 @@ export function Gnb() {
               {n.label}
             </Link>
           ))}
-          <Link href="/login" className="btn line" onClick={() => setOpen(false)}>
-            로그인
-          </Link>
-          <Link href="/login" className="btn primary" onClick={() => setOpen(false)}>
-            시작하기
-          </Link>
+          <AuthButton className="btn line">로그인</AuthButton>
+          <AuthButton className="btn primary">시작하기</AuthButton>
         </div>
       )}
     </header>
