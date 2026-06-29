@@ -2,7 +2,7 @@
 
 > 작성일: 2026-06-24 · 작성: 시장조사 라운드 1
 > 목적: Kup과 유사한 서비스를 정리하고, 직접 경쟁자(특히 **mirra**)를 심층 분석해 차별화 포지셔닝을 도출한다.
-> 관련 문서: [PRD 요약본](Kup_PRD_요약본.md) · [PRD 고도화 v2](Kup_PRD_고도화_v2.md) · [SPEC](Kup_SPEC.md)
+> 관련 문서: [PRD 요약본](../archive/Kup_PRD_요약본.md) · [PRD 고도화 v2](../archive/Kup_PRD_고도화_v2.md) · [SPEC](../product/Kup_SPEC.md)
 
 ---
 
