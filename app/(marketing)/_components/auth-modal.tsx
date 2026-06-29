@@ -1,12 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { signInWithGoogle, signInWithPassword, signUpWithPassword } from "@/app/login/actions";
 
 /**
- * 로그인/회원가입 모달 (화면흐름 L1/L2 — 별도 페이지가 아니라 팝업).
- * 홍보 사이트 어디서든 "로그인"·"시작하기" 누르면 이 팝업이 뜬다.
- * 내용은 /login 페이지와 동일한 서버 액션(구글·이메일)을 재사용.
+ * 로그인/회원가입 모달 (화면흐름 L1/L2 — 팝업) + 로그인 상태 인식.
+ * - 로그아웃 상태: 버튼 → 팝업(구글·이메일·비회원 둘러보기)
+ * - 로그인 상태: 버튼 → 워크스페이스(/dashboard)로 바로 이동 (AuthButton)
  */
 const INP: React.CSSProperties = {
   width: "100%",
@@ -17,12 +18,12 @@ const INP: React.CSSProperties = {
   background: "#fff",
 };
 
-const Ctx = createContext<{ open: () => void; close: () => void } | null>(null);
+const Ctx = createContext<{ open: () => void; close: () => void; loggedIn: boolean } | null>(null);
 
-export function AuthModalProvider({ children }: { children: ReactNode }) {
+export function AuthModalProvider({ loggedIn = false, children }: { loggedIn?: boolean; children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <Ctx.Provider value={{ open: () => setIsOpen(true), close: () => setIsOpen(false) }}>
+    <Ctx.Provider value={{ open: () => setIsOpen(true), close: () => setIsOpen(false), loggedIn }}>
       {children}
       {isOpen && <AuthModalOverlay onClose={() => setIsOpen(false)} />}
     </Ctx.Provider>
@@ -35,9 +36,16 @@ export function useAuthModal() {
   return c;
 }
 
-/** 모달을 여는 버튼 (Link 대신). 홍보 페이지 곳곳에서 사용. */
+/** 로그아웃 상태 → 팝업 / 로그인 상태 → 워크스페이스 이동. */
 export function AuthButton({ className, children }: { className?: string; children: ReactNode }) {
-  const { open } = useAuthModal();
+  const { open, loggedIn } = useAuthModal();
+  if (loggedIn) {
+    return (
+      <Link href="/dashboard" className={className}>
+        {children}
+      </Link>
+    );
+  }
   return (
     <button type="button" className={className} onClick={open}>
       {children}
@@ -91,6 +99,13 @@ function AuthModalOverlay({ onClose }: { onClose: () => void }) {
             </button>
           </div>
         </form>
+
+        {/* 비회원으로 둘러보기 (화면흐름 §4) — 가입 없이 워크스페이스 체험, 저장·발행 시 가입 유도 */}
+        <div style={{ textAlign: "center", marginTop: 18 }}>
+          <Link href="/dashboard" onClick={onClose} style={{ fontSize: 13, color: "var(--ink2)", textDecoration: "underline" }}>
+            비회원으로 둘러보기
+          </Link>
+        </div>
       </div>
     </div>
   );

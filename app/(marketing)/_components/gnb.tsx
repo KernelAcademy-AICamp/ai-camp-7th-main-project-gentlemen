@@ -6,7 +6,9 @@ import { AuthButton } from "./auth-modal";
 
 /**
  * 홍보 사이트 GNB (와이어프레임 .gnb). 모바일 햄버거 토글.
- * 로그인/시작하기는 /login(구글·이메일)로 연결 (회원가입도 거기서).
+ * 로그인 상태에 따라 우측 CTA 분기:
+ *  - 로그아웃: 로그인 · 시작하기(팝업)
+ *  - 로그인:   워크스페이스로 · 로그아웃
  */
 const NAV = [
   { href: "/features", label: "주요 기능" },
@@ -14,7 +16,37 @@ const NAV = [
   { href: "/contact", label: "문의하기" },
 ];
 
-export function Gnb() {
+function LogoutButton({ className }: { className?: string }) {
+  // 로그아웃 = /auth/signout 로 POST (세션 종료 후 홈으로)
+  return (
+    <form action="/auth/signout" method="post" style={{ display: "inline" }}>
+      <button type="submit" className={className}>
+        로그아웃
+      </button>
+    </form>
+  );
+}
+
+function Cta({ loggedIn, mobile }: { loggedIn: boolean; mobile?: boolean }) {
+  if (loggedIn) {
+    return (
+      <>
+        <Link href="/dashboard" className="btn primary">
+          워크스페이스로
+        </Link>
+        <LogoutButton className={mobile ? "btn line" : "btn ghost"} />
+      </>
+    );
+  }
+  return (
+    <>
+      <AuthButton className={mobile ? "btn line" : "btn ghost"}>로그인</AuthButton>
+      <AuthButton className="btn primary">시작하기</AuthButton>
+    </>
+  );
+}
+
+export function Gnb({ loggedIn }: { loggedIn: boolean }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -31,8 +63,7 @@ export function Gnb() {
           ))}
         </nav>
         <div className="gnb-cta">
-          <AuthButton className="btn ghost">로그인</AuthButton>
-          <AuthButton className="btn primary">시작하기</AuthButton>
+          <Cta loggedIn={loggedIn} />
         </div>
         <button className="gnb-burger" onClick={() => setOpen((v) => !v)} aria-label="메뉴">
           ☰
@@ -45,8 +76,7 @@ export function Gnb() {
               {n.label}
             </Link>
           ))}
-          <AuthButton className="btn line">로그인</AuthButton>
-          <AuthButton className="btn primary">시작하기</AuthButton>
+          <Cta loggedIn={loggedIn} mobile />
         </div>
       )}
     </header>
