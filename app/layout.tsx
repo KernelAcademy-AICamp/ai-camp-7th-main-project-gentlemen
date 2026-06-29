@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./wireframe.css"; // 와이어프레임 디자인 시스템(비주얼 SoT, 1차 초안)
 
 export const metadata: Metadata = {
   title: "Kup",
