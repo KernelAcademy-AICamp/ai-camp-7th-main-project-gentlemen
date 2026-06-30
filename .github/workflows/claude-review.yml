@@ -1,0 +1,40 @@
+name: Claude PR Review
+
+# PR이 열리거나 새 커밋이 push되면 Claude가 자동으로 1차 코드 리뷰 → PR에 코멘트.
+# 사람이 코드를 못 읽어도 AI가 1차로 봐줌. (사람 승인 1명은 그대로 필요 — AI는 승인권 없음)
+#
+# ⚠️ 동작하려면 레포 관리자가 2가지를 먼저 해야 함(워크플로우로는 불가):
+#   1) Claude GitHub App 설치: https://github.com/apps/claude
+#   2) 시크릿 추가: Settings → Secrets and variables → Actions → New repository secret
+#      Name=ANTHROPIC_API_KEY, Value=콘솔(console.anthropic.com)에서 발급한 키
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+# 같은 PR에 연속 푸시되면 이전 리뷰 실행 취소(중복/비용 방지)
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # diff 비교용 전체 히스토리
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            이 PR(#${{ github.event.pull_request.number }})을 한국어로 코드 리뷰해줘.
+            변경된 diff를 보고 아래를 찾아 PR에 코멘트로 남겨:
+            - 버그 / 논리 오류, 보안 이슈, 명백한 성능 문제
+            - 공유 계약 위반(lib/deck-schema·concept-schema, supabase/migrations)
+            - 공통 파일 무단 변경(components/workspace/*, lib/workspace/types.ts)
+            심각도 순으로 핵심만. 문제 없으면 "LGTM 👍" 한 줄로.
+            ⚠️ 우리는 비개발자 팀이라, 왜 문제인지/어떻게 고치는지 쉬운 말로 설명해줘.
