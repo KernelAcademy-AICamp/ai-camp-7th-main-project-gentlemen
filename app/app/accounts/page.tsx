@@ -9,12 +9,10 @@ export default function AccountsPage() {
   const [user, setUser] = useState<PublicUser | null>(null);
   const [publicBase, setPublicBase] = useState<string | null>(null);
   const [mode, setMode] = useState<"테스터" | "정식">("테스터");
-  const [fbLogin, setFbLogin] = useState(false); // 고급: Facebook 로그인 방식
   const [handle, setHandle] = useState("");
-  const [igUserId, setIgUserId] = useState("");
-  const [accessToken, setAccessToken] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [notice, setNotice] = useState<{ tone: "ok" | "err"; msg: string } | null>(null);
 
   async function load() {
     const me = await api<{ user: PublicUser; publicBaseUrl: string | null }>("/api/auth/me");
@@ -25,24 +23,28 @@ export default function AccountsPage() {
     load();
   }, []);
 
+  // OAuth 콜백 결과(/api/ig/oauth/callback 리다이렉트) 표시 후 URL 정리
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    const connected = sp.get("ig_connected");
+    const error = sp.get("ig_error");
+    if (connected) setNotice({ tone: "ok", msg: `인스타 연동 완료! ${connected !== "1" ? `@${connected}` : ""}`.trim() });
+    else if (error) setNotice({ tone: "err", msg: `연동 실패: ${error}` });
+    if (connected || error) window.history.replaceState({}, "", "/app/accounts");
+  }, []);
+
+  // 테스터(시뮬레이션) 연동 — 핸들만 입력. 정식 연동은 "인스타로 로그인"(OAuth) 사용.
   async function connect() {
     setErr("");
-    if (mode === "테스터" && !handle.trim()) return setErr("핸들을 입력하세요.");
-    if (mode === "정식") {
-      if (!accessToken.trim()) return setErr("액세스 토큰을 입력하세요.");
-      if (fbLogin && !igUserId.trim()) return setErr("Facebook 로그인 방식은 IG User ID도 필요해요.");
-    }
+    if (!handle.trim()) return setErr("핸들을 입력하세요.");
     setBusy(true);
     try {
       const { user } = await api<{ user: PublicUser }>("/api/ig", {
         method: "POST",
-        body:
-          mode === "정식"
-            ? { accessToken, igUserId: fbLogin ? igUserId : undefined, handle }
-            : { handle },
+        body: { handle },
       });
       setUser(user);
-      setHandle(""); setIgUserId(""); setAccessToken("");
+      setHandle("");
     } catch (e) {
       setErr((e as Error).message);
     } finally {
@@ -63,6 +65,13 @@ export default function AccountsPage() {
   return (
     <div className="space-y-6">
       <SectionTitle eyebrow="워크스페이스" title="연동 인스타 계정" desc="한 워크스페이스에서 여러 계정을 연결하고 전환하며 운영해요." />
+
+      {notice && (
+        <Card className={`p-4 text-sm flex items-center justify-between gap-3 ${notice.tone === "ok" ? "bg-teal-soft/40 border-teal-soft text-ink" : "bg-coral/10 border-coral/30 text-coral"}`}>
+          <span>{notice.msg}</span>
+          <button onClick={() => setNotice(null)} className="text-muted hover:text-ink">✕</button>
+        </Card>
+      )}
 
       <Card className="p-5 bg-teal-soft/40 border-teal-soft flex gap-3">
         <span className="text-lg">🔒</span>
@@ -90,37 +99,12 @@ export default function AccountsPage() {
             <Button onClick={connect} disabled={busy}>{busy ? "연동 중…" : "연동"}</Button>
           </div>
         ) : (
-          <div className="space-y-3">
-            <Field label="액세스 토큰" hint="콘텐츠 발행 권한 토큰">
-              <input className={inputClass} value={accessToken} onChange={(e) => setAccessToken(e.target.value)} placeholder="IG... 또는 EAAB..." type="password" />
-            </Field>
-            <details className="text-xs text-muted" open>
-              <summary className="cursor-pointer text-ink-soft font-medium">토큰은 어떻게 받나요? (Instagram 로그인 방식 · 권장)</summary>
-              <ol className="list-decimal list-inside mt-2 space-y-1">
-                <li>인스타를 <b>프로페셔널(비즈니스/크리에이터)</b> 계정으로 전환</li>
-                <li>Meta 앱 → 앱 역할에서 본인 인스타를 <b>Instagram 테스터</b>로 추가하고, 인스타 앱에서 수락</li>
-                <li>앱 → Instagram API → <b>“Instagram 로그인이 포함된 API 설정” → 2. 액세스 토큰 생성 → 계정 추가</b></li>
-                <li>나온 <b>액세스 토큰</b>을 위에 붙여넣기 (IG User ID는 자동으로 찾아요)</li>
-              </ol>
-              <p className="mt-2">권한 및 기능에서 <code>instagram_business_content_publish</code> 가 추가돼 있어야 발행됩니다.</p>
-            </details>
-
-            <details className="text-xs text-muted">
-              <summary className="cursor-pointer text-ink-soft">고급: Facebook 로그인 방식 (페이지 연결 + IG User ID)</summary>
-              <label className="flex items-center gap-2 mt-2">
-                <input type="checkbox" checked={fbLogin} onChange={(e) => setFbLogin(e.target.checked)} className="w-4 h-4 accent-[#1f6f63]" />
-                Facebook 로그인 방식 사용 (IG User ID 직접 입력)
-              </label>
-              {fbLogin && (
-                <div className="mt-2">
-                  <Field label="Instagram User ID">
-                    <input className={inputClass} value={igUserId} onChange={(e) => setIgUserId(e.target.value)} placeholder="17841400000000000" />
-                  </Field>
-                </div>
-              )}
-            </details>
-
-            <Button onClick={connect} disabled={busy}>{busy ? "검증·연동 중…" : "정식 연동"}</Button>
+          <div className="rounded-xl border border-line p-4 max-w-md">
+            <div className="font-medium text-sm">인스타로 로그인</div>
+            <p className="text-xs text-muted mt-1">버튼을 누르면 인스타 인증 화면으로 이동해요. 토큰을 직접 입력할 필요 없이, 인스타에서 ‘허용’만 누르면 연동됩니다.</p>
+            <Button className="mt-3" onClick={() => { window.location.href = "/api/ig/oauth/start"; }}>
+              인스타로 로그인
+            </Button>
           </div>
         )}
         {err && <p className="text-sm text-coral mt-2">{err}</p>}

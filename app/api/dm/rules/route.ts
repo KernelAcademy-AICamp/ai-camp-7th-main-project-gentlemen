@@ -29,7 +29,8 @@ export async function POST(req: Request) {
     enabled: b.enabled ?? true,
     optIn: true,
     triggerKeyword: b.triggerKeyword.trim(),
-    postReference: (b.postReference || "").trim(),
+    postReference: (b.postReference || "").trim(), // 표시용 라벨(게시물 캡션 등)
+    mediaId: (b.mediaId || "").trim() || undefined, // 비우면 전체 게시물에 적용
     dmMessage: b.dmMessage.trim(),
     resourceLink: (b.resourceLink || "").trim(),
     sentCount: 0,

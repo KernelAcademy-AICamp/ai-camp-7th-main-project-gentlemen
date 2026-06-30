@@ -159,6 +159,8 @@ export interface MetricEntry {
   id: string;
   userId: string;
   cardId?: string;
+  mediaId?: string; // 인스타 미디어 ID (자동수집 시 중복 방지 키)
+  source?: "manual" | "instagram"; // 출처 — 미지정은 수동 입력으로 간주
   date: string; // YYYY-MM-DD
   views: number; // 조회
   reach: number; // 도달
@@ -178,7 +180,8 @@ export interface DmRule {
   enabled: boolean;
   optIn: boolean;
   triggerKeyword: string;
-  postReference: string;
+  postReference: string; // 표시용 라벨(선택한 게시물 캡션/설명). 매칭엔 mediaId 사용
+  mediaId?: string; // 대상 게시물 IG 미디어 ID. 비우면 "전체 게시물"에 적용
   dmMessage: string;
   resourceLink: string;
   sentCount: number;
@@ -194,13 +197,25 @@ export const DM_LIMITS: Record<Plan, number> = {
   프리미엄: Number.POSITIVE_INFINITY,
 };
 
+// DM 기본 문구(미리 채워지고 수정 가능). 자료 링크는 문구 안에 직접 적는다.
+export const DM_TEMPLATE = "안녕하세요! 요청하신 자료 보내드려요 🙌";
+
+// DM 문구 렌더 — 미리보기·카드·실제 발송 공용.
+//  - 기본은 문구 그대로. (옛 데이터 호환) link 가 따로 있으면 끝에 붙여준다.
+export function renderDmMessage(message: string, link?: string): string {
+  const msg = message || "";
+  const url = (link || "").trim();
+  return url && !msg.includes(url) ? `${msg}\n🔗 ${url}` : msg;
+}
+
 export interface IgAccount {
   id: string;
   handle: string;
   mode: "테스터베타" | "정식";
   loginType?: "instagram" | "facebook"; // 정식 연동 방식 (호출 호스트 결정)
   igUserId?: string; // 정식: Instagram Business Account ID
-  accessToken?: string; // 정식: access token (콘텐츠 발행 권한)
+  accessToken?: string; // 정식: access token (봉인 저장 — crypto.sealToken). 클라이언트엔 노출 X
+  tokenExpiresAt?: number; // 장기 토큰 만료(epoch ms). OAuth 연동 시 설정 — 갱신 판단용
   connectedAt: number;
   // 데모/표시용 메트릭 (mock 단계). 실연동 시 인스타 인사이트로 교체 — TODO(데이터 연결)
   followers?: number;

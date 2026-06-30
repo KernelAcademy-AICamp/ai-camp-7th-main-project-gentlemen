@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/workspace/client";
-import { Badge, Button, Card, Field, inputClass, SectionTitle } from "@/components/workspace/ui";
+import { Badge, Button, Card, SectionTitle } from "@/components/workspace/ui";
 import { activeIgHandle, type CardNews, type DmRule, type MetricEntry, type PublicUser, type PublishJob } from "@/lib/workspace/types";
 
 function dayKey(ts: number): string {
@@ -23,6 +23,8 @@ export default function InsightsPage() {
   const [dm, setDm] = useState<DmRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshedAt, setRefreshedAt] = useState(updatedStamp());
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
 
   async function load() {
     const [me, mt, sc, cd, dr] = await Promise.all([
@@ -43,9 +45,27 @@ export default function InsightsPage() {
     load();
   }, []);
 
+  // 인스타에서 인사이트 자동수집(정식 연동 계정 한정)
+  async function sync() {
+    setSyncMsg(null);
+    setSyncing(true);
+    try {
+      const r = await api<{ synced: number; followers: number }>("/api/metrics/sync", { method: "POST" });
+      await load(); // 갱신된 지표 + 계정 팔로워 반영
+      setRefreshedAt(updatedStamp());
+      setSyncMsg({ tone: "ok", text: `인스타에서 ${r.synced}개 게시물 지표를 가져왔어요 (팔로워 ${r.followers.toLocaleString()}명).` });
+    } catch (e) {
+      setSyncMsg({ tone: "err", text: (e as Error).message });
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  const activeAccount = user ? user.igAccounts.find((a) => a.id === user.activeIgAccountId) ?? user.igAccounts[0] : undefined;
+  const hasRealFollowers = activeAccount?.mode === "정식" && typeof activeAccount.followers === "number";
   const followersGained = useMemo(() => metrics.reduce((s, m) => s + m.newFollowers, 0), [metrics]);
   const baseFollowers = user?.survey?.followers ?? 0;
-  const followers = baseFollowers + followersGained;
+  const followers = hasRealFollowers ? activeAccount!.followers! : baseFollowers + followersGained;
   const totals = useMemo(() => metrics.reduce(
     (a, m) => ({
       views: a.views + m.views, reach: a.reach + m.reach, saves: a.saves + m.saves,
@@ -73,12 +93,31 @@ export default function InsightsPage() {
         title="콘텐츠 성과"
         desc={handle ? `@${handle} 인사이트` : "인스타 계정을 연동하면 계정 단위 지표가 채워져요."}
         action={
-          <Button variant="outline" size="sm" onClick={() => { setRefreshedAt(updatedStamp()); load(); }}>
-            ↻ 새로고침
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => { setRefreshedAt(updatedStamp()); load(); }}>
+              ↻ 새로고침
+            </Button>
+            {activeAccount?.mode === "정식" && (
+              <Button size="sm" onClick={sync} disabled={syncing}>
+                {syncing ? "가져오는 중…" : "↧ 인스타에서 가져오기"}
+              </Button>
+            )}
+          </div>
         }
       />
       <p className="text-xs text-muted -mt-3">인사이트 업데이트 {refreshedAt} · 수치는 안정적인 시간대(오전 4시) 기준</p>
+
+      {syncMsg && (
+        <Card className={`p-3 text-sm ${syncMsg.tone === "ok" ? "bg-teal-soft/40 border-teal-soft text-ink" : "bg-coral/10 border-coral/30 text-coral"}`}>
+          {syncMsg.text}
+        </Card>
+      )}
+
+      {activeAccount && activeAccount.mode !== "정식" && (
+        <Card className="p-3 text-sm bg-paper-2/50 text-ink-soft">
+          현재 계정은 <b>테스터(시뮬)</b>라 자동 수집이 안 돼요. 정식 연동 계정이면 ‘인스타에서 가져오기’로 실제 지표를 불러옵니다. 그 전엔 아래에서 직접 입력하세요.
+        </Card>
+      )}
 
       {/* 계정 단위 인사이트 */}
       <div className="grid sm:grid-cols-4 gap-3">
@@ -136,28 +175,22 @@ export default function InsightsPage() {
         <ContributionsGraph jobs={jobs} />
       </Card>
 
-      {/* 다음 액션 + 성과 입력 */}
-      <div className="grid lg:grid-cols-2 gap-4">
-        <Card className="p-6">
-          <SectionTitle title="다음에 바꿀 점" desc="최근 성과 기록을 바탕으로." />
-          {latest ? (
-            <ul className="space-y-2">
-              {nextActions.map((a, i) => (
-                <li key={i} className="flex gap-2.5 items-start text-sm">
-                  <span className="text-coral mt-0.5">→</span>
-                  <span className="text-ink-soft">{a}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-ink-soft">아직 성과 기록이 없어요. 오른쪽에서 첫 기록을 넣으면 ‘다음에 바꿀 점’을 추천해 드려요.</p>
-          )}
-        </Card>
-        <Card className="p-6">
-          <SectionTitle title="인사이트 입력" desc="초기엔 손으로 입력해요. (P1: 자동 수집)" />
-          <MetricForm cards={cards} onAdded={(e) => setMetrics((m) => [e, ...m])} />
-        </Card>
-      </div>
+      {/* 다음 액션 */}
+      <Card className="p-6">
+        <SectionTitle title="다음에 바꿀 점" desc="수집된 성과를 바탕으로." />
+        {latest ? (
+          <ul className="space-y-2">
+            {nextActions.map((a, i) => (
+              <li key={i} className="flex gap-2.5 items-start text-sm">
+                <span className="text-coral mt-0.5">→</span>
+                <span className="text-ink-soft">{a}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-ink-soft">아직 수집된 성과가 없어요. 상단 ‘인스타에서 가져오기’로 지표를 불러오면 ‘다음에 바꿀 점’을 추천해 드려요.</p>
+        )}
+      </Card>
 
       {cards.length === 0 && (
         <Card className="p-5 text-center text-sm text-ink-soft">
@@ -252,54 +285,4 @@ function computeNextActions(m?: MetricEntry): string[] {
   if (m.profileVisits > 0 && m.follows === 0) out.push("프로필 방문은 있는데 전환이 0이에요 → 링크·하이라이트에 동선을 명확히 하세요.");
   if (out.length === 0) out.push("지표가 고르게 나와요. 잘 먹힌 주제를 한 번 더 변주해 보세요.");
   return out;
-}
-
-function MetricForm({ cards, onAdded }: { cards: CardNews[]; onAdded: (e: MetricEntry) => void }) {
-  const [f, setF] = useState({ cardId: "", views: "", reach: "", saves: "", shares: "", likes: "", comments: "", profileVisits: "", follows: "", newFollowers: "" });
-  const [saving, setSaving] = useState(false);
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      const num = (k: keyof typeof f) => Number(f[k]) || 0;
-      const { entry } = await api<{ entry: MetricEntry }>("/api/metrics", {
-        method: "POST",
-        body: {
-          cardId: f.cardId || undefined,
-          views: num("views"), reach: num("reach"), saves: num("saves"), shares: num("shares"),
-          likes: num("likes"), comments: num("comments"), profileVisits: num("profileVisits"),
-          follows: num("follows"), newFollowers: num("newFollowers"),
-        },
-      });
-      onAdded(entry);
-      setF({ cardId: "", views: "", reach: "", saves: "", shares: "", likes: "", comments: "", profileVisits: "", follows: "", newFollowers: "" });
-    } finally {
-      setSaving(false);
-    }
-  }
-  const nf = (k: keyof typeof f, label: string) => (
-    <Field label={label}>
-      <input className={inputClass} type="number" value={f[k]} onChange={(e) => setF((p) => ({ ...p, [k]: e.target.value }))} placeholder="0" />
-    </Field>
-  );
-
-  return (
-    <form onSubmit={submit} className="space-y-3">
-      {cards.length > 0 && (
-        <Field label="연결할 콘텐츠" hint="선택">
-          <select className={inputClass} value={f.cardId} onChange={(e) => setF((p) => ({ ...p, cardId: e.target.value }))}>
-            <option value="">— 계정 전체 —</option>
-            {cards.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
-          </select>
-        </Field>
-      )}
-      <div className="grid grid-cols-3 gap-2">
-        {nf("views", "조회")}{nf("reach", "도달")}{nf("saves", "저장")}
-        {nf("shares", "공유")}{nf("likes", "좋아요")}{nf("comments", "댓글")}
-        {nf("profileVisits", "방문")}{nf("follows", "기여팔로우")}{nf("newFollowers", "팔로워+")}
-      </div>
-      <Button type="submit" size="sm" disabled={saving}>{saving ? "저장 중…" : "기록 추가"}</Button>
-    </form>
-  );
 }

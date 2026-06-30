@@ -2,6 +2,7 @@ import { mutateDB, uid } from "@/lib/workspace/db";
 import { toPublicUser } from "@/lib/workspace/auth";
 import { bad, json, withUser } from "@/lib/workspace/api";
 import { verifyConnection } from "@/lib/workspace/ig";
+import { sealToken } from "@/lib/workspace/crypto";
 import type { IgAccount } from "@/lib/workspace/types";
 
 // 인스타 계정 연동 (다중).
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
     mode: live ? "정식" : "테스터베타",
     loginType: live ? loginType : undefined,
     igUserId: live ? igUserId : undefined,
-    accessToken: live ? accessToken : undefined,
+    accessToken: live ? sealToken(accessToken) : undefined, // 봉인 저장
     connectedAt: Date.now(),
   };
 
