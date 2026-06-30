@@ -159,6 +159,8 @@ export interface MetricEntry {
   id: string;
   userId: string;
   cardId?: string;
+  mediaId?: string; // 인스타 미디어 ID (자동수집 시 중복 방지 키)
+  source?: "manual" | "instagram"; // 출처 — 미지정은 수동 입력으로 간주
   date: string; // YYYY-MM-DD
   views: number; // 조회
   reach: number; // 도달
@@ -200,7 +202,8 @@ export interface IgAccount {
   mode: "테스터베타" | "정식";
   loginType?: "instagram" | "facebook"; // 정식 연동 방식 (호출 호스트 결정)
   igUserId?: string; // 정식: Instagram Business Account ID
-  accessToken?: string; // 정식: access token (콘텐츠 발행 권한)
+  accessToken?: string; // 정식: access token (봉인 저장 — crypto.sealToken). 클라이언트엔 노출 X
+  tokenExpiresAt?: number; // 장기 토큰 만료(epoch ms). OAuth 연동 시 설정 — 갱신 판단용
   connectedAt: number;
   // 데모/표시용 메트릭 (mock 단계). 실연동 시 인스타 인사이트로 교체 — TODO(데이터 연결)
   followers?: number;
