@@ -11,7 +11,7 @@
 데이터 흐름 한 줄: **컨셉(브랜드) → 생성 파이프라인 → deck(카피) → 렌더(PNG) → DB 저장 → (예약) 발행 워커**
 
 현재 동작 범위 = **생성 파이프라인**(컨셉 → deck JSON → 카드 PNG). 기본 **mock LLM** 이라 API 키 없이 돈다.
-이후 로드맵(실 LLM·영속화·검수 UI·발행 워커)은 [docs/작업트랙.md](docs/작업트랙.md).
+이후 로드맵·다음 할 일은 **[GitHub Issues](https://github.com/KernelAcademy-AICamp/ai-camp-7th-main-project-gentlemen/issues)** 로 추적한다 (초기 로드맵 기록은 [docs/archive/작업트랙.md](docs/archive/작업트랙.md)).
 
 ## 스택
 
@@ -69,5 +69,5 @@ docs/        기획·기술 문서(설계 SoT)
 - 무엇을 만드나: [docs/product/Kup_SPEC.md](docs/product/Kup_SPEC.md)
 - 어떻게: [docs/tech/Kup_기술설계.md](docs/tech/Kup_기술설계.md) · 데이터: [docs/tech/Kup_데이터모델.md](docs/tech/Kup_데이터모델.md)
 - 생성 파이프라인: [docs/tech/Kup_생성파이프라인_설계.md](docs/tech/Kup_생성파이프라인_설계.md)
-- 작업 현황·다음 할 일: [docs/작업트랙.md](docs/작업트랙.md) · 역할: [docs/팀_역할분담.md](docs/팀_역할분담.md)
+- 작업 현황·다음 할 일: **[GitHub Issues](https://github.com/KernelAcademy-AICamp/ai-camp-7th-main-project-gentlemen/issues)** · 역할: [docs/팀_역할분담.md](docs/팀_역할분담.md)
 - 팀 개발 규칙: [CONTRIBUTING.md](CONTRIBUTING.md)
