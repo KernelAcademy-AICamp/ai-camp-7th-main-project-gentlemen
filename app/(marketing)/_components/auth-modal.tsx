@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { createContext, useContext, useState, type ReactNode } from "react";
-import { signInWithGoogle, signInWithPassword, signUpWithPassword } from "@/app/login/actions";
+import { continueAsGuest, signInWithGoogle, signInWithPassword, signUpWithPassword } from "@/app/login/actions";
 
 /**
  * 로그인/회원가입 모달 (화면흐름 L1/L2 — 팝업) + 로그인 상태 인식.
@@ -41,7 +41,7 @@ export function AuthButton({ className, children }: { className?: string; childr
   const { open, loggedIn } = useAuthModal();
   if (loggedIn) {
     return (
-      <Link href="/dashboard" className={className}>
+      <Link href="/app/home" className={className}>
         {children}
       </Link>
     );
@@ -100,12 +100,12 @@ function AuthModalOverlay({ onClose }: { onClose: () => void }) {
           </div>
         </form>
 
-        {/* 비회원으로 둘러보기 (화면흐름 §4) — 가입 없이 워크스페이스 체험, 저장·발행 시 가입 유도 */}
-        <div style={{ textAlign: "center", marginTop: 18 }}>
-          <Link href="/dashboard" onClick={onClose} style={{ fontSize: 13, color: "var(--ink2)", textDecoration: "underline" }}>
+        {/* 비회원으로 둘러보기 (화면흐름 §4) — 게스트 세션 발급 후 워크스페이스 진입(가입 없이 체험) */}
+        <form action={continueAsGuest} style={{ textAlign: "center", marginTop: 18 }}>
+          <button type="submit" style={{ fontSize: 13, color: "var(--ink2)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer" }}>
             비회원으로 둘러보기
-          </Link>
-        </div>
+          </button>
+        </form>
       </div>
     </div>
   );

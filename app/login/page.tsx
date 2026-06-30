@@ -1,8 +1,12 @@
-import { signInWithGoogle, signInWithPassword, signUpWithPassword } from "./actions";
+import Link from "next/link";
+import { AuthShell } from "@/components/workspace/AuthShell";
+import { Button, Field, inputClass } from "@/components/workspace/ui";
+import { continueAsGuest, signInWithGoogle, signInWithPassword } from "./actions";
 
 /**
- * 로그인 페이지 — 구글을 메인으로 노출, 이메일/비번은 보조(개발·테스트용).
- * 세션은 Supabase Auth가 발급. 성공 시 /auth/callback(구글) 또는 바로 /dashboard(이메일).
+ * 로그인 — Supabase Auth(구글 메인 + 이메일/비번 보조).
+ * 디자인은 워크스페이스 AuthShell(통일된 그레이스케일 토큰).
+ * 성공 → /auth/callback 또는 액션 내부에서 파일DB 브릿지 → /app.
  */
 export default async function LoginPage({
   searchParams,
@@ -12,62 +16,50 @@ export default async function LoginPage({
   const { error } = await searchParams;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 p-8">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold">Kup 시작하기</h1>
-        <p className="mt-2 text-sm opacity-60">구글 계정으로 1초 만에 시작하세요</p>
-      </div>
-
+    <AuthShell title="다시 만나서 반가워요" sub="로그인하고 이번 주 루틴을 이어가요.">
       {error && (
-        <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{decodeURIComponent(error)}</p>
+        <p className="mb-4 rounded-lg bg-coral-soft px-3 py-2 text-sm text-coral">
+          {decodeURIComponent(error)}
+        </p>
       )}
 
-      {/* 메인: 구글 (구글 공급자 설정 후 동작) */}
-      <form action={signInWithGoogle}>
-        <button
-          type="submit"
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-black/15 bg-white px-4 py-3 text-sm font-semibold text-black hover:bg-black/[0.03]"
-        >
-          <span className="font-bold text-[#4285F4]">G</span> 구글로 계속하기
-        </button>
+      <form action={signInWithPassword} className="space-y-4">
+        <Field label="이메일">
+          <input className={inputClass} name="email" type="email" placeholder="you@example.com" required />
+        </Field>
+        <Field label="비밀번호">
+          <input className={inputClass} name="password" type="password" placeholder="••••••" required />
+        </Field>
+        <Button type="submit" size="lg" className="w-full">
+          로그인
+        </Button>
       </form>
 
-      {/* 보조: 이메일/비번 (개발·테스트용) */}
-      <div className="flex items-center gap-3 text-xs opacity-40">
-        <span className="h-px flex-1 bg-current" />또는 이메일 (개발·테스트용)<span className="h-px flex-1 bg-current" />
+      <div className="my-5 flex items-center gap-3">
+        <div className="h-px flex-1 bg-line" />
+        <span className="text-xs text-muted">또는</span>
+        <div className="h-px flex-1 bg-line" />
       </div>
 
-      <form className="flex flex-col gap-3">
-        <input
-          name="email"
-          type="email"
-          required
-          placeholder="이메일"
-          className="rounded-lg border border-black/15 px-4 py-2.5 text-sm"
-        />
-        <input
-          name="password"
-          type="password"
-          required
-          minLength={6}
-          placeholder="비밀번호 (6자 이상)"
-          className="rounded-lg border border-black/15 px-4 py-2.5 text-sm"
-        />
-        <div className="flex gap-2">
-          <button
-            formAction={signInWithPassword}
-            className="flex-1 rounded-lg border border-black/15 px-4 py-2.5 text-sm font-semibold hover:bg-black/[0.03]"
-          >
-            로그인
-          </button>
-          <button
-            formAction={signUpWithPassword}
-            className="flex-1 rounded-lg bg-foreground px-4 py-2.5 text-sm font-semibold text-background"
-          >
-            가입
-          </button>
-        </div>
+      <form action={signInWithGoogle}>
+        <Button type="submit" variant="outline" size="lg" className="w-full">
+          <span className="font-bold text-[#4285F4]">G</span> 구글로 계속하기
+        </Button>
       </form>
-    </main>
+
+      {/* Supabase 없이도 화면을 볼 수 있는 폴백(파일DB 게스트) */}
+      <form action={continueAsGuest} className="mt-2">
+        <Button type="submit" variant="ghost" size="lg" className="w-full">
+          비회원으로 둘러보기
+        </Button>
+      </form>
+
+      <p className="mt-5 text-center text-sm text-ink-soft">
+        아직 계정이 없나요?{" "}
+        <Link href="/signup" className="font-medium text-coral">
+          무료로 시작하기
+        </Link>
+      </p>
+    </AuthShell>
   );
 }

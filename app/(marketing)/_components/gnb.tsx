@@ -31,7 +31,7 @@ function Cta({ loggedIn, mobile }: { loggedIn: boolean; mobile?: boolean }) {
   if (loggedIn) {
     return (
       <>
-        <Link href="/dashboard" className="btn primary">
+        <Link href="/app/home" className="btn primary">
           워크스페이스로
         </Link>
         <LogoutButton className={mobile ? "btn line" : "btn ghost"} />

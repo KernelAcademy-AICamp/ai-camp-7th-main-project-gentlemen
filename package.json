@@ -18,9 +18,11 @@
     "gen": "tsx scripts/generate-deck.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.40.1",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.4",
     "bullmq": "^5.34.0",
+    "html-to-image": "^1.11.13",
     "ioredis": "5.10.1",
     "next": "^15.1.0",
     "react": "^19.0.0",
