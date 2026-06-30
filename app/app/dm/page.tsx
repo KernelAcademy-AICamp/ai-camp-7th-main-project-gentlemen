@@ -11,6 +11,11 @@ export default function DmPage() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [err, setErr] = useState("");
+  const [origin, setOrigin] = useState("");
+
+  useEffect(() => {
+    setOrigin(window.location.origin); // 웹훅 콜백 URL 안내용(현재 접속 주소 기준)
+  }, []);
 
   async function load() {
     const [{ rules }, { user }] = await Promise.all([
@@ -75,8 +80,37 @@ export default function DmPage() {
       <Card className="p-4 bg-paper-2/50 text-sm text-ink-soft flex gap-3">
         <span className="text-lg">✉</span>
         특정 게시물에 지정 키워드 댓글이 달리면, 동의 기반으로 정보 DM(리드마그넷 링크)을 보내는 흐름이에요.
-        베타에서는 ‘시뮬레이션 발송’으로 동작을 확인합니다.
+        실시간 자동 발송은 아래 ‘웹훅 연결’이 되어 있어야 동작하고, 연결 전엔 ‘시뮬레이션 발송’으로 흐름을 확인합니다.
       </Card>
+
+      {/* 웹훅 연결 안내 — 실제 댓글→DM 자동화를 켜려면 Meta 앱에 등록 */}
+      <details className="text-sm">
+        <summary className="cursor-pointer text-ink-soft font-medium">⚙️ 실시간 자동화 켜기 (웹훅 연결 방법)</summary>
+        <Card className="p-5 mt-2 space-y-3">
+          <p className="text-ink-soft">
+            Meta 앱 → <b>Webhooks(Instagram)</b> 에 아래 값을 등록하고 <code>comments</code> 필드를 구독하면,
+            댓글이 달리는 즉시 규칙에 맞춰 DM이 자동 발송돼요.
+          </p>
+          <div className="space-y-2">
+            <div>
+              <div className="text-xs text-muted mb-1">콜백 URL</div>
+              <code className="block bg-paper-2/60 rounded-lg px-3 py-2 text-xs break-all">{origin || "https://<공개주소>"}/api/ig/webhook</code>
+            </div>
+            <div>
+              <div className="text-xs text-muted mb-1">Verify token</div>
+              <code className="block bg-paper-2/60 rounded-lg px-3 py-2 text-xs">.env 의 IG_WEBHOOK_VERIFY_TOKEN 값</code>
+            </div>
+            <div>
+              <div className="text-xs text-muted mb-1">구독 필드</div>
+              <code className="block bg-paper-2/60 rounded-lg px-3 py-2 text-xs">comments</code>
+            </div>
+          </div>
+          <p className="text-xs text-muted">
+            ※ 로컬은 공개 https 주소(터널/배포)가 필요해요. 위 콜백 URL은 지금 접속한 주소 기준으로 표시됩니다 —
+            공개 주소로 접속한 상태에서 복사하세요.
+          </p>
+        </Card>
+      </details>
 
       {err && <p className="text-sm text-coral">{err}</p>}
       {creating && <RuleForm onCreated={(r) => { setRules((rs) => [r, ...rs]); setCreating(false); }} />}

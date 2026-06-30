@@ -173,6 +173,23 @@ export async function exchangeCodeForLongLivedToken(code: string, redirectUri: s
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// DM 자동화 — 댓글 비공개 답장(Private Replies). 댓글 작성자에게 정보 DM 발송.
+//   POST {host}/me/messages  body: { recipient:{comment_id}, message:{text} }
+//   ※ 콜드 DM 아님 — "키워드 댓글(옵트인)"에 대한 답장만 보낸다(정책).
+// ─────────────────────────────────────────────────────────────────────────────
+export async function sendPrivateReply(account: IgAccount, commentId: string, text: string): Promise<void> {
+  const token = openToken(account.accessToken);
+  const host = graphBase(account);
+  const res = await fetch(`${host}/me/messages?access_token=${encodeURIComponent(token)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ recipient: { comment_id: commentId }, message: { text } }),
+  });
+  const data = (await res.json().catch(() => ({}))) as Record<string, unknown> & GraphError;
+  if (!res.ok || data.error) throw new Error(data.error?.message || `DM 발송 실패 (${res.status})`);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 인사이트 자동수집 — 연동 계정의 팔로워/게시물 지표를 Graph API 로 가져온다(읽기전용).
 //   계정 단위: followers_count
 //   게시물 단위: like_count·comments_count(미디어 필드) + reach·saved·shares·views·
