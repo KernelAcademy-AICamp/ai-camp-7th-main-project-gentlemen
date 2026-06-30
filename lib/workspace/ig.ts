@@ -236,6 +236,31 @@ interface MediaNode {
   comments_count?: number;
 }
 
+// 게시물 선택기용 경량 목록(캡션 포함). DM 규칙에서 "어떤 게시물" 고를 때 사용.
+export interface IgMediaSummary {
+  id: string;
+  caption: string;
+  permalink?: string;
+  mediaType?: string;
+  timestamp?: string;
+}
+export async function fetchMediaList(account: IgAccount, limit = 25): Promise<IgMediaSummary[]> {
+  const token = openToken(account.accessToken);
+  const host = graphBase(account);
+  const id = account.igUserId!;
+  const d = (await gGET(
+    host,
+    `/${id}/media?fields=id,caption,permalink,timestamp,media_type&limit=${limit}&access_token=${token}`
+  )) as { data?: Array<MediaNode & { caption?: string }> };
+  return (d.data ?? []).map((m) => ({
+    id: m.id,
+    caption: (m.caption || "").trim(),
+    permalink: m.permalink,
+    mediaType: m.media_type,
+    timestamp: m.timestamp,
+  }));
+}
+
 // 최근 게시물 목록(기본 필드 + 좋아요/댓글 수)
 async function fetchUserMedia(account: IgAccount, limit: number): Promise<MediaNode[]> {
   const token = openToken(account.accessToken);

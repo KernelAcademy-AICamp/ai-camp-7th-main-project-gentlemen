@@ -71,20 +71,37 @@ export function Badge({
   );
 }
 
+// 라벨 옆 ⓘ 호버 툴팁 — 부가 설명을 인라인 텍스트 대신 툴팁으로.
+export function Tip({ text }: { text: string }) {
+  return (
+    <span className="group relative inline-flex align-middle" title={text}>
+      <span className="cursor-help w-4 h-4 inline-flex items-center justify-center rounded-full border border-line text-[10px] text-muted leading-none">?</span>
+      <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 hidden group-hover:block w-max max-w-[220px] whitespace-normal text-left rounded-lg bg-ink text-paper text-xs font-normal px-2.5 py-1.5 shadow-lg z-30">
+        {text}
+      </span>
+    </span>
+  );
+}
+
 export function Field({
   label,
   hint,
+  tip,
   children,
 }: {
   label: string;
   hint?: string;
+  tip?: string; // 설정 시 라벨 옆 ⓘ 툴팁으로 표시(인라인 hint 대신)
   children: ReactNode;
 }) {
   return (
     <label className="block">
-      <div className="flex items-baseline justify-between mb-1.5">
-        <span className="text-sm font-medium text-ink">{label}</span>
-        {hint && <span className="text-xs text-muted">{hint}</span>}
+      <div className="flex items-baseline justify-between mb-1.5 gap-2">
+        <span className="text-sm font-medium text-ink inline-flex items-center gap-1.5">
+          {label}
+          {tip && <Tip text={tip} />}
+        </span>
+        {hint && <span className="text-xs text-muted shrink-0">{hint}</span>}
       </div>
       {children}
     </label>

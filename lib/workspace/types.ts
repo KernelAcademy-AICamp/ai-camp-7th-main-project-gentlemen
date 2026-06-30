@@ -180,7 +180,8 @@ export interface DmRule {
   enabled: boolean;
   optIn: boolean;
   triggerKeyword: string;
-  postReference: string;
+  postReference: string; // 표시용 라벨(선택한 게시물 캡션/설명). 매칭엔 mediaId 사용
+  mediaId?: string; // 대상 게시물 IG 미디어 ID. 비우면 "전체 게시물"에 적용
   dmMessage: string;
   resourceLink: string;
   sentCount: number;
@@ -195,6 +196,17 @@ export const DM_LIMITS: Record<Plan, number> = {
   프로: 1000,
   프리미엄: Number.POSITIVE_INFINITY,
 };
+
+// DM 기본 문구(미리 채워지고 수정 가능). 자료 링크는 문구 안에 직접 적는다.
+export const DM_TEMPLATE = "안녕하세요! 요청하신 자료 보내드려요 🙌";
+
+// DM 문구 렌더 — 미리보기·카드·실제 발송 공용.
+//  - 기본은 문구 그대로. (옛 데이터 호환) link 가 따로 있으면 끝에 붙여준다.
+export function renderDmMessage(message: string, link?: string): string {
+  const msg = message || "";
+  const url = (link || "").trim();
+  return url && !msg.includes(url) ? `${msg}\n🔗 ${url}` : msg;
+}
 
 export interface IgAccount {
   id: string;

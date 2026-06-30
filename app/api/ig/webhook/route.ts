@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { readDB, mutateDB } from "@/lib/workspace/db";
 import { sendPrivateReply } from "@/lib/workspace/ig";
-import { DM_LIMITS, type DmRule, type IgAccount, type User } from "@/lib/workspace/types";
+import { DM_LIMITS, renderDmMessage, type IgAccount, type User } from "@/lib/workspace/types";
 
 // 인스타 웹훅 — 댓글 → DM 리드마그넷 자동화.
 //  GET  : 웹훅 등록 검증(hub.challenge 에코)
@@ -99,9 +99,16 @@ async function handleComment(recipientIgId: string, value: CommentValue): Promis
   // 내 계정이 단 댓글은 무시(무한루프 방지)
   if (fromId && account.igUserId && String(fromId) === String(account.igUserId)) return;
 
-  // 매칭 규칙: 활성 + 옵트인 + 키워드 포함(대소문자 무시)
+  // 매칭 규칙: 활성 + 옵트인 + 키워드 포함(대소문자 무시) + 게시물(mediaId) 일치
+  //   - rule.mediaId 가 있으면 그 게시물 댓글에만, 없으면 전체 게시물에 적용
+  const mediaId = value.media?.id;
   const rules = readDB().dmRules.filter((r) => r.userId === user.id && r.enabled && r.optIn);
-  const rule = rules.find((r) => r.triggerKeyword && text.toLowerCase().includes(r.triggerKeyword.toLowerCase()));
+  const rule = rules.find(
+    (r) =>
+      r.triggerKeyword &&
+      text.toLowerCase().includes(r.triggerKeyword.toLowerCase()) &&
+      (!r.mediaId || r.mediaId === mediaId)
+  );
   if (!rule) return;
 
   // 플랜 DM 한도 확인
@@ -113,7 +120,7 @@ async function handleComment(recipientIgId: string, value: CommentValue): Promis
   }
 
   handled.add(commentId); // 실패 시 아래에서 해제
-  const message = buildDmText(rule);
+  const message = renderDmMessage(rule.dmMessage, rule.resourceLink);
   try {
     await sendPrivateReply(account, commentId, message);
     mutateDB((db) => {
@@ -127,6 +134,3 @@ async function handleComment(recipientIgId: string, value: CommentValue): Promis
   }
 }
 
-function buildDmText(rule: DmRule): string {
-  return rule.resourceLink ? `${rule.dmMessage}\n🔗 ${rule.resourceLink}` : rule.dmMessage;
-}
