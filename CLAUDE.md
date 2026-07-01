@@ -18,22 +18,20 @@
 TypeScript · Next.js 15(App Router)+Tailwind · Supabase(Postgres·Auth·Storage) ·
 BullMQ+Redis(예약/cron) · sharp+SVG(렌더). **프론트+API → Vercel / 워커 → Railway** (같은 레포·`lib/` 공유, 배포만 둘로).
 
-## 디렉토리 & 오너십
-
-작업할 때 자기 영역 위주로. 남의 영역은 사전 공유 + PR 리뷰로만 손댄다(CONTRIBUTING §4).
+## 디렉토리
 
 ```
-app/         Next.js 프론트+API                ← 프론트(C)
+app/         Next.js 프론트+API
 lib/
-  generate/  생성 엔진 generateDeck()           ← 품질(A)
-  llm/       LLM 어댑터(mock + 공급자 교체점)    ← 품질(A)
-  render/    카드 렌더(sharp+SVG)               ← 품질(A)
-  db/        decks 저장·복원·시드               ← 백엔드(B)
-  supabase/  client/server/admin 3종           ← 백엔드(B)
-  env.ts     환경변수 검증(zod)                 ← 공통
-  sentry.ts  에러추적(현재 스텁)               ← 공통
-workers/     BullMQ 워커(발행·cron)             ← 백엔드(B)
-supabase/    config + 마이그레이션(0001~0003)   ← 백엔드(B)
+  generate/  생성 엔진 generateDeck()
+  llm/       LLM 어댑터(mock + 공급자 교체점)
+  render/    카드 렌더(sharp+SVG)
+  db/        decks 저장·복원·시드
+  supabase/  client/server/admin 3종
+  env.ts     환경변수 검증(zod)
+  sentry.ts  에러추적(현재 스텁)
+workers/     BullMQ 워커(발행·cron)
+supabase/    config + 마이그레이션(0001~0003)
 scripts/     CLI(생성 데모 등)
 docs/        기획·기술 문서(설계 SoT)
 ```
@@ -69,5 +67,5 @@ docs/        기획·기술 문서(설계 SoT)
 - 무엇을 만드나: [docs/product/Kup_SPEC.md](docs/product/Kup_SPEC.md)
 - 어떻게: [docs/tech/Kup_기술설계.md](docs/tech/Kup_기술설계.md) · 데이터: [docs/tech/Kup_데이터모델.md](docs/tech/Kup_데이터모델.md)
 - 생성 파이프라인: [docs/tech/Kup_생성파이프라인_설계.md](docs/tech/Kup_생성파이프라인_설계.md)
-- 작업 현황·다음 할 일: **[GitHub Issues](https://github.com/KernelAcademy-AICamp/ai-camp-7th-main-project-gentlemen/issues)** · 역할: [docs/팀_역할분담.md](docs/팀_역할분담.md)
+- 작업 현황·다음 할 일: **[GitHub Issues](https://github.com/KernelAcademy-AICamp/ai-camp-7th-main-project-gentlemen/issues)**
 - 팀 개발 규칙: [CONTRIBUTING.md](CONTRIBUTING.md)
