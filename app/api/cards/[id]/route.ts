@@ -6,15 +6,15 @@ import type { CardNews, CardPage } from "@/lib/workspace/types";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-function findCard(userId: string, id: string): CardNews | undefined {
-  return readDB().cards.find((c) => c.id === id && c.userId === userId);
+async function findCard(userId: string, id: string): Promise<CardNews | undefined> {
+  return (await readDB()).cards.find((c) => c.id === id && c.userId === userId);
 }
 
 export async function GET(_req: Request, ctx: Ctx) {
   const guard = await withUser();
   if ("res" in guard) return guard.res;
   const { id } = await ctx.params;
-  const card = findCard(guard.user.id, id);
+  const card = await findCard(guard.user.id, id);
   if (!card) return bad("카드를 찾을 수 없습니다.", 404);
   return json({ card });
 }
@@ -36,7 +36,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
   } | null;
   if (!body) return bad("잘못된 요청입니다.");
 
-  const updated = mutateDB((db) => {
+  const updated = await mutateDB((db) => {
     const card = db.cards.find((c) => c.id === id && c.userId === guard.user.id);
     if (!card) return null;
     if (card.status === "업로드완료") return card;
@@ -97,10 +97,10 @@ export async function DELETE(_req: Request, ctx: Ctx) {
   const guard = await withUser();
   if ("res" in guard) return guard.res;
   const { id } = await ctx.params;
-  mutateDB((db) => {
+  await mutateDB((db) => {
     db.cards = db.cards.filter((c) => !(c.id === id && c.userId === guard.user.id));
     db.publishJobs = db.publishJobs.filter((j) => j.cardId !== id);
   });
-  deleteCardImages(id);
+  await deleteCardImages(id);
   return json({ ok: true });
 }

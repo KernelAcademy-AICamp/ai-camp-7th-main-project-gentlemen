@@ -39,7 +39,7 @@ export async function GET(req: Request) {
     // 사용자명/계정 확인(Instagram 로그인 → graph.instagram.com/me)
     const v = await verifyConnection(tok.accessToken);
 
-    const updated = mutateDB((db) => {
+    const updated = await mutateDB((db) => {
       const u = db.users.find((x) => x.id === user.id);
       if (!u) return null;
       const handle = v.username || v.igUserId;

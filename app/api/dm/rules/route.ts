@@ -8,7 +8,7 @@ import { DM_LIMITS, type DmRule } from "@/lib/workspace/types";
 export async function GET() {
   const guard = await withUser();
   if ("res" in guard) return guard.res;
-  const rules = readDB()
+  const rules = (await readDB())
     .dmRules.filter((r) => r.userId === guard.user.id)
     .sort((a, b) => b.createdAt - a.createdAt);
   return json({ rules });
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     sentCount: 0,
     createdAt: Date.now(),
   };
-  mutateDB((db) => db.dmRules.push(rule));
+  await mutateDB((db) => db.dmRules.push(rule));
   return json({ rule });
 }
 
@@ -50,7 +50,7 @@ export async function PATCH(req: Request) {
   if (!b?.id) return bad("id가 필요합니다.");
 
   const limit = DM_LIMITS[guard.user.plan];
-  const res = mutateDB((db) => {
+  const res = await mutateDB((db) => {
     const rule = db.dmRules.find((r) => r.id === b.id && r.userId === guard.user.id);
     if (!rule) return { error: "not_found" as const };
     if (typeof b.enabled === "boolean") rule.enabled = b.enabled;
@@ -74,7 +74,7 @@ export async function DELETE(req: Request) {
   if ("res" in guard) return guard.res;
   const b = (await req.json().catch(() => null)) as { id?: string } | null;
   if (!b?.id) return bad("id가 필요합니다.");
-  mutateDB((db) => {
+  await mutateDB((db) => {
     db.dmRules = db.dmRules.filter((r) => !(r.id === b.id && r.userId === guard.user.id));
   });
   return json({ ok: true });

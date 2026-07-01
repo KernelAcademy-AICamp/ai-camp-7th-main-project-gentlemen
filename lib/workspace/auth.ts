@@ -79,7 +79,7 @@ export function toPublicUser(user: User): PublicUser {
 
 export async function createSession(userId: string): Promise<void> {
   const token = uid("sess") + randomBytes(16).toString("hex");
-  mutateDB((db) => {
+  await mutateDB((db) => {
     db.sessions.push({ token, userId, createdAt: Date.now() });
   });
   const store = await cookies();
@@ -95,7 +95,7 @@ export async function destroySession(): Promise<void> {
   const store = await cookies();
   const token = store.get(COOKIE)?.value;
   if (token) {
-    mutateDB((db) => {
+    await mutateDB((db) => {
       db.sessions = db.sessions.filter((s) => s.token !== token);
     });
   }
@@ -106,7 +106,7 @@ export async function getCurrentUser(): Promise<User | null> {
   const store = await cookies();
   const token = store.get(COOKIE)?.value;
   if (!token) return null;
-  const db = readDB();
+  const db = (await readDB());
   const session = db.sessions.find((s) => s.token === token);
   if (!session) return null;
   return db.users.find((u) => u.id === session.userId) ?? null;

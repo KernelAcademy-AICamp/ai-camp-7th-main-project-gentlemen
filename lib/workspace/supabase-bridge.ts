@@ -24,7 +24,7 @@ export async function bridgeSupabaseSession(): Promise<{ ok: boolean; survey: bo
   const email = user?.email?.toLowerCase();
   if (!email) return { ok: false, survey: false };
 
-  let dbUser: User | undefined = readDB().users.find((u) => u.email === email);
+  let dbUser: User | undefined = (await readDB()).users.find((u) => u.email === email);
   if (!dbUser) {
     const meta = (user!.user_metadata ?? {}) as { name?: string; full_name?: string };
     const created = newUser({
@@ -33,7 +33,7 @@ export async function bridgeSupabaseSession(): Promise<{ ok: boolean; survey: bo
       authProvider: "google",
       marketingConsent: false,
     });
-    mutateDB((d) => d.users.push(created));
+    await mutateDB((d) => d.users.push(created));
     dbUser = created;
   }
 
