@@ -11,13 +11,13 @@ export function AuthShell({
 }) {
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-paper text-ink font-sans">
-      <div className="hidden lg:flex flex-col justify-between bg-ink text-paper p-12">
+      <div className="hidden lg:flex flex-col justify-between bg-coral text-white p-12">
         <Logo size="md" />
         <div>
           <p className="font-display text-4xl leading-tight">
             시간은 AI가 줄이고,
             <br />
-            <span className="text-coral">발행은 내가.</span>
+            <span className="font-semibold underline decoration-white/40 underline-offset-4">발행은 내가.</span>
           </p>
           <p className="text-paper/70 mt-4 max-w-sm">
             설문→전략→카드뉴스 초안→검수→편집·발행→성과까지. 100명씩 1,000명으로.

@@ -142,7 +142,7 @@ function Switch({ on, onClick }: { on: boolean; onClick: () => void }) {
       role="switch"
       aria-checked={on}
       onClick={onClick}
-      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition ${on ? "bg-ink" : "bg-line"}`}
+      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition ${on ? "bg-coral" : "bg-line"}`}
     >
       <span className={`inline-block h-4 w-4 rounded-full bg-card shadow transition-transform ${on ? "translate-x-4" : "translate-x-0.5"}`} />
     </button>

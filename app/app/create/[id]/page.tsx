@@ -28,7 +28,7 @@ function DropZone({
   onReject,
   clickable = true,
   className = "",
-  activeClassName = "border-ink bg-paper-2/60",
+  activeClassName = "border-coral bg-coral-soft/50",
   children,
 }: {
   accept: string;
@@ -351,7 +351,7 @@ export default function EditorPage() {
               <Field label="테마">
                 <div className="flex flex-wrap gap-2">
                   {THEMES.map((tm) => (
-                    <button key={tm.key} onClick={() => patchDraft({ theme: tm.key })} className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm ${draft.theme === tm.key ? "border-ink" : "border-line"}`}>
+                    <button key={tm.key} onClick={() => patchDraft({ theme: tm.key })} className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm ${draft.theme === tm.key ? "border-coral" : "border-line"}`}>
                       <span className="w-4 h-4 rounded-full border border-line" style={{ background: getTheme(tm.key).bg }} />
                       {tm.name}
                     </button>

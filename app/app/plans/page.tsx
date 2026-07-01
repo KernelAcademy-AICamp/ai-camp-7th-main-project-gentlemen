@@ -114,7 +114,7 @@ export default function PlansPage() {
 
       {/* 전략 요약 */}
       {strategy && (
-        <Card className="p-5 bg-ink text-paper border-ink">
+        <Card className="p-5 bg-coral text-white border-transparent">
           <div className="flex items-center gap-2 flex-wrap">
             <Badge tone="coral">{strategy.stage}</Badge>
             <span className="text-sm text-paper/90">{strategy.diagnosis}</span>
@@ -122,7 +122,7 @@ export default function PlansPage() {
               {regen ? "생성 중…" : "전략 다시 생성"}
             </button>
           </div>
-          <p className="text-sm text-coral mt-3 font-medium">이번 주 목표 · 주 {strategy.recommendedCount}회</p>
+          <p className="text-sm text-white mt-3 font-semibold">이번 주 목표 · 주 {strategy.recommendedCount}회</p>
           <p className="text-sm text-paper/90">{strategy.weeklyGoal}</p>
           <div className="mt-4 grid sm:grid-cols-2 gap-2">
             {strategy.topics.map((t, i) => (
@@ -225,7 +225,7 @@ export default function PlansPage() {
                   <button
                     key={fmt}
                     onClick={() => setForm((f) => ({ ...f, format: fmt }))}
-                    className={`rounded-xl border px-2 py-2 text-sm ${form.format === fmt ? "border-ink bg-paper-2/50" : "border-line text-ink-soft"}`}
+                    className={`rounded-xl border px-2 py-2 text-sm ${form.format === fmt ? "border-coral bg-coral-soft/50" : "border-line text-ink-soft"}`}
                   >
                     {label}
                   </button>
