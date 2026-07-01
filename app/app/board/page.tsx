@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { api, formatDate } from "@/lib/workspace/client";
 import { Badge, Button, Card, EmptyState, SectionTitle } from "@/components/workspace/ui";
 import { getTheme } from "@/components/workspace/CardCanvas";
-import { KANBAN_COLUMNS, type CardNews, type CardStatus } from "@/lib/workspace/types";
+import { KANBAN_COLUMNS, kanbanColumnOf, type CardNews, type CardStatus } from "@/lib/workspace/types";
 
 const COLUMN_TONE: Record<CardStatus, string> = {
   기획중: "#8b8579",
@@ -36,7 +36,8 @@ export default function BoardPage() {
 
   if (loading) return <div className="py-20 text-center text-muted">불러오는 중…</div>;
 
-  const byStatus = (s: CardStatus) => cards.filter((c) => c.status === s);
+  // 게이트 상태(기획완료/제작완료)는 각 '중' 열에 접어서 집계·표시
+  const byColumn = (col: CardStatus) => cards.filter((c) => kanbanColumnOf(c.status) === col);
 
   return (
     <div className="space-y-5">
@@ -63,7 +64,7 @@ export default function BoardPage() {
         <div className="overflow-x-auto pb-2">
           <div className="flex gap-3 min-w-max" style={{ height: 640 }}>
             {KANBAN_COLUMNS.map((col) => {
-              const items = byStatus(col);
+              const items = byColumn(col);
               return (
                 <div key={col} className="w-64 shrink-0 flex flex-col bg-paper-2/40 rounded-2xl border border-line">
                   <div className="px-3.5 py-3 flex items-center justify-between sticky top-0">

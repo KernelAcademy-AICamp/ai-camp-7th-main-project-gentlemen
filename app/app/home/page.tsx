@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/workspace/client";
 import { Badge, Button, Card } from "@/components/workspace/ui";
-import { activeIgHandle, KANBAN_COLUMNS, type CardNews, type CardStatus, type MetricEntry, type PublicUser, type PublishJob, type Strategy } from "@/lib/workspace/types";
+import { activeIgHandle, KANBAN_COLUMNS, kanbanColumnOf, type CardNews, type CardStatus, type MetricEntry, type PublicUser, type PublishJob, type Strategy } from "@/lib/workspace/types";
 
 function weekStart(ts: number): number {
   const d = new Date(ts);
@@ -69,7 +69,8 @@ export default function HomePage() {
   const followers = (user.survey?.followers ?? 0) + metrics.reduce((s, m) => s + m.newFollowers, 0);
   const nextTarget = Math.min(1000, Math.ceil((followers + 1) / 100) * 100);
   const roadmapPct = Math.min(100, (followers / 1000) * 100);
-  const stageCount = (s: CardStatus) => cards.filter((c) => c.status === s).length;
+  // 칸반 표시 열 기준 집계 — 게이트 상태(기획완료/제작완료)는 각 '중' 열에 접어서 센다
+  const columnCount = (col: CardStatus) => cards.filter((c) => kanbanColumnOf(c.status) === col).length;
   const reserved = jobs.filter((j) => j.status === "예약");
   const todo = cards.filter((c) => c.status === "제작완료").length; // 발행 대기
 
@@ -151,7 +152,7 @@ export default function HomePage() {
           <div className="space-y-1.5 text-sm">
             <Row label="발행 대기 (검수 통과)" value={todo} href="/app/board" tone="teal" />
             <Row label="예약된 발행" value={reserved.length} href="/app/board" tone="amber" />
-            <Row label="기획 중" value={stageCount("기획중") + stageCount("기획완료")} href="/app/plans" tone="muted" />
+            <Row label="기획 중" value={columnCount("기획중")} href="/app/plans" tone="muted" />
           </div>
         </Card>
       </div>
@@ -162,10 +163,10 @@ export default function HomePage() {
           <div className="text-sm font-medium">기획 현황</div>
           <Link href="/app/board" className="text-xs text-coral">콘텐츠 관리 →</Link>
         </div>
-        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {KANBAN_COLUMNS.map((col) => (
             <div key={col} className="rounded-xl bg-paper-2/50 p-3 text-center">
-              <div className="font-display text-2xl" style={{ color: STAGE_TONE[col] }}>{stageCount(col)}</div>
+              <div className="font-display text-2xl" style={{ color: STAGE_TONE[col] }}>{columnCount(col)}</div>
               <div className="text-[11px] text-muted mt-1">{col}</div>
             </div>
           ))}

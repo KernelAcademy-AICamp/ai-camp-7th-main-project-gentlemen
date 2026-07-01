@@ -78,7 +78,9 @@ export interface CardPage {
   photoNote?: string; // 사진첨부형: 들어갈 사진 설명
 }
 
-// IA 칸반 6단계 = 카드 수명주기
+// 카드 수명주기 상태(6). '기획완료'·'제작완료'는 수명주기 게이트다 —
+// 기획완료=기획확정(릴스 발행 조건), 제작완료=검수통과(발행 조건)로 발행·검수 로직이 사용한다.
+// 칸반에는 별도 열로 노출하지 않고 각 단계의 '중' 열에 접어서 보여준다(kanbanColumnOf).
 export type CardStatus =
   | "기획중"
   | "기획완료"
@@ -87,14 +89,20 @@ export type CardStatus =
   | "예약업로드"
   | "업로드완료";
 
+// IA 0.2.4 칸반 표시 열 = 4. 게이트 상태(기획완료/제작완료)는 자체 열 없이 '중' 열에 접어 표시.
 export const KANBAN_COLUMNS: CardStatus[] = [
   "기획중",
-  "기획완료",
   "제작중",
-  "제작완료",
   "예약업로드",
   "업로드완료",
 ];
+
+// 카드 상태 → 칸반 표시 열. 열이 없는 게이트 상태를 같은 단계의 '중' 열로 접는다.
+export function kanbanColumnOf(status: CardStatus): CardStatus {
+  if (status === "기획완료") return "기획중";
+  if (status === "제작완료") return "제작중";
+  return status;
+}
 
 export interface ReviewFlag {
   id: string;
