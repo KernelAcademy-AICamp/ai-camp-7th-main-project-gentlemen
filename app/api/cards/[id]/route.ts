@@ -101,6 +101,6 @@ export async function DELETE(_req: Request, ctx: Ctx) {
     db.cards = db.cards.filter((c) => !(c.id === id && c.userId === guard.user.id));
     db.publishJobs = db.publishJobs.filter((j) => j.cardId !== id);
   });
-  deleteCardImages(id);
+  await deleteCardImages(id);
   return json({ ok: true });
 }

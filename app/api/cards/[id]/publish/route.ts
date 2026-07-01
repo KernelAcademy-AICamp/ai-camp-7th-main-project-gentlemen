@@ -40,8 +40,8 @@ export async function POST(req: Request, ctx: Ctx) {
   // 정식 발행은 공개 URL + (릴스=영상 / 카드뉴스=이미지) 가 필요
   if (live) {
     if (!publicBaseUrl()) return bad("PUBLIC_BASE_URL이 설정되지 않았어요(인스타가 가져갈 공개 주소).", 409);
-    if (reels && !hasCardVideo(card.id)) return bad("업로드된 영상이 없어요. 발행 전에 영상을 먼저 업로드해 주세요.", 409);
-    if (!reels && !hasCardImages(card.id)) return bad("발행할 이미지가 없어요. 발행 전에 이미지를 먼저 생성해 주세요.", 409);
+    if (reels && !(await hasCardVideo(card.id))) return bad("업로드된 영상이 없어요. 발행 전에 영상을 먼저 업로드해 주세요.", 409);
+    if (!reels && !(await hasCardImages(card.id))) return bad("발행할 이미지가 없어요. 발행 전에 이미지를 먼저 생성해 주세요.", 409);
   }
 
   const scheduledAt = Number(body.scheduledAt) || 0;

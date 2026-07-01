@@ -19,7 +19,7 @@ export async function PUT(req: Request, ctx: Ctx) {
   if (!file.type.startsWith("video/")) return bad("영상 파일만 업로드할 수 있어요.");
 
   const buf = Buffer.from(await file.arrayBuffer());
-  saveCardVideo(id, buf);
+  await saveCardVideo(id, buf);
   await mutateDB((db) => {
     const c = db.cards.find((x) => x.id === id && x.userId === guard.user.id);
     if (c) {

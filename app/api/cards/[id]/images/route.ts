@@ -14,6 +14,6 @@ export async function PUT(req: Request, ctx: Ctx) {
 
   const body = (await req.json().catch(() => null)) as { images?: string[] } | null;
   if (!body?.images?.length) return bad("이미지가 없습니다.");
-  const n = saveCardImages(id, body.images);
+  const n = await saveCardImages(id, body.images);
   return json({ ok: true, count: n });
 }
