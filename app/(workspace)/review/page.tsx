@@ -168,6 +168,7 @@ export default function ReviewPage() {
   const [verdict, setVerdict] = useState<VKey>("yellow");
   const [consent, setConsent] = useState(false);
   const [legalOpen, setLegalOpen] = useState(false);
+  const [trustOpen, setTrustOpen] = useState(false);
   const s = STATES[verdict];
 
   const pubDisabled = s.pub.mode === "blocked" || (s.pub.mode === "consent" && !consent);
@@ -190,10 +191,13 @@ export default function ReviewPage() {
 
   return (
     <>
-      <div className="page-head">
+      <div className="page-head" style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
         <div>
           <h1>최종 검수·업로드</h1>
           <p>작업 중 · 가을 신메뉴 소개 · 카드뉴스 5장 · 업로드 전 마지막 확인이에요.</p>
+        </div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink2)", background: "#fff", border: "1px solid var(--border2)", borderRadius: 999, padding: "6px 12px", whiteSpace: "nowrap" }}>
+          검수 기준 · <b style={{ color: "var(--ink)" }}>음식·카페</b> 기본
         </div>
       </div>
 
@@ -389,6 +393,18 @@ export default function ReviewPage() {
             <p className="hint" style={{ textAlign: "center", marginTop: 10, fontSize: 12, color: "var(--ink3)" }}>
               {s.pub.hint}
             </p>
+          </div>
+
+          {/* 검수 기준 안내 (ISO 신뢰 장치) */}
+          <div style={{ border: "1px solid var(--border)", background: "#fff", borderRadius: "var(--radius)", padding: "11px 13px", marginTop: 14, fontSize: 12, color: "var(--ink2)" }}>
+            <div onClick={() => setTrustOpen((v) => !v)} style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 700, cursor: "pointer" }}>
+              🛡 국제표준 원칙 기반 3단 점검 · 사람 최종 검토 <span style={{ marginLeft: "auto", color: "var(--ink3)" }}>{trustOpen ? "▲" : "▼"}</span>
+            </div>
+            {trustOpen && (
+              <div style={{ color: "var(--ink3)", fontSize: 12, lineHeight: 1.6, marginTop: 9 }}>
+                본 검수는 국제표준 원칙(ISO/IEC 42001·25059·23894)을 <b>참고하여</b> ① 자동 형식·금칙어 ② AI 품질·규제 평가 ③ 사람 최종 검토의 3단계로 수행돼요. 최종 발행 책임은 사용자에게 있어요.
+              </div>
+            )}
           </div>
         </div>
       </div>
