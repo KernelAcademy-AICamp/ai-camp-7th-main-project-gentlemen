@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   if (!(body.agreeTerms && body.agreePrivacy && body.agreeMeta))
     return bad("필수 약관(이용약관·개인정보·Meta 연동)에 동의해야 합니다.", 409);
 
-  const db = readDB();
+  const db = (await readDB());
   if (db.users.find((u) => u.email === email)) return bad("이미 가입된 이메일입니다.");
   if (db.users.find((u) => u.name === name && !u.guest)) return bad("이미 사용 중인 닉네임입니다.");
 
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     authProvider: "email",
     marketingConsent: !!body.marketingConsent,
   });
-  mutateDB((d) => d.users.push(user));
+  await mutateDB((d) => d.users.push(user));
   await createSession(user.id);
   return json({ user: toPublicUser(user) });
 }

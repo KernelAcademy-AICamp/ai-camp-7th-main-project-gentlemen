@@ -47,7 +47,7 @@ export async function POST(req: Request) {
     connectedAt: Date.now(),
   };
 
-  const updated = mutateDB((db) => {
+  const updated = await mutateDB((db) => {
     const u = db.users.find((x) => x.id === guard.user.id);
     if (!u) return null;
     const existing = u.igAccounts.find((a) => a.handle === handle);
@@ -73,7 +73,7 @@ export async function PATCH(req: Request) {
   if ("res" in guard) return guard.res;
   const b = (await req.json().catch(() => null)) as { activeId?: string } | null;
   if (!b?.activeId) return bad("activeId가 필요합니다.");
-  const updated = mutateDB((db) => {
+  const updated = await mutateDB((db) => {
     const u = db.users.find((x) => x.id === guard.user.id);
     if (!u || !u.igAccounts.some((a) => a.id === b.activeId)) return null;
     u.activeIgAccountId = b.activeId;
@@ -88,7 +88,7 @@ export async function DELETE(req: Request) {
   if ("res" in guard) return guard.res;
   const b = (await req.json().catch(() => null)) as { id?: string } | null;
   if (!b?.id) return bad("id가 필요합니다.");
-  const updated = mutateDB((db) => {
+  const updated = await mutateDB((db) => {
     const u = db.users.find((x) => x.id === guard.user.id);
     if (!u) return null;
     u.igAccounts = u.igAccounts.filter((a) => a.id !== b.id);

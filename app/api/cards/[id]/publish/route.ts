@@ -14,7 +14,7 @@ export async function POST(req: Request, ctx: Ctx) {
   const { id } = await ctx.params;
   const body = (await req.json().catch(() => ({}))) as { scheduledAt?: number };
 
-  const pre = mutateDB((db) => {
+  const pre = await mutateDB((db) => {
     const card = db.cards.find((c) => c.id === id && c.userId === guard.user.id);
     if (!card) return { error: "not_found" as const };
     if (card.status === "업로드완료") return { error: "already" as const };
@@ -66,7 +66,7 @@ export async function POST(req: Request, ctx: Ctx) {
     job.igPermalink = result.permalink;
   }
 
-  const saved = mutateDB((db) => {
+  const saved = await mutateDB((db) => {
     const c = db.cards.find((x) => x.id === id && x.userId === guard.user.id);
     if (c) {
       c.status = immediate ? "업로드완료" : "예약업로드";
