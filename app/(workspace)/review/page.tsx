@@ -309,6 +309,23 @@ export default function ReviewPage() {
             )}
           </div>
 
+          {/* 법적 근거 토글 (⚫ 차단) — 발행불가 박스 바로 아래 */}
+          {s.legal && (
+            <div style={{ border: "1px solid var(--border)", background: "#fff", borderRadius: "var(--radius)", padding: "12px 14px", marginBottom: 14, fontSize: 12 }}>
+              <div onClick={() => setLegalOpen((v) => !v)} style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 700, cursor: "pointer" }}>
+                ⚖️ 왜 차단됐나요? 법적 근거 보기 <span style={{ marginLeft: "auto", color: "var(--ink3)" }}>{legalOpen ? "▲" : "▼"}</span>
+              </div>
+              {legalOpen && (
+                <div style={{ color: "var(--ink2)", fontSize: 12, lineHeight: 1.7, marginTop: 9 }}>
+                  이 콘텐츠는 아래 법령에 저촉될 수 있어 발행이 제한돼요.
+                  <br />· <b>표시·광고의 공정화에 관한 법률</b> — 거짓·과장 광고 금지
+                  <br />· <b>의료법 / 건강기능식품법</b> — 효능·효과 단정 금지
+                  <br />또한 인스타그램 정책상 계정이 제재될 수 있어, <b>계정 보호</b>를 위해 차단해요.
+                </div>
+              )}
+            </div>
+          )}
+
           {/* 필수 통과 */}
           <div className="card" style={{ marginBottom: 14 }}>
             <div style={sect}>🔒 필수 통과</div>
@@ -340,23 +357,6 @@ export default function ReviewPage() {
                   <b>⚠️ 안내된 위험을 확인했어요.</b> 그대로 발행해 발생하는 문제의 책임이 <b>회원 본인</b>에게 있음에 동의합니다.
                 </span>
               </label>
-            </div>
-          )}
-
-          {/* 법적 근거 토글 (⚫ 차단) */}
-          {s.legal && (
-            <div style={{ border: "1px solid var(--border)", background: "#fff", borderRadius: "var(--radius)", padding: "12px 14px", marginBottom: 14, fontSize: 12 }}>
-              <div onClick={() => setLegalOpen((v) => !v)} style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 700, cursor: "pointer" }}>
-                ⚖️ 왜 차단됐나요? 법적 근거 보기 <span style={{ marginLeft: "auto", color: "var(--ink3)" }}>{legalOpen ? "▲" : "▼"}</span>
-              </div>
-              {legalOpen && (
-                <div style={{ color: "var(--ink2)", fontSize: 12, lineHeight: 1.7, marginTop: 9 }}>
-                  이 콘텐츠는 아래 법령에 저촉될 수 있어 발행이 제한돼요.
-                  <br />· <b>표시·광고의 공정화에 관한 법률</b> — 거짓·과장 광고 금지
-                  <br />· <b>의료법 / 건강기능식품법</b> — 효능·효과 단정 금지
-                  <br />또한 인스타그램 정책상 계정이 제재될 수 있어, <b>계정 보호</b>를 위해 차단해요.
-                </div>
-              )}
             </div>
           )}
 
