@@ -15,7 +15,7 @@ function weekStart(ts: number): number {
 }
 
 const STAGE_TONE: Record<CardStatus, string> = {
-  기획중: "#8b8579", 기획완료: "#d99413", 제작중: "#d99413", 제작완료: "#1f6f63", 예약업로드: "#d99413", 업로드완료: "#1f6f63",
+  기획중: "#6a6a6a", 기획완료: "#a8710a", 제작중: "#a8710a", 제작완료: "#008489", 예약업로드: "#a8710a", 업로드완료: "#008489",
 };
 
 export default function HomePage() {

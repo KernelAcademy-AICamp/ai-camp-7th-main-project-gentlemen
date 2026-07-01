@@ -14,6 +14,7 @@ export interface CardTheme {
   chipFg: string;
 }
 
+// 카드 테마 프리셋(제품 콘텐츠) — 프로젝트 웜 팔레트 유지. key는 기존 유지 → 기존 카드 호환.
 export const THEMES: CardTheme[] = [
   { key: "cream", name: "크림", bg: "#f6f3ec", fg: "#1b1a17", sub: "#6f6a5e", accent: "#ef5a35", chip: "#1b1a17", chipFg: "#f6f3ec" },
   { key: "ink", name: "잉크", bg: "#1b1a17", fg: "#f6f3ec", sub: "#b6b1a4", accent: "#ef8a35", chip: "#ef5a35", chipFg: "#ffffff" },
@@ -26,6 +27,19 @@ export function getTheme(key: string): CardTheme {
   return THEMES.find((t) => t.key === key) ?? THEMES[0]!;
 }
 
+// 카드 본문/제목 공통 폰트 — 고딕체(산세리프)
+const GOTHIC = '"Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", ui-sans-serif, system-ui, sans-serif';
+
+// hex(#rgb/#rrggbb) → rgba 문자열 (인포그래픽 틴트용, 3자리도 허용)
+function tint(hex: string, a: number): string {
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex ?? "");
+  if (!m) return `rgba(120,120,120,${a})`;
+  let h = m[1]!;
+  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  const n = parseInt(h, 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+}
+
 export function CardCanvas({
   page,
   index,
@@ -33,8 +47,10 @@ export function CardCanvas({
   themeKey,
   niche,
   handle,
-  brandColor,
   photo = false,
+  photoDataUrl,
+  photoStyle = "top",
+  ratio = "1:1",
 }: {
   page: CardPage;
   index: number;
@@ -44,87 +60,134 @@ export function CardCanvas({
   handle: string;
   brandColor?: string;
   photo?: boolean;
+  photoDataUrl?: string;
+  photoStyle?: "top" | "bg";
+  ratio?: "1:1" | "3:4";
 }) {
   const t = getTheme(themeKey);
-  const accent = brandColor || t.accent;
   const isFirst = index === 0;
-  const isLast = index === total - 1;
+  const hasPhoto = Boolean(photoDataUrl);
+  const showVisual = hasPhoto || photo; // 사진첨부형이거나 사진이 올라간 카드 → 비주얼 영역
+  const W = 1080;
+  const H = ratio === "3:4" ? 1440 : 1080; // 세로 3:4 또는 정사각
 
-  const Header = (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-      <div style={{ fontSize: 30, fontWeight: 700, color: t.fg, letterSpacing: -0.5 }}>@{handle || "myaccount"}</div>
-      <div style={{ fontSize: 26, fontWeight: 600, background: t.chip, color: t.chipFg, borderRadius: 999, padding: "10px 22px" }}>
-        {index + 1} / {total}
+  // 모드 2: 사진을 배경 풀블리드로 깔고 DIM 블랙 → 텍스트는 위에, 사진은 은은하게
+  if (photoStyle === "bg" && photoDataUrl) {
+    return (
+      <div
+        style={{
+          width: W,
+          height: H,
+          position: "relative",
+          overflow: "hidden",
+          background: "#111",
+          fontFamily: GOTHIC,
+          boxSizing: "border-box",
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={photoDataUrl} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        {/* DIM: 위는 살짝, 아래로 갈수록 진하게(텍스트 가독성) */}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0.40) 45%, rgba(0,0,0,0.78) 100%)" }} />
+        <div style={{ position: "absolute", inset: 0, padding: 72, display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 26 }}>
+          <div style={{ fontFamily: GOTHIC, fontSize: isFirst ? 88 : 68, lineHeight: 1.18, fontWeight: 800, color: "#ffffff", wordBreak: "keep-all", whiteSpace: "pre-wrap", textShadow: "0 2px 24px rgba(0,0,0,0.45)" }}>
+            {page.headline}
+          </div>
+          {page.body && (
+            <div style={{ fontSize: 40, lineHeight: 1.5, color: "rgba(255,255,255,0.92)", whiteSpace: "pre-wrap", wordBreak: "keep-all", textShadow: "0 2px 18px rgba(0,0,0,0.45)" }}>{page.body}</div>
+          )}
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
+            <div style={{ fontSize: 30, fontWeight: 700, color: "rgba(255,255,255,0.92)", letterSpacing: -0.5, textShadow: "0 2px 14px rgba(0,0,0,0.5)" }}>@{handle || "myaccount"}</div>
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 
-  const Dots = (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-      <div style={{ display: "flex", gap: 10 }}>
-        {Array.from({ length: total }).map((_, i) => (
-          <div
-            key={i}
-            style={{ width: i === index ? 36 : 12, height: 12, borderRadius: 999, background: i === index ? accent : t.sub, opacity: i === index ? 1 : 0.4 }}
-          />
+  // 사진이 없을 때: 대시 박스 대신 인포그래픽 비주얼(테마 톤 기반, 브랜드 컬러 미사용)
+  const Infographic = (
+    <div
+      style={{
+        flex: 1,
+        borderRadius: 32,
+        background: `linear-gradient(135deg, ${tint(t.sub, 0.16)}, ${tint(t.sub, 0.05)})`,
+        border: `2px solid ${tint(t.sub, 0.22)}`,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 40,
+        padding: 64,
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      <div style={{ position: "absolute", top: -60, right: -60, width: 240, height: 240, borderRadius: 999, background: tint(t.sub, 0.12) }} />
+      <div style={{ position: "absolute", bottom: -50, left: -50, width: 180, height: 180, borderRadius: 999, background: tint(t.sub, 0.08) }} />
+      {/* 미니 바차트 느낌의 인포그래픽 */}
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 20, height: 200, position: "relative" }}>
+        {[0.42, 0.66, 0.52, 1, 0.78].map((h, i) => (
+          <div key={i} style={{ width: 50, height: Math.round(200 * h), borderRadius: 14, background: i === 3 ? t.fg : tint(t.sub, 0.45) }} />
         ))}
       </div>
-      <div style={{ fontSize: 28, fontWeight: 600, color: t.sub }}>{isLast ? "저장 · 공유 🔖" : "넘기기 →"}</div>
+      <div style={{ fontSize: 36, fontWeight: 600, color: t.sub, textAlign: "center", wordBreak: "keep-all", position: "relative" }}>
+        {page.photoNote || "사진을 올리면 여기에 표시돼요 · 비우면 인포그래픽"}
+      </div>
     </div>
   );
 
   return (
     <div
       style={{
-        width: 1080,
-        height: 1080,
+        width: W,
+        height: H,
         background: t.bg,
         color: t.fg,
         position: "relative",
-        padding: 84,
+        padding: "18px 18px 32px 18px", // 사진(비주얼)은 near-full-bleed 유지(18px)
         display: "flex",
         flexDirection: "column",
-        fontFamily: 'ui-sans-serif, system-ui, "Apple SD Gothic Neo", "Pretendard", "Malgun Gothic", sans-serif',
+        gap: 32, // 사진↔텍스트 세로 여백 ≥32px
+        fontFamily: GOTHIC,
         overflow: "hidden",
         boxSizing: "border-box",
       }}
     >
-      {Header}
+      {/* 비주얼(사진/인포그래픽) — 크게 */}
+      {showVisual &&
+        (photoDataUrl ? (
+          <div style={{ flex: 1, borderRadius: 32, overflow: "hidden", display: "flex" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={photoDataUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+          </div>
+        ) : (
+          Infographic
+        ))}
 
-      {photo ? (
-        // 사진첨부형: 사진 프레임(설명) + 그 위에 짧은 카피
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 28, justifyContent: "center" }}>
-          <div
-            style={{
-              borderRadius: 28,
-              border: `4px dashed ${t.sub}`,
-              background: "rgba(0,0,0,0.04)",
-              minHeight: 360,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 40,
-              textAlign: "center",
-            }}
-          >
-            <div style={{ color: t.sub, fontSize: 34 }}>📷 {page.photoNote || "여기에 사진을 넣어요"}</div>
-          </div>
-          <div style={{ fontFamily: '"Fraunces", Georgia, serif', fontSize: isFirst ? 64 : 52, lineHeight: 1.15, fontWeight: 600, wordBreak: "keep-all" }}>
-            {page.headline}
-          </div>
-          {page.body && <div style={{ fontSize: 36, lineHeight: 1.5, color: t.sub, whiteSpace: "pre-wrap", wordBreak: "keep-all" }}>{page.body}</div>}
+      {/* 텍스트: 비주얼이 있으면 아래에, 없으면 가운데 크게.
+          글씨 좌우 여백 72px(외곽18 + 내부54) — 배경사진 모드(padding 72)와 동일 */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: showVisual ? 18 : 28,
+          paddingLeft: 54,
+          paddingRight: 54,
+          ...(showVisual ? {} : { flex: 1, justifyContent: "center" }),
+        }}
+      >
+        <div style={{ fontFamily: GOTHIC, fontSize: showVisual ? (isFirst ? 60 : 52) : isFirst ? 92 : 64, lineHeight: 1.2, fontWeight: 800, color: t.fg, wordBreak: "keep-all", whiteSpace: "pre-wrap" }}>
+          {page.headline}
         </div>
-      ) : (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: 32 }}>
-          {isFirst && <div style={{ fontSize: 30, fontWeight: 700, color: accent, letterSpacing: 1 }}>{niche || "오늘의 주제"} ✦</div>}
-          <div style={{ fontFamily: '"Fraunces", Georgia, serif', fontSize: isFirst ? 92 : 64, lineHeight: 1.12, fontWeight: 600, color: t.fg, wordBreak: "keep-all" }}>
-            {page.headline}
-          </div>
-          {page.body && <div style={{ fontSize: 40, lineHeight: 1.5, color: t.sub, whiteSpace: "pre-wrap", wordBreak: "keep-all" }}>{page.body}</div>}
-        </div>
-      )}
+        {page.body && (
+          <div style={{ fontSize: showVisual ? 34 : 40, lineHeight: 1.5, color: t.sub, whiteSpace: "pre-wrap", wordBreak: "keep-all" }}>{page.body}</div>
+        )}
+      </div>
 
-      {Dots}
+      {/* 아이디 — 우측 하단 (테마 기본색, 글씨 여백 72px = 텍스트와 동일) */}
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", paddingRight: 54 }}>
+        <div style={{ fontSize: 30, fontWeight: 700, color: t.fg, letterSpacing: -0.5 }}>@{handle || "myaccount"}</div>
+      </div>
     </div>
   );
 }

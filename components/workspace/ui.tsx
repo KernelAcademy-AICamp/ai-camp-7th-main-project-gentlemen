@@ -60,7 +60,7 @@ export function Badge({
     teal: "bg-teal-soft text-teal",
     amber: "bg-amber-soft text-amber",
     muted: "bg-paper-2 text-muted",
-    rose: "bg-[#f6dce7] text-rose",
+    rose: "bg-rose-soft text-rose",
   };
   return (
     <span

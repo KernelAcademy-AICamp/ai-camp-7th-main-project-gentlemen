@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #14122b;
+  --background: #ffffff;   /* Airbnb: 순백 캔버스 */
+  --foreground: #222222;   /* ink */
 }
 
 @theme inline {
@@ -10,18 +10,14 @@
   --color-foreground: var(--foreground);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #14122b;
-    --foreground: #f3f1fa;
-  }
-}
+/* Airbnb 퍼블릭 웹은 다크모드가 없다 — OS 다크 설정이 순백 캔버스를 뒤집지 않도록
+   prefers-color-scheme 오버라이드를 두지 않는다(DESIGN-airbnb.md). */
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: "Apple SD Gothic Neo", AppleGothic, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
+  font-family: "Inter", "Pretendard", -apple-system, BlinkMacSystemFont,
+    "Apple SD Gothic Neo", "Segoe UI", sans-serif;
 }
 
 /* 홍보 카드 hover 강조 — 마우스 올리면 살짝 떠오르며 강조 (와이어프레임 기본 위 우리 추가) */
@@ -33,41 +29,45 @@ body {
 .fcard:hover,
 .step:hover,
 .plan:hover {
-  transform: translateY(-4px);
-  border-color: var(--ink2, #666);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+  border-color: var(--color-line);
+  /* Airbnb 단일 섀도우 티어 (DESIGN-airbnb.md Elevation) */
+  box-shadow: rgba(0, 0, 0, 0.02) 0 0 0 1px, rgba(0, 0, 0, 0.04) 0 2px 6px 0,
+    rgba(0, 0, 0, 0.1) 0 4px 8px 0;
 }
 
 /* ──────────────────────────────────────────────────────────────────────────
-   워크스페이스 디자인 토큰 (kawai030/KUP 워크스페이스에서 이식).
-   ⚠️ 전역 토큰만 둔다 — body 배경은 전역으로 덮지 않음(마케팅 흰 배경 보호).
-   배경은 워크스페이스/인증 화면 루트의 bg-paper 유틸로만 적용된다.
-   디자인 확정(작업트랙 ③) 후 이 토큰 값을 새 아트디렉션으로 교체 예정.
+   디자인 시스템 토큰 — Airbnb 아트디렉션 (DESIGN-airbnb.md).
+   순백 캔버스 + 잉크 + 단일 Rausch(#ff385c) 액센트.
+   ⚠️ 토큰 '이름'은 팀원 컴포넌트가 쓰는 그대로 두고 '값'만 교체 →
+      코드 무수정으로 전체 디자인 통일(팀이 설계해둔 교체점).
+   ⚠️ body 배경은 전역으로 덮지 않음 — 배경은 각 루트의 bg-paper 유틸로만.
    ────────────────────────────────────────────────────────────────────────── */
 @theme {
-  /* 값 = 내 마케팅/워크스페이스(#ws) 그레이스케일 팔레트로 통일.
-     토큰 '이름'은 팀원 컴포넌트가 쓰는 그대로 두고 '값'만 교체 → 코드 무수정으로 디자인 통일. */
-  --color-paper: #f4f4f4;        /* 캔버스 (#ws --bg2) */
-  --color-paper-2: #e9e9e9;      /* hover/보조 (#ws --bg3) */
-  --color-card: #ffffff;         /* 흰 카드 */
-  --color-ink: #333333;          /* 본문 (#ws --ink) */
-  --color-ink-soft: #666666;     /* 보조 텍스트 (--ink2) */
-  --color-muted: #999999;        /* 흐린 텍스트 (--ink3) */
-  --color-line: #d6d6d6;         /* 보더 (--border) */
-  /* 컬러 액센트 → 모노크롬 강조(다크그레이)로 매핑(와이어프레임은 무채색) */
-  --color-coral: #3a3a3a;        /* 강조/주요 (--grad) */
-  --color-coral-soft: #ececec;   /* 강조 soft (--accent-soft) */
-  --color-teal: #3a3a3a;
-  --color-teal-soft: #ececec;
-  --color-amber: #666666;
-  --color-amber-soft: #efefef;
-  --color-rose: #666666;
+  --color-paper: #ffffff;        /* canvas — 순백 */
+  --color-paper-2: #f7f7f7;      /* surface-soft — hover/보조 필 */
+  --color-card: #ffffff;         /* 카드 표면 */
+  --color-ink: #222222;          /* ink — 헤드라인·본문 (순검정 아님) */
+  --color-ink-soft: #3f3f3f;     /* body — 보조 본문 */
+  --color-muted: #6a6a6a;        /* muted — 서브라벨·비활성 */
+  --color-line: #dddddd;         /* hairline — 기본 1px 보더 */
+  /* 단일 브랜드 볼티지 — Rausch. 모든 주요 액센트가 이 색 하나로. */
+  --color-coral: #ff385c;        /* Rausch — 액센트/브랜드 */
+  --color-coral-soft: #ffe8ec;   /* pale Rausch — soft 배경 */
+  /* 상태 시맨틱(에어비앤비 계열) — Rausch는 브랜드 전용, 상태 색은 별도로 분리 */
+  --color-teal: #008489;         /* Babu — 완료/성공 */
+  --color-teal-soft: #e6f2f2;
+  --color-amber: #a8710a;        /* 진행중 */
+  --color-amber-soft: #f6ecd6;
+  --color-rose: #92174d;         /* Plus magenta — 릴스 */
+  --color-rose-soft: #fbe4ee;
 
-  /* 세리프 제거 → 마케팅과 동일하게 Pretendard 통일 */
-  --font-display: "Pretendard", system-ui, -apple-system, sans-serif;
-  --font-sans: "Pretendard", system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+  /* Airbnb Cereal은 상용 폰트 → Inter로 대체(DESIGN-airbnb.md 권장).
+     한글 글리프는 Pretendard로 폴백(글리프 단위 폴백). */
+  --font-display: "Inter", "Pretendard", system-ui, -apple-system, sans-serif;
+  --font-sans: "Inter", "Pretendard", system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
 
-  --radius-xl: 0.5rem;           /* 작은 radius(와이어프레임 톤) */
+  --radius-xl: 0.5rem;           /* Airbnb 버튼 radius(8px) */
 }
 
 /* 워크스페이스 유틸/애니메이션 (이식) */

@@ -9,12 +9,12 @@ import { getTheme } from "@/components/workspace/CardCanvas";
 import { KANBAN_COLUMNS, kanbanColumnOf, type CardNews, type CardStatus } from "@/lib/workspace/types";
 
 const COLUMN_TONE: Record<CardStatus, string> = {
-  기획중: "#8b8579",
-  기획완료: "#d99413",
-  제작중: "#d99413",
-  제작완료: "#1f6f63",
-  예약업로드: "#d99413",
-  업로드완료: "#1f6f63",
+  기획중: "#6a6a6a",
+  기획완료: "#a8710a",
+  제작중: "#a8710a",
+  제작완료: "#008489",
+  예약업로드: "#a8710a",
+  업로드완료: "#008489",
 };
 
 export default function BoardPage() {
@@ -86,8 +86,8 @@ export default function BoardPage() {
                               </span>
                             </div>
                             <div className="flex items-center gap-1 flex-wrap">
-                              <Badge tone={c.format === "사진첨부형 카드뉴스" ? "amber" : "muted"}>{c.format === "사진첨부형 카드뉴스" ? "사진" : "카드"}</Badge>
-                              <span className="text-xs text-muted">{c.pageCount}장</span>
+                              <Badge tone={c.format === "릴스" ? "rose" : "muted"}>{c.format === "릴스" ? "릴스" : "게시물"}</Badge>
+                              <span className="text-xs text-muted">{c.pageCount}{c.format === "릴스" ? "컷" : "장"}</span>
                             </div>
                             <div className="text-[11px] text-muted mt-1">{formatDate(c.updatedAt)}</div>
                           </div>
@@ -124,7 +124,7 @@ export default function BoardPage() {
                         {c.status}
                       </span>
                     </td>
-                    <td className="py-3 px-3 text-ink-soft">{c.format === "사진첨부형 카드뉴스" ? "사진첨부형" : "카드뉴스"}</td>
+                    <td className="py-3 px-3 text-ink-soft">{c.format === "릴스" ? "릴스" : "게시물"}</td>
                     <td className="py-3 px-3 text-ink-soft">{c.pageCount}장</td>
                     <td className="py-3 px-3 text-muted">{formatDate(c.updatedAt)}</td>
                   </tr>

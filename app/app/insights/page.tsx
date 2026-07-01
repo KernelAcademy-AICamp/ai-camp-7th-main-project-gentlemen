@@ -232,7 +232,8 @@ function ContributionsGraph({ jobs }: { jobs: PublishJob[] }) {
   today.setHours(0, 0, 0, 0);
   const start = new Date(today);
   start.setDate(start.getDate() - ((today.getDay() + 6) % 7) - (WEEKS - 1) * 7); // 월요일 정렬
-  const levels = ["#eee7d8", "#cfe6dd", "#94cdbd", "#4ba38e", "#1f6f63"];
+  // Airbnb Rausch 톤 시퀀셜 스케일 (연분홍 → Rausch)
+  const levels = ["#ffe8ec", "#ffc2ce", "#ff8fa6", "#ff5c7e", "#ff385c"];
   const cell = (n: number) => levels[n >= 4 ? 4 : n];
 
   const cols: { date: Date; n: number }[][] = [];

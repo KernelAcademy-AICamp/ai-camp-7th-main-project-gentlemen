@@ -155,3 +155,59 @@ export async function deleteCardImages(cardId: string): Promise<void> {
     /* noop */
   }
 }
+
+// ── 사용자 첨부 사진(게시물, 페이지별 원본) ── dual-backend(Supabase Storage / 로컬 fs)
+function photoName(page: number): string {
+  return `src_${Number(page)}.jpg`;
+}
+export async function saveCardPhoto(cardId: string, page: number, buf: Buffer): Promise<void> {
+  const id = safeId(cardId);
+  if (USE_SUPABASE) {
+    const { error } = await sb().storage.from(BUCKET).upload(`${id}/${photoName(page)}`, buf, { contentType: "image/jpeg", upsert: true });
+    if (error) throw new Error(`사진 업로드 실패: ${error.message}`);
+    return;
+  }
+  const dir = fileDir(id);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, photoName(page)), buf);
+}
+export async function readCardPhoto(cardId: string, page: number): Promise<Buffer | null> {
+  const id = safeId(cardId);
+  if (USE_SUPABASE) {
+    const { data, error } = await sb().storage.from(BUCKET).download(`${id}/${photoName(page)}`);
+    if (error || !data) return null;
+    return Buffer.from(await data.arrayBuffer());
+  }
+  const file = path.join(fileDir(id), photoName(page));
+  if (!fs.existsSync(file)) return null;
+  return fs.readFileSync(file);
+}
+export async function deleteCardPhoto(cardId: string, page: number): Promise<void> {
+  try {
+    const id = safeId(cardId);
+    if (USE_SUPABASE) {
+      await sb().storage.from(BUCKET).remove([`${id}/${photoName(page)}`]);
+      return;
+    }
+    fs.rmSync(path.join(fileDir(id), photoName(page)), { force: true });
+  } catch {
+    /* noop */
+  }
+}
+export async function listCardPhotoPages(cardId: string): Promise<number[]> {
+  const pick = (names: string[]) =>
+    names
+      .map((f) => f.match(/^src_(\d+)\.jpg$/))
+      .filter(Boolean)
+      .map((m) => Number(m![1]))
+      .sort((a, b) => a - b);
+  try {
+    const id = safeId(cardId);
+    if (USE_SUPABASE) return pick(await sbList(id));
+    const dir = fileDir(id);
+    if (!fs.existsSync(dir)) return [];
+    return pick(fs.readdirSync(dir));
+  } catch {
+    return [];
+  }
+}
