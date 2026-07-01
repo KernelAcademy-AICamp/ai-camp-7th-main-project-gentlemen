@@ -14,6 +14,10 @@ function weekStart(ts: number): number {
   d.setDate(d.getDate() - day);
   return d.getTime();
 }
+function dayKey(ts: number): string {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 const STAGE_TONE: Record<CardStatus, string> = {
   기획중: "#6a6a6a", 기획완료: "#a8710a", 제작중: "#a8710a", 제작완료: "#008489", 예약업로드: "#a8710a", 업로드완료: "#008489",
@@ -71,8 +75,6 @@ export default function HomePage() {
   const { nextTarget, roadmapPct } = followerChallenge(followers);
   // 칸반 표시 열 기준 집계 — 게이트 상태(기획완료/제작완료)는 각 '중' 열에 접어서 센다
   const columnCount = (col: CardStatus) => cards.filter((c) => kanbanColumnOf(c.status) === col).length;
-  const reserved = jobs.filter((j) => j.status === "예약");
-  const todo = cards.filter((c) => c.status === "제작완료").length; // 발행 대기
 
   return (
     <div className="space-y-6">
@@ -146,14 +148,12 @@ export default function HomePage() {
         </Card>
 
         <Card className="p-5">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-sm font-medium">바로 할 일</div>
+          <div className="flex items-center justify-between mb-1">
+            <div className="text-sm font-medium">이번 주 업로드</div>
+            <Link href="/app/insights" className="text-xs text-coral">전체 릴레이 →</Link>
           </div>
-          <div className="space-y-1.5 text-sm">
-            <Row label="발행 대기 (검수 통과)" value={todo} href="/app/board" tone="teal" />
-            <Row label="예약된 발행" value={reserved.length} href="/app/board" tone="amber" />
-            <Row label="기획 중" value={columnCount("기획중")} href="/app/plans" tone="muted" />
-          </div>
+          <p className="text-xs text-muted mb-4">요일별 발행 건수를 색 농도로 — 꾸준히 올리고 있는지 한눈에.</p>
+          <WeeklyUploadGraph jobs={jobs} />
         </Card>
       </div>
 
@@ -183,12 +183,55 @@ export default function HomePage() {
   );
 }
 
-function Row({ label, value, href, tone }: { label: string; value: number; href: string; tone: "teal" | "amber" | "muted" }) {
-  const color = { teal: "text-teal", amber: "text-amber", muted: "text-muted" }[tone];
+// 이번 주(월~일) 요일별 발행 건수를 색 농도로 — 인사이트 '업로드 릴레이'와 같은 시각 언어.
+// 데이터 소스: 발행완료 job 의 publishedAt (이번 주 루틴과 동일 → 숫자 정합).
+function WeeklyUploadGraph({ jobs }: { jobs: PublishJob[] }) {
+  const counts = new Map<string, number>();
+  for (const j of jobs) {
+    if (j.status === "발행완료" && j.publishedAt) {
+      const k = dayKey(j.publishedAt);
+      counts.set(k, (counts.get(k) ?? 0) + 1);
+    }
+  }
+  // Airbnb Rausch 톤 시퀀셜 스케일 (연분홍 → Rausch)
+  const levels = ["#ffe8ec", "#ffc2ce", "#ff8fa6", "#ff5c7e", "#ff385c"];
+  const cell = (n: number) => levels[n >= 4 ? 4 : n];
+  const labels = ["월", "화", "수", "목", "금", "토", "일"];
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = weekStart(Date.now()); // 이번 주 월요일 00:00
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(start);
+    d.setDate(d.getDate() + i);
+    const t = d.getTime();
+    const future = t > today.getTime();
+    return { label: labels[i], n: future ? -1 : counts.get(dayKey(t)) ?? 0, isToday: t === today.getTime() };
+  });
+  const total = days.reduce((a, d) => a + Math.max(0, d.n), 0);
+
   return (
-    <Link href={href} className="flex items-center justify-between py-1.5 px-2 -mx-2 rounded-lg hover:bg-paper-2/60">
-      <span className="text-ink-soft">{label}</span>
-      <span className={`font-medium ${color}`}>{value}</span>
-    </Link>
+    <div>
+      <div className="flex gap-2">
+        {days.map((d, i) => (
+          <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+            <div
+              title={d.n >= 0 ? `${d.label} · 발행 ${d.n}건` : `${d.label} · 예정`}
+              className={`w-full aspect-square rounded-md border border-black/5 ${d.isToday ? "ring-2 ring-ink ring-offset-1" : ""}`}
+              style={{ background: d.n < 0 ? "transparent" : cell(d.n) }}
+            />
+            <span className={`text-[11px] ${d.isToday ? "text-ink font-medium" : "text-muted"}`}>{d.label}</span>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center justify-between mt-3 text-xs text-muted">
+        <span>이번 주 총 발행 {total}건</span>
+        <span className="flex items-center gap-1">
+          적음
+          {levels.map((l) => <span key={l} className="w-3 h-3 rounded-sm inline-block border border-black/5" style={{ background: l }} />)}
+          많음
+        </span>
+      </div>
+    </div>
   );
 }
