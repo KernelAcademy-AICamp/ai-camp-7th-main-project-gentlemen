@@ -297,7 +297,7 @@ function RuleForm({ onCreated, onCancel }: { onCreated: (r: DmRule) => void; onC
         </div>
 
         <label className="flex items-start gap-2.5 text-sm bg-paper-2/50 rounded-xl p-3">
-          <input type="checkbox" checked={optIn} onChange={(e) => setOptIn(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#1f6f63]" />
+          <input type="checkbox" checked={optIn} onChange={(e) => setOptIn(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#008489]" />
           <span className="text-ink-soft"><b>옵트인 동의</b> — 동의(키워드 댓글)한 사용자에게만 발송하며, 콜드 DM·자동팔로우·대량 발송을 하지 않는다는 정책에 동의합니다. (필수)</span>
         </label>
 

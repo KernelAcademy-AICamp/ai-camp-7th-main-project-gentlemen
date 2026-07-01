@@ -98,7 +98,7 @@ export default function EditorPage() {
   const activeAccount = findIgAccount(user);
   const isReels = card.format === "릴스";
   const isPlan = (card.status === "기획중" || card.status === "기획완료") && !isReels;
-  const photo = card.format === "사진첨부형 카드뉴스";
+  const photo = card.format !== "릴스"; // 게시물(카드뉴스·사진첨부형)은 장마다 사진 설명 첨부 가능
 
   return (
     <div>
@@ -110,7 +110,7 @@ export default function EditorPage() {
           <h1 className="font-display text-2xl mt-1">{draft.title || "제목 없음"}</h1>
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             <StatusBadge status={card.status} />
-            <Badge tone={isReels ? "rose" : photo ? "amber" : "muted"}>{isReels ? "릴스" : photo ? "사진첨부형" : "카드뉴스"}</Badge>
+            <Badge tone={isReels ? "rose" : "muted"}>{isReels ? "릴스" : "게시물"}</Badge>
             {!isPlan && (card.aiEdited ? <Badge tone="teal">사용자 편집됨</Badge> : <Badge tone="muted">{card.aiLabel}</Badge>)}
             <Badge tone="muted">{card.generatedBy === "ai" ? "Claude" : card.generatedBy === "template" ? "템플릿" : "기획"}</Badge>
           </div>
@@ -330,7 +330,7 @@ function ReviewTab({ card, dirty, onChange, onSaveNeeded }: { card: CardNews; di
         {card.reviewFlags.map((f) => (
           <Card key={f.id} className={`p-4 ${f.resolved ? "opacity-60" : ""}`}>
             <div className="flex items-start gap-3">
-              <input type="checkbox" checked={f.resolved} onChange={() => toggleFlag(f)} className="mt-1 w-4 h-4 accent-[#1f6f63]" />
+              <input type="checkbox" checked={f.resolved} onChange={() => toggleFlag(f)} className="mt-1 w-4 h-4 accent-[#008489]" />
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <Badge tone={f.severity === "high" ? "rose" : f.severity === "medium" ? "amber" : "muted"}>{f.type}</Badge>
@@ -728,7 +728,7 @@ function ReelsEditor({
             <div className="space-y-2">
               {card.reviewFlags.map((f) => (
                 <label key={f.id} className={`flex items-start gap-2 text-xs ${f.resolved ? "opacity-60" : ""}`}>
-                  <input type="checkbox" checked={f.resolved} onChange={() => toggleFlag(f)} className="mt-0.5 w-3.5 h-3.5 accent-[#1f6f63]" />
+                  <input type="checkbox" checked={f.resolved} onChange={() => toggleFlag(f)} className="mt-0.5 w-3.5 h-3.5 accent-[#008489]" />
                   <span className="text-ink-soft"><b>{f.type}</b> {f.message}</span>
                 </label>
               ))}
