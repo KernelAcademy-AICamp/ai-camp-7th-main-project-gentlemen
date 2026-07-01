@@ -22,9 +22,15 @@ port = 54323
 enabled = true
 # 서비스 로그인은 Supabase Auth(인스타 OAuth와 별개, 개발계획 §7)
 site_url = "http://localhost:3000"
-additional_redirect_urls = ["http://localhost:3000"]
+additional_redirect_urls = ["http://localhost:3000", "http://localhost:3000/**"]
 jwt_expiry = 3600
 enable_signup = true
+
+# 서비스 로그인 — 구글 OAuth(메인). 값은 .env.local 환경변수로 주입(커밋 금지).
+[auth.external.google]
+enabled = true
+client_id = "env(GOOGLE_CLIENT_ID)"
+secret = "env(GOOGLE_CLIENT_SECRET)"
 
 [storage]
 enabled = true
