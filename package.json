@@ -15,7 +15,10 @@
     "typecheck": "tsc --noEmit",
     "worker": "tsx workers/index.ts",
     "worker:dev": "tsx watch workers/index.ts",
-    "gen": "tsx scripts/generate-deck.ts"
+    "gen": "tsx scripts/generate-deck.ts",
+    "compare": "tsx scripts/compare-card-prompt.ts",
+    "ground": "tsx scripts/grounded-card-prototype.ts",
+    "render-compare": "tsx scripts/render-card-comparison.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.1",

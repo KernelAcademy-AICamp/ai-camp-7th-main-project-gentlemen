@@ -228,7 +228,8 @@ export interface CardGenResult {
   generatedBy: "ai" | "template";
 }
 
-function cardSystemPrompt(survey: SurveyProfile, format: CardFormat): string {
+// export: 프롬프트 비교 하버스(scripts/compare-card-prompt.ts)가 "라이브와 동일한" A 프롬프트로 대조하기 위함. 런타임 동작 변화 없음.
+export function cardSystemPrompt(survey: SurveyProfile, format: CardFormat): string {
   const common = [
     `브랜드 키워드: ${survey.brandKeywords.join(", ") || "(없음)"}`,
     `문체 예시: ${survey.voiceExample || "(없음)"}`,
