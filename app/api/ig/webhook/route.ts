@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { readDB, mutateDB } from "@/lib/workspace/db";
+import { claimComment, releaseComment } from "@/lib/workspace/dedup";
 import { sendPrivateReply } from "@/lib/workspace/ig";
 import { DM_LIMITS, renderDmMessage, type IgAccount, type User } from "@/lib/workspace/types";
 
@@ -13,8 +14,7 @@ import { DM_LIMITS, renderDmMessage, type IgAccount, type User } from "@/lib/wor
 //   구독 필드   : comments
 // (로컬은 공개 https 가 필요 — 터널/배포 후 등록)
 
-// 같은 댓글 재처리 방지(프로세스 메모리 — 파일DB 단계용. 서버리스에선 영속 저장 필요).
-const handled = new Set<string>();
+// 같은 댓글 재처리 방지는 dedup.claimComment 로 위임(supabase=영속 테이블 / 로컬=메모리).
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -90,7 +90,7 @@ async function handleComment(recipientIgId: string, value: CommentValue): Promis
   const commentId = value.id;
   const text = value.text || "";
   const fromId = value.from?.id;
-  if (!commentId || handled.has(commentId)) return;
+  if (!commentId) return;
 
   const ctx = await findByIgUserId(recipientIgId);
   if (!ctx) return; // 우리 시스템에 없는 계정
@@ -119,7 +119,8 @@ async function handleComment(recipientIgId: string, value: CommentValue): Promis
     return;
   }
 
-  handled.add(commentId); // 실패 시 아래에서 해제
+  // 발송 직전에 원자적으로 선점 — 재전송/다중 인스턴스 중복을 여기서 막는다.
+  if (!(await claimComment(commentId))) return; // 이미 처리됨(또는 동시 중복) → 스킵
   const message = renderDmMessage(rule.dmMessage, rule.resourceLink);
   try {
     await sendPrivateReply(account, commentId, message);
@@ -129,7 +130,7 @@ async function handleComment(recipientIgId: string, value: CommentValue): Promis
     });
     console.log(`[ig-webhook] DM 발송: rule=${rule.id} comment=${commentId}`);
   } catch (e) {
-    handled.delete(commentId);
+    await releaseComment(commentId); // 실패 → 선점 해제(재전송 때 재시도)
     console.error(`[ig-webhook] DM 발송 실패: ${(e as Error).message}`);
   }
 }

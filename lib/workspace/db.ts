@@ -31,6 +31,14 @@ function withDefaults(parsed: Partial<DB> | null | undefined): DB {
 }
 
 // ── Supabase blob 백엔드 ─────────────────────────────────────────────────────
+export const USE_SUPABASE_BACKEND = USE_SUPABASE;
+
+// service_role 관리자 클라이언트. blob(app_state) 외에 관계형 보조 테이블
+// (processed_comments 등)에 접근할 때도 재사용한다. supabase 백엔드에서만 유효.
+export function supabaseAdmin(): SupabaseClient {
+  return sb();
+}
+
 let _sb: SupabaseClient | null = null;
 function sb(): SupabaseClient {
   if (!_sb) {

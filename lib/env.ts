@@ -33,6 +33,9 @@ const serverSchema = z.object({
   GOOGLE_API_KEY: z.string().optional(),
   // 관측(Task 3은 스텁만 — lib/sentry.ts). DSN 없으면 no-op.
   SENTRY_DSN: z.string().optional(),
+  // 크론(예약발행·토큰갱신) 보호용 시크릿. Vercel Cron 은 이 값을 Authorization: Bearer 로 보낸다.
+  // 미설정이면 크론 라우트는 비활성(503) — MVP 기본값(dark). Pro 전환·활성화 시 설정.
+  CRON_SECRET: z.string().optional(),
 });
 
 function read<T extends z.ZodTypeAny>(schema: T, source: NodeJS.ProcessEnv): z.infer<T> {

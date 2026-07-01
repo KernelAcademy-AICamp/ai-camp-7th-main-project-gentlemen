@@ -172,6 +172,30 @@ export async function exchangeCodeForLongLivedToken(code: string, redirectUri: s
   };
 }
 
+// 장기 토큰 갱신 — 만료(약 60일) 전에 호출하면 다시 60일 연장된다.
+//   GET graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=...
+//   ※ Instagram 로그인 방식(loginType!=="facebook")만 지원. 토큰은 최소 24시간 지난 것만 갱신 가능.
+// 반환은 평문 토큰 — 저장 측에서 sealToken 으로 봉인해 넣는다.
+export async function refreshLongLivedToken(
+  account: IgAccount
+): Promise<{ accessToken: string; expiresAt: number }> {
+  if (account.loginType === "facebook") {
+    throw new Error("페이스북 로그인 방식 토큰은 이 방식으로 갱신할 수 없어요.");
+  }
+  const token = openToken(account.accessToken);
+  if (!token) throw new Error("갱신할 토큰이 없어요.");
+
+  const res = await fetch(
+    `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${encodeURIComponent(token)}`
+  );
+  const data = (await res.json().catch(() => ({}))) as { access_token?: string; expires_in?: number } & GraphError;
+  if (!res.ok || data.error || !data.access_token) {
+    throw new Error(data.error?.message || `장기 토큰 갱신 실패 (${res.status})`);
+  }
+  const expiresIn = Number(data.expires_in) || 60 * 24 * 60 * 60; // 기본 60일(초)
+  return { accessToken: data.access_token, expiresAt: Date.now() + expiresIn * 1000 };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // DM 자동화 — 댓글 비공개 답장(Private Replies). 댓글 작성자에게 정보 DM 발송.
 //   POST {host}/me/messages  body: { recipient:{comment_id}, message:{text} }
