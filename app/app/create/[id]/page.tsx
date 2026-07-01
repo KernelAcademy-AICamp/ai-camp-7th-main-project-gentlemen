@@ -370,7 +370,7 @@ export default function EditorPage() {
                   <div className="text-xs text-muted mb-2">페이지 ({draft.pages.length}장) · 편집/미리보기 함께 이동</div>
                   <div className="flex gap-1.5 flex-wrap">
                     {draft.pages.map((_, i) => (
-                      <button key={i} onClick={() => setActivePage(i)} className={`w-10 h-10 rounded-lg text-sm font-medium ${activePage === i ? "bg-coral text-white" : "bg-paper-2 text-ink-soft"}`}>
+                      <button key={i} onClick={() => setActivePage(i)} className={`w-10 h-10 rounded-lg text-sm font-medium ${activePage === i ? "bg-ink text-paper" : "bg-paper-2 text-ink-soft"}`}>
                         {i + 1}
                       </button>
                     ))}
