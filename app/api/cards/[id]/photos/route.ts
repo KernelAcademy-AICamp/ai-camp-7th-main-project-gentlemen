@@ -9,7 +9,7 @@ export async function GET(_req: Request, ctx: Ctx) {
   const guard = await withUser();
   if ("res" in guard) return guard.res;
   const { id } = await ctx.params;
-  const card = readDB().cards.find((c) => c.id === id && c.userId === guard.user.id);
+  const card = (await readDB()).cards.find((c) => c.id === id && c.userId === guard.user.id);
   if (!card) return bad("카드를 찾을 수 없습니다.", 404);
-  return json({ pages: listCardPhotoPages(id) });
+  return json({ pages: await listCardPhotoPages(id) });
 }

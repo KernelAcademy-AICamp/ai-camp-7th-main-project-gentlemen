@@ -32,8 +32,8 @@ function buildHashtags(pillars: string[]): string[] {
   return out.slice(0, Math.min(out.length, 10));
 }
 
-/** 실존/규제 가능성이 있는 표현(자가점검 데모용 휴리스틱). */
-const RISK_WORDS = ["맛집", "디저트", "매장", "수익", "보장", "효능", "투자", "원금", "치료", "%"];
+/** 명백한 규제 위반 소지가 큰 표현만(자가점검 데모용 휴리스틱). 단순 과장·열정은 제외 — 실제 판단은 실 공급자 프롬프트가 맥락으로. */
+const RISK_WORDS = ["수익 보장", "원금 보장", "확정 수익", "효능", "치료", "부작용 없"];
 
 function estimateUsage(input: string, output: string) {
   return {
@@ -124,14 +124,48 @@ function run(call: LlmCall): string {
 
     case "review": {
       const text = call.meta.deckDraftJson ?? "";
-      const hits = RISK_WORDS.filter((w) => text.includes(w));
-      if (hits.length > 0) {
-        return JSON.stringify({
-          ai_flags: [`실존/규제 가능 표현 추정: ${hits.join(", ")} — 사람 검수 필요`],
-          risk_level: "high",
+      const regHits = RISK_WORDS.filter((w) => text.includes(w));
+      const emptyHits = [
+        "첫 번째 포인트",
+        "두 번째 포인트",
+        "세 번째 포인트",
+        "정리했어요",
+        "기억하면 좋은 한 가지",
+      ].filter((p) => text.includes(p));
+
+      const ok = { status: "pass", note: "" };
+      const axes: Record<string, { status: string; note: string }> = {
+        factuality: ok,
+        regulatory: ok,
+        tone: ok,
+        request: ok,
+        completeness: ok,
+        format: ok,
+        ux: ok,
+      };
+      const flags: Array<{ slide: string; axis: string; severity: string; issue: string; suggestion: string }> = [];
+
+      if (regHits.length > 0) {
+        axes.regulatory = { status: "fail", note: `규제 가능 표현: ${regHits.join(", ")}` };
+        flags.push({
+          slide: "",
+          axis: "규제 안전성",
+          severity: "block",
+          issue: `규제 가능 표현 발견: ${regHits.join(", ")}`,
+          suggestion: "정보 제공 결로 표현 수정",
         });
       }
-      return JSON.stringify({ ai_flags: [], risk_level: "low" });
+      if (emptyHits.length > 0) {
+        axes.completeness = { status: "warn", note: "빈 표현(placeholder) 포함" };
+        flags.push({
+          slide: "본문",
+          axis: "완전성",
+          severity: "warn",
+          issue: `빈 표현: ${emptyHits.join(", ")}`,
+          suggestion: "구체적 정보·예시로 교체",
+        });
+      }
+      return JSON.stringify({ domain: "일반", axes, flags });
     }
   }
 }

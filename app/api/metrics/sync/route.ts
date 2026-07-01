@@ -26,7 +26,7 @@ export async function POST() {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  const result = mutateDB((db) => {
+  const result = await mutateDB((db) => {
     // 우리 발행 기록의 permalink → cardId 매핑(게시물-카드 연결)
     const permalinkToCard = new Map<string, string>();
     for (const j of db.publishJobs) {

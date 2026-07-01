@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   const email = (body.email || "").trim().toLowerCase();
   const password = body.password || "";
 
-  const user = readDB().users.find((u) => u.email === email);
+  const user = (await readDB()).users.find((u) => u.email === email);
   if (!user || !verifyPassword(password, user.passwordHash, user.passwordSalt)) {
     return bad("이메일 또는 비밀번호가 올바르지 않습니다.", 401);
   }

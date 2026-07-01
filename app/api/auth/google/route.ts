@@ -7,14 +7,14 @@ import { json } from "@/lib/workspace/api";
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as { email?: string; name?: string };
   const email = (body.email || `google_user_${Math.random().toString(36).slice(2, 7)}@gmail.com`).toLowerCase();
-  const existing = readDB().users.find((u) => u.email === email);
+  const existing = (await readDB()).users.find((u) => u.email === email);
   if (existing) {
     await createSession(existing.id);
     return json({ user: toPublicUser(existing) });
   }
   const name = (body.name || email.split("@")[0] || email).slice(0, 10);
   const user = newUser({ email, name, authProvider: "google", marketingConsent: false });
-  mutateDB((d) => d.users.push(user));
+  await mutateDB((d) => d.users.push(user));
   await createSession(user.id);
   return json({ user: toPublicUser(user) });
 }

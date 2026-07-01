@@ -11,7 +11,7 @@ export async function POST() {
     guest: true,
     authProvider: "guest",
   });
-  mutateDB((d) => d.users.push(user));
+  await mutateDB((d) => d.users.push(user));
   await createSession(user.id);
   return json({ user: toPublicUser(user) });
 }

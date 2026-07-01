@@ -6,7 +6,7 @@ import { generateStrategy } from "@/lib/workspace/ai";
 export async function GET() {
   const guard = await withUser();
   if ("res" in guard) return guard.res;
-  const strategy = readDB().strategies[guard.user.id] ?? null;
+  const strategy = (await readDB()).strategies[guard.user.id] ?? null;
   return json({ strategy });
 }
 
@@ -17,7 +17,7 @@ export async function POST() {
   if (!guard.user.survey) return bad("먼저 시작 설문을 완료하세요.", 409);
 
   const strategy = await generateStrategy(guard.user.survey);
-  mutateDB((db) => {
+  await mutateDB((db) => {
     db.strategies[guard.user.id] = strategy;
   });
   return json({ strategy });

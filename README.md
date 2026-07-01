@@ -242,7 +242,7 @@ npm run gen -- --save         # + 로컬 DB 영속화 (supabase 기동 필요)
 | 예약 발행 / 인사이트 자동 수집 | 2-step 발행 + 일별 스냅샷 | 예정 |
 | 리드마그넷 (댓글 → 자동 DM) | 키워드 트리거 | 예정 |
 
-> 상세 작업 현황: [docs/작업트랙.md](docs/작업트랙.md)
+> 상세 작업 현황: [GitHub Issues](https://github.com/KernelAcademy-AICamp/ai-camp-7th-main-project-gentlemen/issues) (초기 로드맵 기록: [docs/archive/작업트랙.md](docs/archive/작업트랙.md))
 
 
 <br/>

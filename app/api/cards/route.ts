@@ -10,7 +10,7 @@ const FORMATS: CardFormat[] = ["카드뉴스", "사진첨부형 카드뉴스", "
 export async function GET() {
   const guard = await withUser();
   if ("res" in guard) return guard.res;
-  const cards = readDB()
+  const cards = (await readDB())
     .cards.filter((c) => c.userId === guard.user.id)
     .sort((a, b) => b.updatedAt - a.updatedAt);
   return json({ cards });
@@ -80,6 +80,6 @@ export async function POST(req: Request) {
   };
   if (isReels) card.reviewFlags = runReview(card, guard.user.survey);
 
-  mutateDB((db) => db.cards.push(card));
+  await mutateDB((db) => db.cards.push(card));
   return json({ card });
 }

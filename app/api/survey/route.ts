@@ -42,7 +42,7 @@ export async function PUT(req: Request) {
 
   if (!survey.niche) return bad("주제(니치)는 필수입니다.");
 
-  mutateDB((db) => {
+  await mutateDB((db) => {
     const u = db.users.find((x) => x.id === guard.user.id);
     if (u) u.survey = survey;
   });
