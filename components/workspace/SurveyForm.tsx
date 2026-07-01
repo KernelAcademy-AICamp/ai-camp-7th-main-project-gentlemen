@@ -49,7 +49,7 @@ function Chip({
       type="button"
       onClick={onClick}
       className={`px-3.5 py-1.5 rounded-full text-sm border transition ${
-        active ? "bg-ink text-paper border-ink" : "bg-card text-ink-soft border-line hover:border-ink/30"
+        active ? "bg-coral text-white border-coral" : "bg-card text-ink-soft border-line hover:border-coral/40"
       }`}
     >
       {children}
@@ -118,7 +118,7 @@ export function SurveyForm({
             type="button"
             onClick={() => setStep(i)}
             className={`flex-1 text-left rounded-xl border px-3 py-2 transition ${
-              step === i ? "border-ink bg-card" : "border-line bg-paper-2/50"
+              step === i ? "border-coral bg-card" : "border-line bg-paper-2/50"
             }`}
           >
             <div className="text-xs text-muted">STEP {i + 1}</div>
