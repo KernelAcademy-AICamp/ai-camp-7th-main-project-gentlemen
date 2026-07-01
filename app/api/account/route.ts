@@ -29,7 +29,7 @@ export async function PATCH(req: Request) {
     if (!PW_RE.test(b.passwordNew)) return bad("새 비밀번호는 영문·숫자·특수문자 포함 8~16자여야 합니다.");
   }
 
-  const updated = mutateDB((db) => {
+  const updated = await mutateDB((db) => {
     const u = db.users.find((x) => x.id === guard.user.id);
     if (!u) return null;
     if (b.plan && ["베이직", "프로", "프리미엄"].includes(b.plan)) {
@@ -58,7 +58,7 @@ export async function DELETE(req: Request) {
   const b = (await req.json().catch(() => ({}))) as { scope?: "account" | "data"; period?: "all" | "1" | "7" | "30" };
 
   if (b.scope === "account") {
-    mutateDB((db) => {
+    await mutateDB((db) => {
       const uidv = guard.user.id;
       db.users = db.users.filter((u) => u.id !== uidv);
       db.sessions = db.sessions.filter((s) => s.userId !== uidv);
@@ -78,7 +78,7 @@ export async function DELETE(req: Request) {
   // keep = 보존할 것: 내 데이터가 아니거나(다른 사용자), 충분히 최근이면 보존
   const keep = (uidv: string, ownerId: string, ts: number) =>
     ownerId !== uidv || (cutoff !== Infinity && Date.now() - ts < cutoff);
-  const removed = mutateDB((db) => {
+  const removed = await mutateDB((db) => {
     const uidv = guard.user.id;
     const before = db.cards.filter((c) => c.userId === uidv).length;
     db.cards = db.cards.filter((c) => keep(uidv, c.userId, c.createdAt));

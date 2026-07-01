@@ -7,8 +7,8 @@ const COOKIE = "onekup_session";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30일
 
 /**
- * 데모 연동 계정 시드 (mock 단계). 계정 스위처/전체 워크스페이스 화면을 데이터와 함께 보기 위함.
- * TODO(데이터 연결): 실제 인스타 OAuth 연동으로 교체하고 이 시드는 제거.
+ * 데모 연동 계정 시드 — **게스트(둘러보기) 전용**. 워크스페이스를 데이터와 함께 미리 보여주기 위함.
+ * ⚠️ 실유저(구글/이메일)에게는 절대 심지 않는다 — 각자 자기 인스타를 OAuth 로 실제 연동해야 하므로.
  */
 function demoIgAccounts(now: number): User["igAccounts"] {
   return [
@@ -48,8 +48,9 @@ export function newUser(partial: Partial<User> & { email: string; name: string }
     marketingConsent: partial.marketingConsent ?? false,
     plan: "베이직",
     billingCycle: "월",
-    igAccounts: demoIgAccounts(now),
-    activeIgAccountId: "ig_demo_my_cafe_daily",
+    // 게스트만 데모 계정으로 워크스페이스를 채워 보여준다. 실유저는 빈 상태 → 자기 인스타를 직접 연동.
+    igAccounts: partial.guest ? demoIgAccounts(now) : [],
+    activeIgAccountId: partial.guest ? "ig_demo_my_cafe_daily" : undefined,
     onboarded: false,
     createdAt: now,
   };
@@ -79,7 +80,7 @@ export function toPublicUser(user: User): PublicUser {
 
 export async function createSession(userId: string): Promise<void> {
   const token = uid("sess") + randomBytes(16).toString("hex");
-  mutateDB((db) => {
+  await mutateDB((db) => {
     db.sessions.push({ token, userId, createdAt: Date.now() });
   });
   const store = await cookies();
@@ -95,7 +96,7 @@ export async function destroySession(): Promise<void> {
   const store = await cookies();
   const token = store.get(COOKIE)?.value;
   if (token) {
-    mutateDB((db) => {
+    await mutateDB((db) => {
       db.sessions = db.sessions.filter((s) => s.token !== token);
     });
   }
@@ -106,7 +107,7 @@ export async function getCurrentUser(): Promise<User | null> {
   const store = await cookies();
   const token = store.get(COOKIE)?.value;
   if (!token) return null;
-  const db = readDB();
+  const db = (await readDB());
   const session = db.sessions.find((s) => s.token === token);
   if (!session) return null;
   return db.users.find((u) => u.id === session.userId) ?? null;

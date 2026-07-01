@@ -9,7 +9,7 @@ export async function POST(_req: Request, ctx: Ctx) {
   const guard = await withUser();
   if ("res" in guard) return guard.res;
   const { id } = await ctx.params;
-  const updated = mutateDB((db) => {
+  const updated = await mutateDB((db) => {
     const card = db.cards.find((c) => c.id === id && c.userId === guard.user.id);
     if (!card || card.status === "업로드완료") return card ?? null;
     card.reviewFlags = runReview(card, guard.user.survey);
@@ -31,7 +31,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
     | null;
   if (!body) return bad("잘못된 요청입니다.");
 
-  const result = mutateDB((db) => {
+  const result = await mutateDB((db) => {
     const card = db.cards.find((c) => c.id === id && c.userId === guard.user.id);
     if (!card) return { error: "not_found" as const };
     if (card.status === "업로드완료") return { error: "published" as const };

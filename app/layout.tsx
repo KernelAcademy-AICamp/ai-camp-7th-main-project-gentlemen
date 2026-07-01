@@ -13,11 +13,11 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
-        {/* 워크스페이스 디스플레이 서체(Fraunces) — 이식. Pretendard는 wireframe.css에서 로드 */}
+        {/* Airbnb Cereal 대체 서체 Inter(DESIGN-airbnb.md 권장). 한글은 Pretendard(wireframe.css). */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
       </head>

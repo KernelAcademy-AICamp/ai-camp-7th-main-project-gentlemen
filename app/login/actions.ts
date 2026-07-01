@@ -63,7 +63,7 @@ export async function continueAsGuest() {
     name: "게스트",
     guest: true,
   });
-  mutateDB((d) => d.users.push(guest));
+  await mutateDB((d) => d.users.push(guest));
   await createSession(guest.id);
   redirect("/onboarding");
 }

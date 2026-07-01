@@ -9,7 +9,7 @@ export async function PUT(req: Request, ctx: Ctx) {
   const guard = await withUser();
   if ("res" in guard) return guard.res;
   const { id } = await ctx.params;
-  const card = readDB().cards.find((c) => c.id === id && c.userId === guard.user.id);
+  const card = (await readDB()).cards.find((c) => c.id === id && c.userId === guard.user.id);
   if (!card) return bad("카드를 찾을 수 없습니다.", 404);
   if (card.format !== "릴스") return bad("릴스만 영상을 업로드할 수 있어요.", 409);
 
@@ -19,8 +19,8 @@ export async function PUT(req: Request, ctx: Ctx) {
   if (!file.type.startsWith("video/")) return bad("영상 파일만 업로드할 수 있어요.");
 
   const buf = Buffer.from(await file.arrayBuffer());
-  saveCardVideo(id, buf);
-  mutateDB((db) => {
+  await saveCardVideo(id, buf);
+  await mutateDB((db) => {
     const c = db.cards.find((x) => x.id === id && x.userId === guard.user.id);
     if (c) {
       c.hasVideo = true;

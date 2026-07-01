@@ -12,7 +12,7 @@ export async function POST(_req: Request, ctx: Ctx) {
   if (!guard.user.survey) return bad("먼저 시작 설문을 완료하세요.", 409);
   const { id } = await ctx.params;
 
-  const card = readDB().cards.find((c) => c.id === id && c.userId === guard.user.id);
+  const card = (await readDB()).cards.find((c) => c.id === id && c.userId === guard.user.id);
   if (!card) return bad("카드를 찾을 수 없습니다.", 404);
   if (!(card.status === "기획중" || card.status === "기획완료" || card.status === "제작중"))
     return bad("기획 단계의 카드만 제작할 수 있어요.", 409);
@@ -27,7 +27,7 @@ export async function POST(_req: Request, ctx: Ctx) {
   };
   const result = await generateCard(guard.user.survey, input, card.pages);
 
-  const updated = mutateDB((db) => {
+  const updated = await mutateDB((db) => {
     const c = db.cards.find((x) => x.id === id && x.userId === guard.user.id);
     if (!c) return null;
     c.title = result.title;

@@ -1,17 +1,17 @@
 import fs from "fs";
 import path from "path";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { DB } from "./types";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 단순 파일 기반 저장소 (프로토타입용, 네이티브 의존성 없음).
-// 운영 단계에서는 Postgres/Prisma 등으로 교체 가능하도록 인터페이스를 좁게 유지한다.
+// 워크스페이스 저장소 — 좁은 인터페이스(readDB/writeDB/mutateDB)로 백엔드를 감춘다.
+//
+//   KUP_DB_BACKEND=supabase  → Supabase 단일 행(app_state) JSONB blob (서버리스/배포용)
+//   그 외(기본)              → 로컬 파일 .data/db.json (로컬 개발·npm run gen)
+//
+// ⚠️ 임시(C안): Supabase 백엔드도 통짜 blob이라 동시 write 는 마지막-쓰기-승리다.
+//    소규모 베타엔 충분. 정식은 관계형 테이블(A안)로 이관 예정 — 그때 이 파일만 교체.
 // ─────────────────────────────────────────────────────────────────────────────
-
-// KUP_DATA_DIR 로 데이터 디렉터리를 격리할 수 있다(기본: .data)
-const DATA_DIR = process.env.KUP_DATA_DIR
-  ? path.resolve(process.env.KUP_DATA_DIR)
-  : path.join(process.cwd(), ".data");
-const DB_PATH = path.join(DATA_DIR, "db.json");
 
 const EMPTY_DB: DB = {
   users: [],
@@ -23,6 +23,47 @@ const EMPTY_DB: DB = {
   dmRules: [],
 };
 
+const USE_SUPABASE = process.env.KUP_DB_BACKEND === "supabase";
+
+function withDefaults(parsed: Partial<DB> | null | undefined): DB {
+  // 누락된 컬렉션 보강 (스키마 진화 대비)
+  return { ...EMPTY_DB, ...(parsed ?? {}) } as DB;
+}
+
+// ── Supabase blob 백엔드 ─────────────────────────────────────────────────────
+let _sb: SupabaseClient | null = null;
+function sb(): SupabaseClient {
+  if (!_sb) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) {
+      throw new Error(
+        "KUP_DB_BACKEND=supabase 인데 NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY 가 없습니다."
+      );
+    }
+    _sb = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  }
+  return _sb;
+}
+
+async function readSupabase(): Promise<DB> {
+  const { data, error } = await sb().from("app_state").select("data").eq("id", 1).maybeSingle();
+  if (error) throw new Error(`app_state 읽기 실패: ${error.message}`);
+  return withDefaults((data?.data as Partial<DB> | undefined) ?? undefined);
+}
+
+async function writeSupabase(db: DB): Promise<void> {
+  const { error } = await sb().from("app_state").upsert({ id: 1, data: db as unknown as object });
+  if (error) throw new Error(`app_state 쓰기 실패: ${error.message}`);
+}
+
+// ── 파일 백엔드 (로컬) ───────────────────────────────────────────────────────
+// KUP_DATA_DIR 로 데이터 디렉터리를 격리할 수 있다(기본: .data)
+const DATA_DIR = process.env.KUP_DATA_DIR
+  ? path.resolve(process.env.KUP_DATA_DIR)
+  : path.join(process.cwd(), ".data");
+const DB_PATH = path.join(DATA_DIR, "db.json");
+
 function ensureFile() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
   if (!fs.existsSync(DB_PATH)) {
@@ -30,28 +71,36 @@ function ensureFile() {
   }
 }
 
-export function readDB(): DB {
+function readFileDB(): DB {
   ensureFile();
   try {
     const raw = fs.readFileSync(DB_PATH, "utf-8");
-    const parsed = JSON.parse(raw) as Partial<DB>;
-    // 누락된 컬렉션 보강 (스키마 진화 대비)
-    return { ...EMPTY_DB, ...parsed } as DB;
+    return withDefaults(JSON.parse(raw) as Partial<DB>);
   } catch {
     return structuredClone(EMPTY_DB);
   }
 }
 
-export function writeDB(db: DB): void {
+function writeFileDB(db: DB): void {
   ensureFile();
   fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), "utf-8");
 }
 
+// ── 공개 API (async — 백엔드 무관) ───────────────────────────────────────────
+export async function readDB(): Promise<DB> {
+  return USE_SUPABASE ? readSupabase() : readFileDB();
+}
+
+export async function writeDB(db: DB): Promise<void> {
+  if (USE_SUPABASE) await writeSupabase(db);
+  else writeFileDB(db);
+}
+
 // read-modify-write 를 하나의 호출로 묶어 일관성을 높인다.
-export function mutateDB<T>(fn: (db: DB) => T): T {
-  const db = readDB();
+export async function mutateDB<T>(fn: (db: DB) => T): Promise<T> {
+  const db = await readDB();
   const result = fn(db);
-  writeDB(db);
+  await writeDB(db);
   return result;
 }
 

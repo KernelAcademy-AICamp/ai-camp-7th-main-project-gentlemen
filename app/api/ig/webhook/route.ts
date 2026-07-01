@@ -77,9 +77,9 @@ async function processWebhook(payload: WebhookPayload): Promise<void> {
 }
 
 // IG user id 로 우리 사용자+계정 찾기
-function findByIgUserId(igUserId: string): { user: User; account: IgAccount } | null {
+async function findByIgUserId(igUserId: string): Promise<{ user: User; account: IgAccount } | null> {
   if (!igUserId) return null;
-  for (const user of readDB().users) {
+  for (const user of (await readDB()).users) {
     const account = user.igAccounts.find((a) => a.igUserId === igUserId);
     if (account) return { user, account };
   }
@@ -92,7 +92,7 @@ async function handleComment(recipientIgId: string, value: CommentValue): Promis
   const fromId = value.from?.id;
   if (!commentId || handled.has(commentId)) return;
 
-  const ctx = findByIgUserId(recipientIgId);
+  const ctx = await findByIgUserId(recipientIgId);
   if (!ctx) return; // 우리 시스템에 없는 계정
   const { user, account } = ctx;
 
@@ -102,7 +102,7 @@ async function handleComment(recipientIgId: string, value: CommentValue): Promis
   // 매칭 규칙: 활성 + 옵트인 + 키워드 포함(대소문자 무시) + 게시물(mediaId) 일치
   //   - rule.mediaId 가 있으면 그 게시물 댓글에만, 없으면 전체 게시물에 적용
   const mediaId = value.media?.id;
-  const rules = readDB().dmRules.filter((r) => r.userId === user.id && r.enabled && r.optIn);
+  const rules = (await readDB()).dmRules.filter((r) => r.userId === user.id && r.enabled && r.optIn);
   const rule = rules.find(
     (r) =>
       r.triggerKeyword &&
@@ -113,7 +113,7 @@ async function handleComment(recipientIgId: string, value: CommentValue): Promis
 
   // 플랜 DM 한도 확인
   const limit = DM_LIMITS[user.plan];
-  const used = readDB().dmRules.filter((r) => r.userId === user.id).reduce((s, r) => s + r.sentCount, 0);
+  const used = (await readDB()).dmRules.filter((r) => r.userId === user.id).reduce((s, r) => s + r.sentCount, 0);
   if (used >= limit) {
     console.warn(`[ig-webhook] DM 한도 초과(user=${user.id}, plan=${user.plan})`);
     return;
@@ -123,7 +123,7 @@ async function handleComment(recipientIgId: string, value: CommentValue): Promis
   const message = renderDmMessage(rule.dmMessage, rule.resourceLink);
   try {
     await sendPrivateReply(account, commentId, message);
-    mutateDB((db) => {
+    await mutateDB((db) => {
       const r = db.dmRules.find((x) => x.id === rule.id);
       if (r) r.sentCount += 1;
     });

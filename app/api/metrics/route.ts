@@ -5,7 +5,7 @@ import { json, withUser } from "@/lib/workspace/api";
 export async function GET() {
   const guard = await withUser();
   if ("res" in guard) return guard.res;
-  const entries = readDB()
+  const entries = (await readDB())
     .metrics.filter((m) => m.userId === guard.user.id)
     .sort((a, b) => b.createdAt - a.createdAt);
   return json({ entries });

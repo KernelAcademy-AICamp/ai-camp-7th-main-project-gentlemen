@@ -5,13 +5,13 @@ import { findIgAccount, type PublishJob } from "@/lib/workspace/types";
 
 // 예약 시각이 지난 예약 건을 처리(데모용 lazy 워커). P2: 서버 스케줄러/크론.
 async function processDue(userId: string): Promise<void> {
-  const due = mutateDB((db) =>
+  const due = await mutateDB((db) =>
     db.publishJobs
       .filter((j) => j.userId === userId && j.status === "예약" && j.scheduledAt <= Date.now())
       .map((j) => j.id)
   );
   for (const jobId of due) {
-    const ctx = mutateDB((db) => {
+    const ctx = await mutateDB((db) => {
       const job = db.publishJobs.find((j) => j.id === jobId);
       const card = job ? db.cards.find((c) => c.id === job.cardId) : undefined;
       const user = db.users.find((u) => u.id === userId);
@@ -19,7 +19,7 @@ async function processDue(userId: string): Promise<void> {
     });
     if (!ctx) continue;
     const result = await publishCard(ctx.card, ctx.account).catch(() => null);
-    mutateDB((db) => {
+    await mutateDB((db) => {
       const job = db.publishJobs.find((j) => j.id === jobId);
       const card = job ? db.cards.find((c) => c.id === job.cardId) : undefined;
       if (job && result) {
@@ -40,7 +40,7 @@ export async function GET() {
   const guard = await withUser();
   if ("res" in guard) return guard.res;
   await processDue(guard.user.id);
-  const jobs = mutateDB((db) =>
+  const jobs = await mutateDB((db) =>
     db.publishJobs.filter((j) => j.userId === guard.user.id).sort((a, b) => b.scheduledAt - a.scheduledAt)
   );
   return json({ jobs: jobs as PublishJob[] });
@@ -53,7 +53,7 @@ export async function PATCH(req: Request) {
   const body = (await req.json().catch(() => null)) as { jobId?: string; action?: "cancel" } | null;
   if (!body?.jobId) return bad("jobId가 필요합니다.");
 
-  const res = mutateDB((db) => {
+  const res = await mutateDB((db) => {
     const job = db.publishJobs.find((j) => j.id === body.jobId && j.userId === guard.user.id);
     if (!job) return { error: "not_found" as const };
     if (job.status !== "예약") return { error: "not_cancelable" as const };

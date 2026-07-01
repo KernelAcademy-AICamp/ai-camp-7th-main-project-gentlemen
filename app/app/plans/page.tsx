@@ -167,8 +167,8 @@ export default function PlansPage() {
                   <tr key={c.id} className="border-b border-line/60 align-top">
                     <td className="py-3 px-4 text-muted">{i + 1}</td>
                     <td className="py-3 px-3">
-                      <Badge tone={c.format === "릴스" ? "rose" : c.format === "사진첨부형 카드뉴스" ? "amber" : "muted"}>
-                        {c.format === "사진첨부형 카드뉴스" ? "사진첨부형" : c.format}
+                      <Badge tone={c.format === "릴스" ? "rose" : "muted"}>
+                        {c.format === "릴스" ? "릴스" : "게시물"}
                       </Badge>
                     </td>
                     <td className="py-3 px-3">{c.pageCount}장</td>
@@ -217,19 +217,24 @@ export default function PlansPage() {
               <input className={inputClass} value={form.topicTitle} onChange={(e) => setForm((f) => ({ ...f, topicTitle: e.target.value }))} placeholder="예: 이번 주 신메뉴 출시 알림" />
             </Field>
             <Field label="형식">
-              <div className="grid grid-cols-3 gap-2">
-                {(["카드뉴스", "사진첨부형 카드뉴스", "릴스"] as CardFormat[]).map((fmt) => (
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  ["카드뉴스", "게시물"],
+                  ["릴스", "릴스"],
+                ] as [CardFormat, string][]).map(([fmt, label]) => (
                   <button
                     key={fmt}
                     onClick={() => setForm((f) => ({ ...f, format: fmt }))}
                     className={`rounded-xl border px-2 py-2 text-sm ${form.format === fmt ? "border-ink bg-paper-2/50" : "border-line text-ink-soft"}`}
                   >
-                    {fmt === "사진첨부형 카드뉴스" ? "사진첨부형" : fmt}
+                    {label}
                   </button>
                 ))}
               </div>
-              {form.format === "릴스" && (
+              {form.format === "릴스" ? (
                 <p className="text-xs text-muted mt-1.5">릴스는 대본·캡션만 만들고, 영상은 직접 업로드해요(제작 단계 없음).</p>
+              ) : (
+                <p className="text-xs text-muted mt-1.5">게시물은 본문 생성 후, 편집에서 장마다 사진 설명을 넣어 카드에 반영할 수 있어요.</p>
               )}
             </Field>
             <div className="grid grid-cols-2 gap-3">
@@ -241,7 +246,7 @@ export default function PlansPage() {
                 </select>
               </Field>
               <Field label={form.format === "릴스" ? "장면 수" : "페이지 수"} hint={`${form.pageCount}${form.format === "릴스" ? "장면" : "장"}`}>
-                <input type="range" min={3} max={form.format === "릴스" ? 6 : 8} value={form.pageCount} onChange={(e) => setForm((f) => ({ ...f, pageCount: Number(e.target.value) }))} className="w-full accent-[#ef5a35]" />
+                <input type="range" min={3} max={form.format === "릴스" ? 6 : 8} value={form.pageCount} onChange={(e) => setForm((f) => ({ ...f, pageCount: Number(e.target.value) }))} className="w-full accent-[#ff385c]" />
               </Field>
             </div>
             <Field label="핵심 메시지" hint="선택">

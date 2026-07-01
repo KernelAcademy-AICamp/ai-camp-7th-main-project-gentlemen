@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type DragEvent, type ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api, formatDate } from "@/lib/workspace/client";
 import { Badge, Button, Card, Field, inputClass } from "@/components/workspace/ui";
@@ -8,7 +8,73 @@ import { Generating } from "@/components/workspace/Generating";
 import { CardCanvas, THEMES, getTheme } from "@/components/workspace/CardCanvas";
 import { activeIgHandle, findIgAccount, type CardNews, type CardPage, type IgAccount, type PublicUser, type ReviewFlag } from "@/lib/workspace/types";
 
-type Tab = "편집" | "검수" | "발행";
+const STEPS = ["편집", "검수", "업로드"] as const;
+type Step = 0 | 1 | 2;
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result as string);
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
+}
+
+// 파일 드롭 존 — 드래그앤드롭 + (선택) 클릭 업로드. kind로 형식 검증(image/video).
+function DropZone({
+  accept,
+  kind,
+  onFile,
+  onReject,
+  clickable = true,
+  className = "",
+  activeClassName = "border-ink bg-paper-2/60",
+  children,
+}: {
+  accept: string;
+  kind: "image" | "video";
+  onFile: (file: File) => void;
+  onReject?: (file: File) => void;
+  clickable?: boolean;
+  className?: string;
+  activeClassName?: string;
+  children: ReactNode;
+}) {
+  const [over, setOver] = useState(false);
+  const take = (f?: File | null) => {
+    if (!f) return;
+    if (f.type.startsWith(`${kind}/`)) onFile(f);
+    else onReject?.(f); // 형식 불일치 → 안내 콜백
+  };
+  const onDragOver = (e: DragEvent<HTMLElement>) => {
+    e.preventDefault();
+    if (!over) setOver(true);
+  };
+  const onDragLeave = (e: DragEvent<HTMLElement>) => {
+    // 자식 위로 이동 시 깜빡임 방지 — 실제로 요소를 벗어날 때만 해제
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+    setOver(false);
+  };
+  const onDrop = (e: DragEvent<HTMLElement>) => {
+    e.preventDefault();
+    setOver(false);
+    take(e.dataTransfer.files?.[0]);
+  };
+  const cls = `${className} ${over ? activeClassName : ""} transition`;
+  if (clickable) {
+    return (
+      <label className={cls} onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}>
+        <input type="file" accept={accept} className="hidden" onChange={(e) => { take(e.target.files?.[0]); e.target.value = ""; }} />
+        {children}
+      </label>
+    );
+  }
+  return (
+    <div className={cls} onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}>
+      {children}
+    </div>
+  );
+}
 
 export default function EditorPage() {
   const { id } = useParams<{ id: string }>();
@@ -16,14 +82,34 @@ export default function EditorPage() {
   const [card, setCard] = useState<CardNews | null>(null);
   const [user, setUser] = useState<PublicUser | null>(null);
   const [publicBase, setPublicBase] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>("편집");
+  const [step, setStep] = useState<Step>(0);
   const [activePage, setActivePage] = useState(0);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [producing, setProducing] = useState(false);
+  const [advancing, setAdvancing] = useState(false);
+  const [stepMsg, setStepMsg] = useState("");
+  const [editingTitle, setEditingTitle] = useState(false);
   const [hashtagsText, setHashtagsText] = useState("");
+  const [photos, setPhotos] = useState<Record<number, string>>({});
 
-  const [draft, setDraft] = useState<{ title: string; pages: CardPage[]; caption: string; cta: string; theme: string; brandColor: string } | null>(null);
+  const [draft, setDraft] = useState<{ title: string; pages: CardPage[]; caption: string; cta: string; theme: string; brandColor: string; photoStyle: "top" | "bg"; ratio: "1:1" | "3:4" } | null>(null);
+
+  const loadPhotos = useCallback(async (cardId: string) => {
+    try {
+      const { pages } = await api<{ pages: number[] }>(`/api/cards/${cardId}/photos`);
+      const entries = await Promise.all(
+        pages.map(async (p) => {
+          const res = await fetch(`/api/cards/${cardId}/photo/${p}`);
+          if (!res.ok) return null;
+          return [p, await blobToDataUrl(await res.blob())] as [number, string];
+        })
+      );
+      setPhotos(Object.fromEntries(entries.filter(Boolean) as [number, string][]));
+    } catch {
+      /* noop */
+    }
+  }, []);
 
   const load = useCallback(async () => {
     const [{ card }, me] = await Promise.all([
@@ -33,9 +119,10 @@ export default function EditorPage() {
     setCard(card);
     setUser(me.user);
     setPublicBase(me.publicBaseUrl);
-    setDraft({ title: card.title, pages: card.pages.map((p) => ({ ...p })), caption: card.caption, cta: card.cta, theme: card.theme, brandColor: card.brandColor });
+    setDraft({ title: card.title, pages: card.pages.map((p) => ({ ...p })), caption: card.caption, cta: card.cta, theme: card.theme, brandColor: card.brandColor, photoStyle: card.photoStyle ?? "top", ratio: card.ratio ?? "1:1" });
     setHashtagsText(card.hashtags.join(" "));
-  }, [id]);
+    if (card.format !== "릴스") loadPhotos(id); // 카드뉴스·사진첨부형 모두 첨부 사진 지원
+  }, [id, loadPhotos]);
 
   useEffect(() => {
     load();
@@ -52,7 +139,7 @@ export default function EditorPage() {
     }
   }
 
-  async function save() {
+  const save = useCallback(async () => {
     if (!draft) return;
     setSaving(true);
     try {
@@ -65,6 +152,8 @@ export default function EditorPage() {
           cta: draft.cta,
           theme: draft.theme,
           brandColor: draft.brandColor,
+          photoStyle: draft.photoStyle,
+          ratio: draft.ratio,
           hashtags: hashtagsText.split(/[\s,]+/).map((h) => h.replace(/^#/, "")).filter(Boolean).map((h) => `#${h}`),
         },
       });
@@ -73,7 +162,14 @@ export default function EditorPage() {
     } finally {
       setSaving(false);
     }
-  }
+  }, [draft, hashtagsText, id]);
+
+  // 실시간 자동 저장 (디바운스)
+  useEffect(() => {
+    if (!dirty) return;
+    const t = setTimeout(() => void save(), 900);
+    return () => clearTimeout(t);
+  }, [dirty, save]);
 
   function patchDraft(p: Partial<NonNullable<typeof draft>>) {
     setDraft((d) => (d ? { ...d, ...p } : d));
@@ -82,6 +178,54 @@ export default function EditorPage() {
   function patchPage(i: number, p: Partial<CardPage>) {
     setDraft((d) => (d ? { ...d, pages: d.pages.map((pg, idx) => (idx === i ? { ...pg, ...p } : pg)) } : d));
     setDirty(true);
+  }
+
+  async function uploadPhoto(page: number, file: File) {
+    const url = await blobToDataUrl(file);
+    setPhotos((p) => ({ ...p, [page]: url })); // 즉시 미리보기
+    const fd = new FormData();
+    fd.append("photo", file);
+    await fetch(`/api/cards/${id}/photo/${page}`, { method: "PUT", body: fd });
+  }
+  async function removePhoto(page: number) {
+    await api(`/api/cards/${id}/photo/${page}`, { method: "DELETE" });
+    setPhotos((p) => {
+      const n = { ...p };
+      delete n[page];
+      return n;
+    });
+  }
+
+  // 스텝 '확인' — 편집→검수(검수 실행), 검수→업로드(승인 통과)
+  async function confirmStep() {
+    setStepMsg("");
+    if (!card) return;
+    if (step === 0) {
+      setAdvancing(true);
+      try {
+        if (dirty) await save();
+        const { card: c } = await api<{ card: CardNews }>(`/api/cards/${id}/review`, { method: "POST" });
+        setCard(c);
+        setStep(1);
+      } finally {
+        setAdvancing(false);
+      }
+    } else if (step === 1) {
+      if (card.reviewFlags.some((f) => !f.resolved)) {
+        setStepMsg("미해결 검수 항목을 모두 확인해 주세요.");
+        return;
+      }
+      setAdvancing(true);
+      try {
+        const { card: c } = await api<{ card: CardNews }>(`/api/cards/${id}/review`, { method: "PATCH", body: { action: "pass" } });
+        setCard(c);
+        setStep(2);
+      } catch (e) {
+        setStepMsg((e as Error).message);
+      } finally {
+        setAdvancing(false);
+      }
+    }
   }
 
   if (!card || !draft || !user) return <div className="py-20 text-center text-muted">불러오는 중…</div>;
@@ -99,33 +243,49 @@ export default function EditorPage() {
   const isReels = card.format === "릴스";
   const isPlan = (card.status === "기획중" || card.status === "기획완료") && !isReels;
   const photo = card.format === "사진첨부형 카드뉴스";
+  const stepperUI = !isPlan && !isReels;
 
   return (
     <div>
       <div className="flex items-start justify-between gap-3 flex-wrap mb-5">
-        <div>
+        <div className="flex-1 min-w-0">
           <button onClick={() => router.push("/app/board")} className="text-sm text-muted hover:text-ink">
             ← 콘텐츠 관리
           </button>
-          <h1 className="font-display text-2xl mt-1">{draft.title || "제목 없음"}</h1>
+          {editingTitle ? (
+            <textarea
+              autoFocus
+              rows={1}
+              className="font-display text-2xl mt-1 w-full bg-transparent border-b border-line focus:border-ink outline-none resize-none overflow-hidden leading-snug block"
+              value={draft.title}
+              ref={(el) => { if (el) { el.style.height = "auto"; el.style.height = `${el.scrollHeight}px`; } }}
+              onChange={(e) => patchDraft({ title: e.target.value })}
+              onInput={(e) => { const el = e.currentTarget; el.style.height = "auto"; el.style.height = `${el.scrollHeight}px`; }}
+              onBlur={() => setEditingTitle(false)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); setEditingTitle(false); } }}
+            />
+          ) : (
+            <div className="flex items-start gap-2 mt-1">
+              <h1 className="font-display text-2xl min-w-0">
+                {(() => { const tt = draft.title || "제목 없음"; return tt.length > 50 ? `${tt.slice(0, 50)}…` : tt; })()}
+              </h1>
+              <button onClick={() => setEditingTitle(true)} className="text-muted hover:text-ink shrink-0 mt-1.5" title="제목 수정" aria-label="제목 수정">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+              </button>
+            </div>
+          )}
           <div className="flex items-center gap-2 mt-2 flex-wrap">
             <StatusBadge status={card.status} />
-            <Badge tone={isReels ? "rose" : photo ? "amber" : "muted"}>{isReels ? "릴스" : photo ? "사진첨부형" : "카드뉴스"}</Badge>
+            <Badge tone={isReels ? "rose" : "muted"}>{isReels ? "릴스" : "게시물"}</Badge>
             {!isPlan && (card.aiEdited ? <Badge tone="teal">사용자 편집됨</Badge> : <Badge tone="muted">{card.aiLabel}</Badge>)}
             <Badge tone="muted">{card.generatedBy === "ai" ? "Claude" : card.generatedBy === "template" ? "템플릿" : "기획"}</Badge>
           </div>
         </div>
-        {!isPlan && (
-          <div className="flex items-center gap-2">
-            {dirty && <span className="text-xs text-amber">저장 안 됨</span>}
-            <Button variant="outline" size="sm" onClick={save} disabled={saving || !dirty}>
-              {saving ? "저장 중…" : "변경 저장"}
-            </Button>
-          </div>
+        {stepperUI && (
+          <span className="text-xs text-muted">{saving ? "저장 중…" : dirty ? "수정 중…" : "자동 저장됨 ✓"}</span>
         )}
       </div>
 
-      {/* 릴스: 대본 + 영상 업로드 + 발행 (단일 화면) */}
       {isReels ? (
         <ReelsEditor
           card={card}
@@ -159,32 +319,104 @@ export default function EditorPage() {
             <Button className="mt-5" onClick={produce}>제작하러가기 →</Button>
           </Card>
           <div className="lg:sticky lg:top-20">
-            <Preview pages={draft.pages} theme={draft.theme} brandColor={draft.brandColor} photo={photo} niche={niche} handle={handle} active={activePage} setActive={setActivePage} />
+            <Preview pages={draft.pages} theme={draft.theme} brandColor={draft.brandColor} photo={photo} photoStyle={draft.photoStyle} ratio={draft.ratio} photos={photos} niche={niche} handle={handle} active={activePage} />
           </div>
         </div>
       ) : (
         <>
-          <div className="flex gap-1 mb-5 bg-paper-2/60 p-1 rounded-xl w-fit">
-            {(["편집", "검수", "발행"] as Tab[]).map((t) => (
-              <button key={t} onClick={() => setTab(t)} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${tab === t ? "bg-card shadow-sm text-ink" : "text-ink-soft"}`}>
-                {t}
-                {t === "검수" && card.reviewFlags.some((f) => !f.resolved) && <span className="ml-1.5 inline-block w-2 h-2 rounded-full bg-coral align-middle" />}
-              </button>
-            ))}
+          {/* 스텝: 1 편집 · 2 검수 · 3 업로드 (크게) */}
+          <div className="flex items-center gap-2 sm:gap-3 mb-6">
+            {STEPS.map((label, i) => {
+              const cur = i === step;
+              const reachable = i <= step;
+              return (
+                <div key={label} className="flex items-center gap-2 sm:gap-3">
+                  <button
+                    onClick={() => reachable && setStep(i as Step)}
+                    disabled={!reachable}
+                    className={`flex items-center gap-2.5 px-5 py-3 rounded-full text-base font-semibold transition ${cur ? "bg-ink text-paper shadow-sm" : reachable ? "bg-paper-2 text-ink hover:bg-paper-2/80" : "text-muted"}`}
+                  >
+                    <span className={`w-7 h-7 rounded-full grid place-items-center text-sm font-bold ${cur ? "bg-paper text-ink" : "bg-card border border-line"}`}>{i + 1}</span>
+                    {label}
+                  </button>
+                  {i < 2 && <span className="w-8 sm:w-12 h-0.5 bg-line rounded-full" />}
+                </div>
+              );
+            })}
           </div>
 
-          <div className="grid lg:grid-cols-[1fr_400px] gap-6 items-start">
-            <div className="min-w-0 order-2 lg:order-1">
-              {tab === "편집" && (
-                <EditTab draft={draft} photo={photo} hashtagsText={hashtagsText} setHashtagsText={(v) => { setHashtagsText(v); setDirty(true); }} patchDraft={patchDraft} patchPage={patchPage} activePage={activePage} setActivePage={setActivePage} />
+          {/* 테마 — 위에 전체폭 카드 (제목은 상단 헤딩에서 ✎로 수정) */}
+          {step === 0 && (
+            <Card className="p-5 mb-4">
+              <Field label="테마">
+                <div className="flex flex-wrap gap-2">
+                  {THEMES.map((tm) => (
+                    <button key={tm.key} onClick={() => patchDraft({ theme: tm.key })} className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm ${draft.theme === tm.key ? "border-ink" : "border-line"}`}>
+                      <span className="w-4 h-4 rounded-full border border-line" style={{ background: getTheme(tm.key).bg }} />
+                      {tm.name}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+            </Card>
+          )}
+
+          {/* 왼쪽: 페이지 네비 + 미리보기 + 비율을 하나의 카드로 · 오른쪽: 텍스트/사진 편집 */}
+          <div className="grid lg:grid-cols-[380px_1fr] gap-6 items-start">
+            <div className="order-1">
+              {step === 0 ? (
+                <Card className="p-4">
+                  {/* 페이지 네비 */}
+                  <div className="text-xs text-muted mb-2">페이지 ({draft.pages.length}장) · 편집/미리보기 함께 이동</div>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {draft.pages.map((_, i) => (
+                      <button key={i} onClick={() => setActivePage(i)} className={`w-10 h-10 rounded-lg text-sm font-medium ${activePage === i ? "bg-ink text-paper" : "bg-paper-2 text-ink-soft"}`}>
+                        {i + 1}
+                      </button>
+                    ))}
+                  </div>
+                  {/* 미리보기 */}
+                  <div className="border-t border-line mt-4 pt-4">
+                    <Preview bare pages={draft.pages} theme={draft.theme} brandColor={draft.brandColor} photo={photo} photoStyle={draft.photoStyle} ratio={draft.ratio} photos={photos} niche={niche} handle={handle} active={activePage} />
+                  </div>
+                  {/* 비율 */}
+                  <div className="border-t border-line mt-4 pt-4 flex items-center gap-3">
+                    <span className="text-xs text-muted shrink-0">비율</span>
+                    <div className="flex gap-2">
+                      {([
+                        ["1:1", "정사각", "1:1"],
+                        ["3:4", "세로형", "3:4"],
+                      ] as const).map(([val, label, sub]) => (
+                        <button key={val} type="button" onClick={() => patchDraft({ ratio: val })} className={`px-3 py-1.5 rounded-full border text-sm ${draft.ratio === val ? "border-ink bg-paper-2/60" : "border-line hover:border-ink/30"}`}>
+                          {label} <span className="text-muted">{sub}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </Card>
+              ) : (
+                <Preview pages={draft.pages} theme={draft.theme} brandColor={draft.brandColor} photo={photo} photoStyle={draft.photoStyle} ratio={draft.ratio} photos={photos} niche={niche} handle={handle} active={activePage} />
               )}
-              {tab === "검수" && <ReviewTab card={card} dirty={dirty} onChange={setCard} onSaveNeeded={save} />}
-              {tab === "발행" && <PublishTab card={card} draft={draft} photo={photo} niche={niche} handle={handle} account={activeAccount} publicBase={publicBase} reload={load} />}
             </div>
-            <div className="order-1 lg:order-2 lg:sticky lg:top-20">
-              <Preview pages={draft.pages} theme={draft.theme} brandColor={draft.brandColor} photo={photo} niche={niche} handle={handle} active={activePage} setActive={setActivePage} />
+            <div className="min-w-0 order-2">
+              {step === 0 && (
+                <EditLeft draft={draft} photo={photo} photos={photos} activePage={activePage} hashtagsText={hashtagsText} setHashtagsText={(v) => { setHashtagsText(v); setDirty(true); }} patchDraft={patchDraft} patchPage={patchPage} uploadPhoto={uploadPhoto} removePhoto={removePhoto} />
+              )}
+              {step === 1 && <ReviewTab card={card} dirty={dirty} onChange={setCard} onSaveNeeded={save} />}
+              {step === 2 && <PublishTab card={card} draft={draft} photo={photo} photoStyle={draft.photoStyle} ratio={draft.ratio} photos={photos} niche={niche} handle={handle} account={activeAccount} publicBase={publicBase} reload={load} />}
             </div>
           </div>
+
+          {/* 하단 확인 버튼 */}
+          {step < 2 && (
+            <div className="mt-6 flex items-center justify-end gap-3 flex-wrap">
+              {stepMsg && <span className="text-sm text-coral mr-auto">{stepMsg}</span>}
+              {step > 0 && <Button variant="ghost" onClick={() => setStep((step - 1) as Step)}>← 이전</Button>}
+              <Button onClick={confirmStep} disabled={advancing}>
+                {advancing ? "처리 중…" : step === 0 ? "확인 — 검수로 →" : "확인 — 승인하고 업로드로 →"}
+              </Button>
+            </div>
+          )}
         </>
       )}
     </div>
@@ -199,58 +431,73 @@ function StatusBadge({ status }: { status: CardNews["status"] }) {
   return <Badge tone={tone as "teal" | "amber" | "muted"}>{status}</Badge>;
 }
 
-function EditTab({ draft, photo, hashtagsText, setHashtagsText, patchDraft, patchPage, activePage, setActivePage }: {
-  draft: { title: string; pages: CardPage[]; caption: string; cta: string; theme: string; brandColor: string };
+// 우측: 1장 내용(헤드라인·본문·사진 업로드·사진 배치·사진 설명) + 캡션/해시태그/CTA
+function EditLeft({ draft, photo, photos, activePage, hashtagsText, setHashtagsText, patchDraft, patchPage, uploadPhoto, removePhoto }: {
+  draft: { title: string; pages: CardPage[]; caption: string; cta: string; theme: string; brandColor: string; photoStyle: "top" | "bg" };
   photo: boolean;
+  photos: Record<number, string>;
+  activePage: number;
   hashtagsText: string;
   setHashtagsText: (v: string) => void;
-  patchDraft: (p: Partial<{ title: string; caption: string; cta: string; theme: string; brandColor: string }>) => void;
+  patchDraft: (p: Partial<{ title: string; caption: string; cta: string; theme: string; brandColor: string; photoStyle: "top" | "bg" }>) => void;
   patchPage: (i: number, p: Partial<CardPage>) => void;
-  activePage: number;
-  setActivePage: (i: number) => void;
+  uploadPhoto: (page: number, file: File) => Promise<void>;
+  removePhoto: (page: number) => Promise<void>;
 }) {
   const pg = draft.pages[activePage];
+  const [uploadWarn, setUploadWarn] = useState("");
   return (
     <div className="space-y-5">
-      <Card className="p-5 space-y-4">
-        <Field label="제목 (저장용)">
-          <input className={inputClass} value={draft.title} onChange={(e) => patchDraft({ title: e.target.value })} />
-        </Field>
-        <div className="grid grid-cols-[1fr_auto] gap-3 items-end">
-          <Field label="테마">
-            <div className="flex flex-wrap gap-2">
-              {THEMES.map((t) => (
-                <button key={t.key} onClick={() => patchDraft({ theme: t.key })} className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm ${draft.theme === t.key ? "border-ink" : "border-line"}`}>
-                  <span className="w-4 h-4 rounded-full border border-line" style={{ background: getTheme(t.key).bg }} />
-                  {t.name}
-                </button>
-              ))}
-            </div>
-          </Field>
-          <Field label="브랜드 컬러">
-            <input type="color" value={draft.brandColor} onChange={(e) => patchDraft({ brandColor: e.target.value })} className="w-12 h-10 rounded-lg border border-line p-1 cursor-pointer" />
-          </Field>
-        </div>
-      </Card>
-
       <Card className="p-5">
-        <div className="flex gap-1.5 flex-wrap mb-4">
-          {draft.pages.map((_, i) => (
-            <button key={i} onClick={() => setActivePage(i)} className={`w-9 h-9 rounded-lg text-sm font-medium ${activePage === i ? "bg-ink text-paper" : "bg-paper-2 text-ink-soft"}`}>
-              {i + 1}
-            </button>
-          ))}
-        </div>
+        <div className="text-sm font-medium mb-3">{activePage + 1}장 내용</div>
         {pg && (
           <div className="space-y-3">
-            <Field label={`${activePage + 1}장 헤드라인`}>
+            <Field label="헤드라인" hint="엔터로 줄바꿈하면 카드에도 그대로 적용돼요">
               <textarea className={inputClass} rows={2} value={pg.headline} onChange={(e) => patchPage(activePage, { headline: e.target.value })} />
             </Field>
             <Field label="본문">
               <textarea className={inputClass} rows={3} value={pg.body} onChange={(e) => patchPage(activePage, { body: e.target.value })} />
             </Field>
+            <Field label="사진 업로드" hint={photo ? "이 장의 메인 사진 (정사각/세로 권장)" : "이 장에 넣을 사진 (선택)"}>
+              {photos[activePage] ? (
+                <div className="flex items-center gap-3">
+                  <DropZone accept="image/*" kind="image" onFile={(f) => { setUploadWarn(""); uploadPhoto(activePage, f); }} onReject={() => setUploadWarn("이미지 파일만 올릴 수 있어요")} clickable={false} className="rounded-lg" activeClassName="ring-2 ring-coral ring-offset-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={photos[activePage]} alt="" className="w-20 h-20 rounded-lg object-cover border border-line block" />
+                  </DropZone>
+                  <label className="cursor-pointer text-sm text-coral hover:underline">
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPhoto(activePage, f); e.target.value = ""; }} />
+                    교체
+                  </label>
+                  <button type="button" onClick={() => removePhoto(activePage)} className="text-sm text-muted hover:text-ink">삭제</button>
+                </div>
+              ) : (
+                <DropZone accept="image/*" kind="image" onFile={(f) => { setUploadWarn(""); uploadPhoto(activePage, f); }} onReject={() => setUploadWarn("이미지 파일만 올릴 수 있어요")} className="flex items-center justify-center h-24 rounded-xl border-2 border-dashed border-line cursor-pointer text-sm text-muted text-center hover:border-ink/30">
+                  + 사진을 끌어다 놓거나 클릭해 업로드
+                </DropZone>
+              )}
+              {uploadWarn && <p className="mt-1 text-xs text-coral">{uploadWarn}</p>}
+            </Field>
+            <Field label="사진 배치" hint="카드 전체에 적용돼요">
+              <div className="flex gap-2">
+                {([
+                  ["top", "상단 사진", "사진 위 · 글씨 아래"],
+                  ["bg", "배경 사진", "사진 꽉 차게 · DIM 위에 글씨"],
+                ] as const).map(([val, label, desc]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => patchDraft({ photoStyle: val })}
+                    className={`flex-1 text-left px-3 py-2 rounded-xl border text-sm transition ${draft.photoStyle === val ? "border-ink bg-paper-2/60" : "border-line hover:border-ink/30"}`}
+                  >
+                    <div className="font-medium">{label}</div>
+                    <div className="text-xs text-muted mt-0.5">{desc}</div>
+                  </button>
+                ))}
+              </div>
+            </Field>
             {photo && (
-              <Field label="사진 설명" hint="이 장에 넣을 사진">
+              <Field label="사진 설명(메모)" hint="선택 — 사진이 없을 때 안내 문구로 표시돼요">
                 <input className={inputClass} value={pg.photoNote ?? ""} onChange={(e) => patchPage(activePage, { photoNote: e.target.value })} placeholder="예: 신메뉴 클로즈업" />
               </Field>
             )}
@@ -290,15 +537,6 @@ function ReviewTab({ card, dirty, onChange, onSaveNeeded }: { card: CardNews; di
     const { card: c } = await api<{ card: CardNews }>(`/api/cards/${card.id}/review`, { method: "PATCH", body: { flagId: flag.id, resolved: !flag.resolved } });
     onChange(c);
   }
-  async function pass() {
-    setBusy(true);
-    try {
-      const { card: c } = await api<{ card: CardNews }>(`/api/cards/${card.id}/review`, { method: "PATCH", body: { action: "pass" } });
-      onChange(c);
-    } finally {
-      setBusy(false);
-    }
-  }
 
   const passed = card.status === "제작완료" || card.status === "예약업로드" || card.status === "업로드완료";
 
@@ -330,7 +568,7 @@ function ReviewTab({ card, dirty, onChange, onSaveNeeded }: { card: CardNews; di
         {card.reviewFlags.map((f) => (
           <Card key={f.id} className={`p-4 ${f.resolved ? "opacity-60" : ""}`}>
             <div className="flex items-start gap-3">
-              <input type="checkbox" checked={f.resolved} onChange={() => toggleFlag(f)} className="mt-1 w-4 h-4 accent-[#1f6f63]" />
+              <input type="checkbox" checked={f.resolved} onChange={() => toggleFlag(f)} className="mt-1 w-4 h-4 accent-[#ff385c]" />
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <Badge tone={f.severity === "high" ? "rose" : f.severity === "medium" ? "amber" : "muted"}>{f.type}</Badge>
@@ -347,9 +585,9 @@ function ReviewTab({ card, dirty, onChange, onSaveNeeded }: { card: CardNews; di
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <div className="font-medium">검수 통과 · 사용자 승인</div>
-            <p className="text-sm text-ink-soft">{allResolved ? "모든 항목을 확인했어요. 통과하면 발행 단계로 넘어가요." : "미해결 항목을 모두 체크해야 통과할 수 있어요."}</p>
+            <p className="text-sm text-ink-soft">{passed ? "이미 통과했어요." : allResolved ? "모든 항목을 확인했어요. 아래 ‘확인 — 승인하고 업로드로’ 버튼으로 통과하세요." : "미해결 항목을 모두 체크해야 통과할 수 있어요."}</p>
           </div>
-          {passed ? <Badge tone="teal">✓ 통과됨</Badge> : <Button onClick={pass} disabled={!allResolved || busy}>승인하고 통과 →</Button>}
+          {passed ? <Badge tone="teal">✓ 통과됨</Badge> : <Badge tone={allResolved ? "teal" : "amber"}>{allResolved ? "승인 준비됨" : `${unresolved.length}건 남음`}</Badge>}
         </div>
       </Card>
 
@@ -370,16 +608,20 @@ function ReviewTab({ card, dirty, onChange, onSaveNeeded }: { card: CardNews; di
   );
 }
 
-function PublishTab({ card, draft, photo, niche, handle, account, publicBase, reload }: {
+function PublishTab({ card, draft, photo, photoStyle, ratio, photos, niche, handle, account, publicBase, reload }: {
   card: CardNews;
   draft: { pages: CardPage[]; theme: string; brandColor: string };
   photo: boolean;
+  photoStyle: "top" | "bg";
+  ratio: "1:1" | "3:4";
+  photos: Record<number, string>;
   niche: string;
   handle: string;
   account?: IgAccount;
   publicBase: string | null;
   reload: () => Promise<void>;
 }) {
+  const exportH = ratio === "3:4" ? 1440 : 1080;
   const exportRef = useRef<HTMLDivElement>(null);
   const [exportIdx, setExportIdx] = useState<number | null>(null);
   const [downloading, setDownloading] = useState(false);
@@ -400,8 +642,8 @@ function PublishTab({ card, draft, photo, niche, handle, account, publicBase, re
     await new Promise((r) => setTimeout(r, 140)); // 렌더 대기
     if (!exportRef.current) throw new Error("no node");
     return kind === "jpeg"
-      ? lib.toJpeg(exportRef.current, { width: 1080, height: 1080, pixelRatio: 1, skipFonts: true, quality: 0.92 })
-      : lib.toPng(exportRef.current, { width: 1080, height: 1080, pixelRatio: 1, skipFonts: true });
+      ? lib.toJpeg(exportRef.current, { width: 1080, height: exportH, pixelRatio: 1, skipFonts: true, quality: 0.92 })
+      : lib.toPng(exportRef.current, { width: 1080, height: exportH, pixelRatio: 1, skipFonts: true });
   }
 
   async function downloadAll() {
@@ -459,7 +701,7 @@ function PublishTab({ card, draft, photo, niche, handle, account, publicBase, re
       <div style={{ position: "fixed", left: -99999, top: 0 }} aria-hidden>
         <div ref={exportRef}>
           {exportIdx !== null && draft.pages[exportIdx] && (
-            <CardCanvas page={draft.pages[exportIdx]} index={exportIdx} total={draft.pages.length} themeKey={draft.theme} brandColor={draft.brandColor} photo={photo} niche={niche} handle={handle} />
+            <CardCanvas page={draft.pages[exportIdx]} index={exportIdx} total={draft.pages.length} themeKey={draft.theme} brandColor={draft.brandColor} photo={photo} photoStyle={photoStyle} ratio={ratio} photoDataUrl={photos[exportIdx]} niche={niche} handle={handle} />
           )}
         </div>
       </div>
@@ -536,37 +778,36 @@ function PublishTab({ card, draft, photo, niche, handle, account, publicBase, re
   );
 }
 
-function Preview({ pages, theme, brandColor, photo, niche, handle, active, setActive }: {
+function Preview({ pages, theme, brandColor, photo, photoStyle, ratio, photos, niche, handle, active, bare = false }: {
   pages: CardPage[];
   theme: string;
   brandColor: string;
   photo: boolean;
+  photoStyle: "top" | "bg";
+  ratio: "1:1" | "3:4";
+  photos: Record<number, string>;
   niche: string;
   handle: string;
   active: number;
-  setActive: (i: number) => void;
+  bare?: boolean; // true면 Card 래퍼 없이 내용만 (상위 카드에 합쳐 쓸 때)
 }) {
-  const SCALE = 0.342;
   const idx = Math.min(active, pages.length - 1);
   const page = pages[idx];
-  return (
-    <Card className="p-4">
-      <div className="text-xs text-muted mb-2 flex items-center justify-between">
-        <span>미리보기</span>
-        <span>{idx + 1} / {pages.length}</span>
-      </div>
-      <div className="mx-auto rounded-xl overflow-hidden border border-line" style={{ width: 1080 * SCALE, height: 1080 * SCALE }}>
-        <div style={{ transform: `scale(${SCALE})`, transformOrigin: "top left", width: 1080, height: 1080 }}>
-          {page && <CardCanvas page={page} index={idx} total={pages.length} themeKey={theme} brandColor={brandColor} photo={photo} niche={niche} handle={handle} />}
+  const cardW = 1080;
+  const cardH = ratio === "3:4" ? 1440 : 1080;
+  const DISPLAY_W = 336; // 미리보기 패널(380px·p-4) 안에 들어오는 폭 → 넘침 방지
+  const scale = DISPLAY_W / cardW;
+  const inner = (
+    <>
+      <div className="text-xs text-muted mb-2">미리보기 · {ratio === "3:4" ? "세로 3:4" : "정사각 1:1"}</div>
+      <div className="mx-auto rounded-xl overflow-hidden border border-line" style={{ width: DISPLAY_W, height: Math.round(cardH * scale) }}>
+        <div style={{ transform: `scale(${scale})`, transformOrigin: "top left", width: cardW, height: cardH }}>
+          {page && <CardCanvas page={page} index={idx} total={pages.length} themeKey={theme} brandColor={brandColor} photo={photo} photoStyle={photoStyle} ratio={ratio} photoDataUrl={photos[idx]} niche={niche} handle={handle} />}
         </div>
       </div>
-      <div className="flex justify-center gap-1.5 mt-3 flex-wrap">
-        {pages.map((_, i) => (
-          <button key={i} onClick={() => setActive(i)} className={`w-2.5 h-2.5 rounded-full ${i === idx ? "bg-coral" : "bg-paper-2"}`} />
-        ))}
-      </div>
-    </Card>
+    </>
   );
+  return bare ? inner : <Card className="p-4">{inner}</Card>;
 }
 
 // ── 릴스 에디터 (대본 + 영상 업로드 + 검수 + 발행, 단일 화면) ────────────────────
@@ -701,17 +942,20 @@ function ReelsEditor({
           <p className="text-xs text-muted mb-3">Edits·캡컷 등에서 편집한 세로 영상(MP4)을 올려주세요.</p>
           {hasVideo ? (
             <div>
-              <video src={`/api/render-video/${card.id}`} controls className="w-full rounded-xl bg-ink/5 aspect-[9/16] object-contain" />
-              <div className="text-xs text-teal mt-2">업로드됨 ✓</div>
+              {/* updatedAt 쿼리로 캐시 무효화 → 교체 시 새 영상이 바로 보이게 */}
+              <DropZone accept="video/*" kind="video" onFile={uploadVideo} onReject={() => setMsg("영상 파일만 올릴 수 있어요")} clickable={false} className="rounded-xl overflow-hidden" activeClassName="ring-2 ring-coral">
+                <video key={card.updatedAt} src={`/api/render-video/${card.id}?v=${card.updatedAt}`} controls className="w-full rounded-xl bg-ink/5 aspect-[9/16] object-contain block" />
+              </DropZone>
+              <div className="text-xs text-teal mt-2">업로드됨 ✓ · 새 영상을 끌어다 놓으면 교체돼요</div>
             </div>
           ) : (
-            <div className="aspect-[9/16] rounded-xl border-2 border-dashed border-line grid place-items-center text-muted text-sm">
-              세로 영상 9:16
-            </div>
+            <DropZone accept="video/*" kind="video" onFile={uploadVideo} onReject={() => setMsg("영상 파일만 올릴 수 있어요")} className="aspect-[9/16] rounded-xl border-2 border-dashed border-line grid place-items-center text-center text-muted text-sm cursor-pointer hover:border-ink/30">
+              <span>세로 영상 9:16<br />끌어다 놓거나 클릭</span>
+            </DropZone>
           )}
           <label className="mt-3 block">
-            <input type="file" accept="video/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadVideo(f); }} />
-            <span className={`inline-flex w-full justify-center items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium cursor-pointer ${uploading ? "bg-paper-2 text-muted" : "bg-ink text-paper hover:bg-black"}`}>
+            <input type="file" accept="video/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadVideo(f); e.target.value = ""; }} />
+            <span className={`inline-flex w-full justify-center items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium cursor-pointer active:scale-[0.98] transition ${uploading ? "bg-paper-2 text-muted" : "bg-coral text-white hover:brightness-95"}`}>
               {uploading ? "업로드 중…" : hasVideo ? "영상 교체" : "영상 선택"}
             </span>
           </label>
@@ -728,7 +972,7 @@ function ReelsEditor({
             <div className="space-y-2">
               {card.reviewFlags.map((f) => (
                 <label key={f.id} className={`flex items-start gap-2 text-xs ${f.resolved ? "opacity-60" : ""}`}>
-                  <input type="checkbox" checked={f.resolved} onChange={() => toggleFlag(f)} className="mt-0.5 w-3.5 h-3.5 accent-[#1f6f63]" />
+                  <input type="checkbox" checked={f.resolved} onChange={() => toggleFlag(f)} className="mt-0.5 w-3.5 h-3.5 accent-[#ff385c]" />
                   <span className="text-ink-soft"><b>{f.type}</b> {f.message}</span>
                 </label>
               ))}
