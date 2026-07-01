@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/workspace/client";
+import { signInWithGoogle } from "@/app/login/actions";
 import { Button, Field, inputClass } from "@/components/workspace/ui";
 import { AuthShell } from "@/components/workspace/AuthShell";
 
@@ -54,12 +55,6 @@ export default function SignupPage() {
       setErr((e as Error).message);
       setLoading(false);
     }
-  }
-  async function google() {
-    setLoading(true);
-    await api("/api/auth/google", { method: "POST" });
-    router.push("/onboarding");
-    router.refresh();
   }
 
   const Check = ({ k, label, required }: { k: keyof typeof agree; label: string; required?: boolean }) => (
@@ -114,9 +109,11 @@ export default function SignupPage() {
         <span className="text-xs text-muted">또는</span>
         <div className="flex-1 h-px bg-line" />
       </div>
-      <Button variant="outline" size="lg" className="w-full" onClick={google} disabled={loading}>
-        <span className="font-bold text-[#4285F4]">G</span> 구글로 가입
-      </Button>
+      <form action={signInWithGoogle}>
+        <Button type="submit" variant="outline" size="lg" className="w-full" disabled={loading}>
+          <span className="font-bold text-[#4285F4]">G</span> 구글로 가입
+        </Button>
+      </form>
 
       <p className="text-sm text-ink-soft mt-5 text-center">
         이미 계정이 있나요?{" "}
