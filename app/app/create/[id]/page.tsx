@@ -28,7 +28,7 @@ function DropZone({
   onReject,
   clickable = true,
   className = "",
-  activeClassName = "border-ink bg-paper-2/60",
+  activeClassName = "border-coral bg-coral-soft/50",
   children,
 }: {
   accept: string;
@@ -351,7 +351,7 @@ export default function EditorPage() {
               <Field label="테마">
                 <div className="flex flex-wrap gap-2">
                   {THEMES.map((tm) => (
-                    <button key={tm.key} onClick={() => patchDraft({ theme: tm.key })} className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm ${draft.theme === tm.key ? "border-ink" : "border-line"}`}>
+                    <button key={tm.key} onClick={() => patchDraft({ theme: tm.key })} className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm ${draft.theme === tm.key ? "border-coral" : "border-line"}`}>
                       <span className="w-4 h-4 rounded-full border border-line" style={{ background: getTheme(tm.key).bg }} />
                       {tm.name}
                     </button>
@@ -370,7 +370,7 @@ export default function EditorPage() {
                   <div className="text-xs text-muted mb-2">페이지 ({draft.pages.length}장) · 편집/미리보기 함께 이동</div>
                   <div className="flex gap-1.5 flex-wrap">
                     {draft.pages.map((_, i) => (
-                      <button key={i} onClick={() => setActivePage(i)} className={`w-10 h-10 rounded-lg text-sm font-medium ${activePage === i ? "bg-ink text-paper" : "bg-paper-2 text-ink-soft"}`}>
+                      <button key={i} onClick={() => setActivePage(i)} className={`w-10 h-10 rounded-lg text-sm font-medium ${activePage === i ? "bg-coral text-white" : "bg-paper-2 text-ink-soft"}`}>
                         {i + 1}
                       </button>
                     ))}

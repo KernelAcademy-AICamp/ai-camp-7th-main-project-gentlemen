@@ -22,7 +22,7 @@ export function Button({
     lg: "text-base px-6 py-3",
   };
   const variants = {
-    primary: "bg-ink text-paper hover:bg-black",
+    primary: "bg-coral text-white hover:brightness-95",
     danger: "bg-coral text-white hover:brightness-95",
     soft: "bg-coral-soft text-coral hover:brightness-95",
     outline: "border border-line bg-card text-ink hover:bg-paper-2",
@@ -55,7 +55,7 @@ export function Badge({
   tone?: "ink" | "coral" | "teal" | "amber" | "muted" | "rose";
 }) {
   const tones = {
-    ink: "bg-ink text-paper",
+    ink: "bg-coral text-white",
     coral: "bg-coral-soft text-coral",
     teal: "bg-teal-soft text-teal",
     amber: "bg-amber-soft text-amber",

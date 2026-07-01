@@ -139,7 +139,7 @@ export function WorkspaceShell({
               href={n.href}
               onClick={() => setMenuOpen(false)}
               className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition ${
-                active ? "bg-ink text-paper" : "text-ink-soft hover:bg-paper-2"
+                active ? "bg-coral-soft text-coral font-medium" : "text-ink-soft hover:bg-paper-2"
               }`}
             >
               <span className="w-5 text-center opacity-80">{n.icon}</span>

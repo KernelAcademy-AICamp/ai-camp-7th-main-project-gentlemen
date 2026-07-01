@@ -63,7 +63,7 @@ export function PricingPlans({
         <span className={`text-sm ${cycle === "월" ? "text-ink font-medium" : "text-muted"}`}>월간</span>
         <button
           onClick={() => setCycle((c) => (c === "월" ? "연" : "월"))}
-          className="relative w-12 h-6 rounded-full bg-ink transition"
+          className="relative w-12 h-6 rounded-full bg-coral transition"
           aria-label="결제 주기"
         >
           <span
@@ -87,7 +87,7 @@ export function PricingPlans({
           return (
             <Card
               key={p.key}
-              className={`p-6 flex flex-col ${p.highlight ? "border-ink ring-1 ring-ink" : ""}`}
+              className={`p-6 flex flex-col ${p.highlight ? "border-coral ring-1 ring-coral" : ""}`}
             >
               <div className="flex items-center justify-between">
                 <span className="font-display text-xl">{p.key}</span>
