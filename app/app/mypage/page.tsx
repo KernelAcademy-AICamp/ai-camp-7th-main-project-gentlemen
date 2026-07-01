@@ -11,7 +11,6 @@ import type { CardNews, PublicUser } from "@/lib/workspace/types";
 type Tab = "계정" | "콘텐츠 설정" | "구독·결제" | "데이터";
 
 export default function MyPage() {
-  const router = useRouter();
   const [user, setUser] = useState<PublicUser | null>(null);
   const [cards, setCards] = useState<CardNews[]>([]);
   const [tab, setTab] = useState<Tab>("계정");
@@ -30,9 +29,8 @@ export default function MyPage() {
   }, []);
 
   async function logout() {
-    await api("/api/auth/logout", { method: "POST" });
-    router.push("/");
-    router.refresh();
+    await api("/api/auth/logout", { method: "POST" }).catch(() => {});
+    window.location.href = "/"; // 하드 리로드로 완전 로그아웃
   }
 
   if (!user) return <div className="py-20 text-center text-muted">불러오는 중…</div>;

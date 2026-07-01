@@ -35,9 +35,9 @@ export function WorkspaceShell({
   const activeId = user.activeIgAccountId ?? user.igAccounts[0]?.id;
 
   async function logout() {
-    await api("/api/auth/logout", { method: "POST" });
-    router.push("/");
-    router.refresh();
+    await api("/api/auth/logout", { method: "POST" }).catch(() => {});
+    // 하드 리로드로 완전 로그아웃 (클라이언트 상태 초기화 + 서버 상태 재조회)
+    window.location.href = "/";
   }
   async function switchAccount(id: string) {
     await api("/api/ig", { method: "PATCH", body: { activeId: id } });
