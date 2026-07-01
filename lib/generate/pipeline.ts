@@ -34,10 +34,53 @@ const strategyResultSchema = z.object({
   leadKeyword: z.string().min(1).max(20),
 });
 
-const reviewResultSchema = z.object({
-  ai_flags: z.array(z.string()).default([]),
-  risk_level: z.enum(["low", "high"]),
+// ④ 검수: 7축(필수통과 2 + 가중 5)을 pass/warn/fail 로 채점 + 플래그. 판정(🟢🟡🔴)은 코드가 결정.
+const axisResultSchema = z.object({
+  status: z.enum(["pass", "warn", "fail"]),
+  note: z.string().default(""),
 });
+const reviewResultSchema = z.object({
+  domain: z.string().default("일반"),
+  axes: z.object({
+    factuality: axisResultSchema, // 🔒 필수통과
+    regulatory: axisResultSchema, // 🔒 필수통과
+    tone: axisResultSchema,
+    request: axisResultSchema,
+    completeness: axisResultSchema,
+    format: axisResultSchema,
+    ux: axisResultSchema,
+  }),
+  flags: z
+    .array(
+      z.object({
+        slide: z.string().default(""),
+        axis: z.string().min(1),
+        severity: z.enum(["warn", "block"]),
+        issue: z.string().min(1),
+        suggestion: z.string().default(""),
+      }),
+    )
+    .default([]),
+});
+
+const MUST_PASS = ["factuality", "regulatory"] as const;
+// 🟢 통과 / 🟡 검토 / 🔴 경고(책임 동의 후 발행 가능) / ⬛ 차단(명백 위법, 발행 불가)
+export type Verdict = "green" | "yellow" | "red" | "black";
+export type ReviewReport = z.infer<typeof reviewResultSchema> & { verdict: Verdict };
+
+/**
+ * 4단계 판정(경계는 코드가 결정, 설계 §2):
+ *  - 필수통과(사실성·규제) fail → ⬛ black(차단): 명백 위법, 발행 불가
+ *  - 필수통과 warn → 🔴 red(경고): 회색지대, 책임 동의 후 발행 가능
+ *  - 가중 축 이슈/플래그 → 🟡 yellow(검토): 발행 자유
+ *  - 전부 통과 → 🟢 green(통과)
+ */
+function decideVerdict(r: z.infer<typeof reviewResultSchema>): Verdict {
+  if (MUST_PASS.some((k) => r.axes[k].status === "fail")) return "black";
+  if (MUST_PASS.some((k) => r.axes[k].status === "warn")) return "red";
+  const anyIssue = r.flags.length > 0 || Object.values(r.axes).some((a) => a.status !== "pass");
+  return anyIssue ? "yellow" : "green";
+}
 
 export type Timings = {
   totalMs: number;
@@ -46,6 +89,7 @@ export type Timings = {
 
 export type GenerateResult = {
   deck: Deck;
+  review: ReviewReport;
   usage: TokenUsage;
   timings: Timings;
 };
@@ -155,9 +199,16 @@ export async function generateDeck(concept: Concept, opts: GenerateOptions = {})
     timings,
   );
 
+  // 7축 → 판정(🟢🟡🔴) 결정 + deck 호환 필드(ai_flags·risk_level)로 매핑
+  const verdict = decideVerdict(review);
+  const ai_flags = review.flags.map(
+    (f) => `[${f.slide || "-"}·${f.axis}] ${f.issue}${f.suggestion ? ` → ${f.suggestion}` : ""}`,
+  );
+  const risk_level: "low" | "high" = verdict === "black" || verdict === "red" ? "high" : "low";
+
   // 병합 후 전체 재검증(글자수·구조·leadKeyword 일관성 최종 확인)
-  const deck = deckSchema.parse({ ...draft, ai_flags: review.ai_flags, risk_level: review.risk_level });
+  const deck = deckSchema.parse({ ...draft, ai_flags, risk_level });
 
   timings.totalMs = Date.now() - t0;
-  return { deck, usage, timings };
+  return { deck, review: { ...review, verdict }, usage, timings };
 }

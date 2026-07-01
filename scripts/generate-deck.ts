@@ -51,7 +51,7 @@ async function main() {
   console.log(`📋 컨셉: ${concept.account} (${concept.id}) — ${concept.persona}`);
   console.log(`   공급자: ${process.env.LLM_PROVIDER ?? "mock"}\n`);
 
-  const { deck, usage, timings } = await generateDeck(concept, { topic: flags.topic });
+  const { deck, review, usage, timings } = await generateDeck(concept, { topic: flags.topic });
 
   const outDir = flags.out ?? path.join("out", deck.conceptId);
   fs.mkdirSync(outDir, { recursive: true });
@@ -67,10 +67,27 @@ async function main() {
   console.log(`   deck   : ${deckPath}`);
   files.forEach((f) => console.log("   - " + path.relative(process.cwd(), f)));
 
-  console.log(`\n── 검수 리포트 ──`);
-  console.log(`   리스크 : ${deck.risk_level === "high" ? "🔴 고위험 (사람 검수 필수)" : "🟢 저위험"}`);
-  if (deck.ai_flags.length === 0) console.log("   플래그 : (없음)");
-  deck.ai_flags.forEach((f) => console.log("   ⚠️  " + f));
+  const vLabel =
+    review.verdict === "black"
+      ? "⬛ 차단 (발행 불가)"
+      : review.verdict === "red"
+        ? "🔴 경고 (책임 동의 후 발행)"
+        : review.verdict === "yellow"
+          ? "🟡 검토 권장"
+          : "🟢 통과 가능";
+  const sym = (s: string) => (s === "pass" ? "✓" : s === "warn" ? "⚠" : "✗");
+  console.log(`\n── 검수 리포트 (7축) ──`);
+  console.log(`   판정   : ${vLabel}  (분야: ${review.domain})`);
+  console.log(
+    `   [필수] 사실성 ${sym(review.axes.factuality.status)} · 규제 ${sym(review.axes.regulatory.status)}`,
+  );
+  console.log(
+    `   [가중] 톤 ${sym(review.axes.tone.status)} · 요청 ${sym(review.axes.request.status)} · 완전성 ${sym(review.axes.completeness.status)} · 형식 ${sym(review.axes.format.status)} · UX ${sym(review.axes.ux.status)}`,
+  );
+  if (review.flags.length === 0) console.log("   플래그 : (없음)");
+  review.flags.forEach((f) =>
+    console.log(`   ⚑ [${f.slide || "-"}·${f.axis}] ${f.issue}${f.suggestion ? ` → ${f.suggestion}` : ""}`),
+  );
 
   console.log(`\n── 계측(벤치 입력) ──`);
   console.log(`   토큰   : in ${usage.inputTokens} / out ${usage.outputTokens} (mock 추정치)`);
