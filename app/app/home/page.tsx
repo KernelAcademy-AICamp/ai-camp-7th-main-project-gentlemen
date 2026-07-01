@@ -5,6 +5,7 @@ import Link from "next/link";
 import { api } from "@/lib/workspace/client";
 import { Badge, Button, Card } from "@/components/workspace/ui";
 import { activeIgHandle, KANBAN_COLUMNS, kanbanColumnOf, type CardNews, type CardStatus, type MetricEntry, type PublicUser, type PublishJob, type Strategy } from "@/lib/workspace/types";
+import { followerChallenge, resolveFollowerCount } from "@/lib/workspace/followers";
 
 function weekStart(ts: number): number {
   const d = new Date(ts);
@@ -66,9 +67,8 @@ export default function HomePage() {
 
   const handle = activeIgHandle(user);
   const target = strategy?.recommendedCount ?? Math.max(2, user.survey?.weeklyCapacity ?? 2);
-  const followers = (user.survey?.followers ?? 0) + metrics.reduce((s, m) => s + m.newFollowers, 0);
-  const nextTarget = Math.min(1000, Math.ceil((followers + 1) / 100) * 100);
-  const roadmapPct = Math.min(100, (followers / 1000) * 100);
+  const followers = resolveFollowerCount(user, metrics);
+  const { nextTarget, roadmapPct } = followerChallenge(followers);
   // 칸반 표시 열 기준 집계 — 게이트 상태(기획완료/제작완료)는 각 '중' 열에 접어서 센다
   const columnCount = (col: CardStatus) => cards.filter((c) => kanbanColumnOf(c.status) === col).length;
   const reserved = jobs.filter((j) => j.status === "예약");
