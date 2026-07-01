@@ -188,6 +188,7 @@ export default function ReviewPage() {
   };
   const flagBg = verdict === "black" ? C.grayBg : verdict === "red" ? C.redBg : C.yellowBg;
   const flagBorder = verdict === "black" ? C.border2 : s.flag?.color ?? "var(--border)";
+  const flagPin = verdict === "black" ? "var(--ink)" : verdict === "red" ? C.red : C.yellow;
 
   return (
     <>
@@ -233,6 +234,7 @@ export default function ReviewPage() {
             {d.label}
           </button>
         ))}
+        <span style={{ color: "var(--ink3)", fontSize: 12, marginLeft: 6 }}>※ 실제론 콘텐츠에 따라 자동 판정</span>
       </div>
 
       <div className="editor" style={{ display: "grid", gridTemplateColumns: "1.15fr 1fr", gap: 20, alignItems: "start" }}>
@@ -242,8 +244,9 @@ export default function ReviewPage() {
           <div
             className="slide"
             style={{
+              position: "relative",
               background: "#fff",
-              border: `1px solid ${s.flag ? s.flag.color : "var(--border)"}`,
+              border: "1px solid var(--border)",
               borderRadius: "var(--radius-lg)",
               padding: 24,
               marginTop: 12,
@@ -254,6 +257,9 @@ export default function ReviewPage() {
             <div className="s-cover" style={{ height: 180, background: "var(--grad)", borderRadius: 8, marginBottom: 16 }} />
             <b>가을, 새로 나왔어요</b>
             <p style={{ color: "var(--ink2)", fontSize: 14 }}>이번 가을 신메뉴 3종을 소개합니다</p>
+            {s.flag && (
+              <span style={{ position: "absolute", top: 12, right: 12, color: "#fff", fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: flagPin }}>⚑</span>
+            )}
           </div>
           <div className="thumbs" style={{ display: "flex", gap: 8, marginTop: 12 }}>
             {["1", "2", "3", "4", "5"].map((n, i) => (
@@ -263,7 +269,7 @@ export default function ReviewPage() {
                   width: 36,
                   height: 36,
                   borderRadius: 7,
-                  border: "1px solid var(--border2)",
+                  border: `1px solid ${s.flag && i === 1 ? flagPin : "var(--border2)"}`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
