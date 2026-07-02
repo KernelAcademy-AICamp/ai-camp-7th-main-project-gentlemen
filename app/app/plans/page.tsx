@@ -6,7 +6,8 @@ import { api } from "@/lib/workspace/client";
 import { Badge, Button, Card, EmptyState, Field, inputClass, SectionTitle } from "@/components/workspace/ui";
 import { Generating } from "@/components/workspace/Generating";
 import { Modal } from "@/components/workspace/WorkspaceShell";
-import type { CardFormat, CardNews, ContentObjective, Strategy, TopicSource } from "@/lib/workspace/types";
+import { SurveyModal } from "@/components/workspace/SurveyModal";
+import type { CardFormat, CardNews, ContentObjective, Strategy, SurveyProfile, TopicSource } from "@/lib/workspace/types";
 
 const OBJECTIVES: ContentObjective[] = ["조회", "저장", "공유", "방문", "문의", "팔로우", "댓글"];
 const PLAN_STATUSES = ["기획중", "기획완료"];
@@ -19,6 +20,9 @@ export default function PlansPage() {
   const [adding, setAdding] = useState(false);
   const [working, setWorking] = useState<string>("");
   const [regen, setRegen] = useState(false);
+  const [hasSurvey, setHasSurvey] = useState(true); // 로드 전엔 게이트 안 띄우게 낙관적
+  const [gate, setGate] = useState(false); // 설문 필요 팝업
+  const [showSurvey, setShowSurvey] = useState(false); // 설문 모달
 
   // 기획 추가 폼
   const [form, setForm] = useState({
@@ -31,12 +35,14 @@ export default function PlansPage() {
   });
 
   async function load() {
-    const [{ strategy }, { cards }] = await Promise.all([
+    const [{ strategy }, { cards }, { survey }] = await Promise.all([
       api<{ strategy: Strategy | null }>("/api/strategy"),
       api<{ cards: CardNews[] }>("/api/cards"),
+      api<{ survey: SurveyProfile | null }>("/api/survey"),
     ]);
     setStrategy(strategy);
     setCards(cards);
+    setHasSurvey(!!survey);
     setLoading(false);
   }
   useEffect(() => {
@@ -46,6 +52,10 @@ export default function PlansPage() {
   const plans = cards.filter((c) => PLAN_STATUSES.includes(c.status));
 
   function openAdd(prefill?: Partial<typeof form>) {
+    if (!hasSurvey) {
+      setGate(true); // 설문 미완 → 기획 추가 대신 '설문 먼저' 팝업
+      return;
+    }
     setForm((f) => ({ ...f, topicTitle: "", keyMessage: "", topicSource: "직접입력", ...prefill }));
     setAdding(true);
   }
@@ -206,6 +216,25 @@ export default function PlansPage() {
             </table>
           </div>
         </Card>
+      )}
+
+      {/* 설문 필요 게이트 팝업 */}
+      {gate && (
+        <Modal onClose={() => setGate(false)}>
+          <h3 className="font-display text-xl mb-2">먼저 계정 설문이 필요해요</h3>
+          <p className="text-sm text-ink-soft mb-5">
+            계정 주제·톤·목적을 알아야 카드뉴스를 만들 수 있어요. 1분이면 끝나요.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setGate(false)}>나중에</Button>
+            <Button onClick={() => { setGate(false); setShowSurvey(true); }}>설문하러 가기 →</Button>
+          </div>
+        </Modal>
+      )}
+
+      {/* 설문 모달 — 게이트에서 진입, 저장 후 리스트/전략 갱신 */}
+      {showSurvey && (
+        <SurveyModal initial={null} onClose={() => setShowSurvey(false)} onSaved={() => load()} />
       )}
 
       {/* 기획 추가 모달 */}

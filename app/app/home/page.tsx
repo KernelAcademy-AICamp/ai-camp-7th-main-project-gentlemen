@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api, formatDay } from "@/lib/workspace/client";
-import { Badge, Card } from "@/components/workspace/ui";
+import { Badge, Button, Card } from "@/components/workspace/ui";
+import { SurveyModal } from "@/components/workspace/SurveyModal";
 import { findIgAccount, DM_LIMITS, type CardNews, type CardStatus, type DmRule, type MetricEntry, type PublicUser, type PublishJob } from "@/lib/workspace/types";
 import { resolveFollowerCount } from "@/lib/workspace/followers";
 
@@ -60,6 +61,7 @@ export default function HomePage() {
   const [metrics, setMetrics] = useState<MetricEntry[]>([]);
   const [dmRules, setDmRules] = useState<DmRule[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showSurvey, setShowSurvey] = useState(false);
 
   async function load() {
     const [me, cd, sc, mt, dm] = await Promise.all([
@@ -128,13 +130,24 @@ export default function HomePage() {
 
   return (
     <div className="space-y-6">
-      {/* 헤더 — 우측 액션 버튼(새 기획·카드뉴스 만들기)은 삭제, 자리는 비워둠 */}
+      {/* 헤더 — 우측: 계정 설문(작성/수정) 진입 */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="font-display text-3xl">안녕하세요, {user.name}님 👋</h1>
           <p className="text-sm text-ink-soft mt-1">이번 주 콘텐츠 현황이에요.</p>
         </div>
+        <Button variant={user.survey ? "ghost" : "primary"} onClick={() => setShowSurvey(true)}>
+          {user.survey ? "✏️ 계정 설문 수정" : "📝 계정 설문 작성"}
+        </Button>
       </div>
+
+      {showSurvey && (
+        <SurveyModal
+          initial={user.survey ?? null}
+          onClose={() => setShowSurvey(false)}
+          onSaved={() => load()}
+        />
+      )}
 
       {/* 통계 4칸 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

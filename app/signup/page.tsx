@@ -49,7 +49,7 @@ export default function SignupPage() {
           marketingConsent: agree.marketing,
         },
       });
-      router.push("/onboarding");
+      router.push("/app/home");
       router.refresh();
     } catch (e) {
       setErr((e as Error).message);

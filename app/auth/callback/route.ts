@@ -15,9 +15,9 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      const { ok, survey } = await bridgeSupabaseSession();
+      const { ok } = await bridgeSupabaseSession();
       if (ok) {
-        return NextResponse.redirect(`${origin}${survey ? "/app/home" : "/onboarding"}`);
+        return NextResponse.redirect(`${origin}/app/home`);
       }
     }
   }
