@@ -104,6 +104,15 @@ export function kanbanColumnOf(status: CardStatus): CardStatus {
   return status;
 }
 
+// 4단계 판정용 축. "규제 안전성"·"사실 정확성" = 필수통과(mustPass), 나머지는 가중.
+// "확인 항목" = 판정 대상이 아닌 순수 체크리스트(출처확인 등).
+export type ReviewAxis =
+  | "규제 안전성"
+  | "사실 정확성"
+  | "요청 준수"
+  | "표기·형식"
+  | "확인 항목";
+
 export interface ReviewFlag {
   id: string;
   type: "민감표현" | "표기누락" | "미검증주장" | "출처확인" | "이미지아티팩트";
@@ -111,6 +120,10 @@ export interface ReviewFlag {
   message: string;
   excerpt?: string;
   resolved: boolean;
+  // ── 4단계 판정 메타 (lib/workspace/verdict.ts 가 소비). 옛 데이터엔 없을 수 있어 옵셔널. ──
+  axis?: ReviewAxis;
+  mustPass?: boolean; // 필수통과 축(규제·사실) 여부
+  level?: "fail" | "warn"; // 명백 위법(fail) vs 회색지대(warn) — 규제·사실 축에서만 의미
 }
 
 export interface ApprovalLogEntry {
