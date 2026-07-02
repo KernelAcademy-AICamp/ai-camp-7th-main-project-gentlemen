@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/workspace/client";
 import { Badge, Button, Card, EmptyState, Field, inputClass, SectionTitle } from "@/components/workspace/ui";
@@ -158,8 +158,8 @@ export default function PlansPage() {
                   <th className="py-3 px-4 font-medium w-10">No.</th>
                   <th className="py-3 px-3 font-medium">형식</th>
                   <th className="py-3 px-3 font-medium w-14">장 수</th>
-                  <th className="py-3 px-3 font-medium">타이틀(주제)</th>
-                  <th className="py-3 px-3 font-medium">서브타이틀 · 본문</th>
+                  <th className="py-3 px-3 font-medium">주제</th>
+                  <th className="py-3 px-3 font-medium">내용</th>
                   <th className="py-3 px-4 font-medium w-32"></th>
                 </tr>
               </thead>
@@ -175,10 +175,6 @@ export default function PlansPage() {
                     <td className="py-3 px-3">{c.pageCount}장</td>
                     <td className="py-3 px-3">
                       <div className="font-medium text-ink">{c.title}</div>
-                      <div className="mt-1 flex items-center gap-1.5">
-                        <Badge tone={c.status === "기획완료" ? "teal" : "muted"}>{c.status}</Badge>
-                        <span className="text-xs text-muted">{c.topicSource}</span>
-                      </div>
                     </td>
                     <td className="py-3 px-3 text-ink-soft">
                       <div className="space-y-0.5 max-w-md">
@@ -192,13 +188,11 @@ export default function PlansPage() {
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <div className="flex flex-col gap-1.5">
-                        <Button size="sm" onClick={() => produce(c)}>
-                          {c.format === "릴스" ? "업로드하기 →" : "제작하러가기 →"}
+                      <div className="flex items-center gap-1.5 justify-end">
+                        <Button size="sm" className="whitespace-nowrap" onClick={() => produce(c)}>
+                          {c.format === "릴스" ? "업로드하기 →" : "제작하기 →"}
                         </Button>
-                        <button onClick={() => remove(c.id)} className="text-xs text-muted hover:text-coral">
-                          삭제
-                        </button>
+                        <PlanRowMenu onDelete={() => remove(c.id)} />
                       </div>
                     </td>
                   </tr>
@@ -259,6 +253,38 @@ export default function PlansPage() {
             <Button onClick={createPlan} disabled={!form.topicTitle.trim()}>기획 생성</Button>
           </div>
         </Modal>
+      )}
+    </div>
+  );
+}
+
+// 기획 행 관리 메뉴(⋮) — 표가 overflow-hidden 이라 아래로 펼치면 잘려서, 버튼 왼쪽으로 펼친다.
+function PlanRowMenu({ onDelete }: { onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-label="더보기"
+        className="w-8 h-8 grid place-items-center rounded-lg text-muted hover:bg-paper-2 hover:text-ink transition leading-none"
+      >
+        ⋮
+      </button>
+      {open && (
+        <div className="absolute right-full top-1/2 -translate-y-1/2 mr-1.5 z-20 w-24 rounded-xl border border-line bg-card shadow-lg py-1 text-sm">
+          <button onClick={() => { setOpen(false); onDelete(); }} className="w-full text-left px-3 py-2 hover:bg-rose-soft text-rose">
+            삭제
+          </button>
+        </div>
       )}
     </div>
   );
