@@ -17,11 +17,9 @@ const NAV = [
 
 export function WorkspaceShell({
   user,
-  aiAvailable,
   children,
 }: {
   user: PublicUser;
-  aiAvailable: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -156,11 +154,6 @@ export function WorkspaceShell({
             <Badge tone="coral">{user.plan}</Badge>
           </div>
         </Link>
-        {!aiAvailable && (
-          <p className="text-[11px] text-muted px-1 leading-relaxed">
-            템플릿 생성 모드 · ANTHROPIC_API_KEY 설정 시 Claude로 생성됩니다.
-          </p>
-        )}
       </div>
     </div>
   );

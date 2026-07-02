@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser, toPublicUser } from "@/lib/workspace/auth";
-import { aiAvailable } from "@/lib/workspace/ai";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -9,7 +8,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!user.survey) redirect("/onboarding");
   return (
     <div className="bg-paper text-ink font-sans min-h-screen">
-      <WorkspaceShell user={toPublicUser(user)} aiAvailable={aiAvailable()}>
+      <WorkspaceShell user={toPublicUser(user)}>
         {children}
       </WorkspaceShell>
     </div>
