@@ -4,15 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/workspace/client";
 import { Badge, Button, Card, SectionTitle } from "@/components/workspace/ui";
-import { activeIgHandle, type CardNews, type DmRule, type MetricEntry, type PublicUser, type PublishJob } from "@/lib/workspace/types";
+import { type CardNews, type DmRule, type MetricEntry, type PublicUser, type PublishJob } from "@/lib/workspace/types";
+import { followerChallenge, resolveFollowerCount } from "@/lib/workspace/followers";
 
 function dayKey(ts: number): string {
   const d = new Date(ts);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-function updatedStamp(): string {
-  const d = new Date();
-  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")} 04:00:00`;
 }
 
 export default function InsightsPage() {
@@ -22,7 +19,6 @@ export default function InsightsPage() {
   const [cards, setCards] = useState<CardNews[]>([]);
   const [dm, setDm] = useState<DmRule[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshedAt, setRefreshedAt] = useState(updatedStamp());
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
 
@@ -52,7 +48,6 @@ export default function InsightsPage() {
     try {
       const r = await api<{ synced: number; followers: number }>("/api/metrics/sync", { method: "POST" });
       await load(); // 갱신된 지표 + 계정 팔로워 반영
-      setRefreshedAt(updatedStamp());
       setSyncMsg({ tone: "ok", text: `인스타에서 ${r.synced}개 게시물 지표를 가져왔어요 (팔로워 ${r.followers.toLocaleString()}명).` });
     } catch (e) {
       setSyncMsg({ tone: "err", text: (e as Error).message });
@@ -62,50 +57,49 @@ export default function InsightsPage() {
   }
 
   const activeAccount = user ? user.igAccounts.find((a) => a.id === user.activeIgAccountId) ?? user.igAccounts[0] : undefined;
-  const hasRealFollowers = activeAccount?.mode === "정식" && typeof activeAccount.followers === "number";
-  const followersGained = useMemo(() => metrics.reduce((s, m) => s + m.newFollowers, 0), [metrics]);
-  const baseFollowers = user?.survey?.followers ?? 0;
-  const followers = hasRealFollowers ? activeAccount!.followers! : baseFollowers + followersGained;
-  const totals = useMemo(() => metrics.reduce(
-    (a, m) => ({
-      views: a.views + m.views, reach: a.reach + m.reach, saves: a.saves + m.saves,
-      shares: a.shares + m.shares, likes: a.likes + m.likes, comments: a.comments + m.comments,
-      profileVisits: a.profileVisits + m.profileVisits, follows: a.follows + m.follows,
-    }),
-    { views: 0, reach: 0, saves: 0, shares: 0, likes: 0, comments: 0, profileVisits: 0, follows: 0 }
-  ), [metrics]);
+
+  // 게시물별 최신 스냅샷(누적) — 인스타 지표는 누적치라 일자별로 더하지 않고 가장 최근 값만 사용.
+  // 묶는 키: cardId(우리 발행-카드 매핑) → mediaId → id. 제목은 연결된 카드에서, 없으면 폴백.
+  const postRows = useMemo(() => {
+    const latest = new Map<string, MetricEntry>();
+    for (const m of metrics) {
+      const key = m.cardId ?? m.mediaId ?? m.id;
+      const prev = latest.get(key);
+      if (!prev || m.date > prev.date || (m.date === prev.date && m.createdAt > prev.createdAt)) latest.set(key, m);
+    }
+    return Array.from(latest.entries())
+      .map(([key, m]) => ({
+        key,
+        title: m.cardId ? cards.find((c) => c.id === m.cardId)?.title ?? "게시물" : "인스타 게시물",
+        m,
+      }))
+      .sort((a, b) => b.m.views - a.m.views);
+  }, [metrics, cards]);
+
+  // 계정 단위 기여 팔로우 합 — 게시물별 최신 스냅샷 기준(중복합산 방지)
+  const followsTotal = postRows.reduce((s, r) => s + r.m.follows, 0);
   const dmSent = dm.reduce((s, r) => s + r.sentCount, 0);
   const latest = metrics[0];
   const nextActions = computeNextActions(latest);
-  const handle = user ? activeIgHandle(user) : undefined;
 
-  if (loading) return <div className="py-20 text-center text-muted">불러오는 중…</div>;
+  if (loading || !user) return <div className="py-20 text-center text-muted">불러오는 중…</div>;
 
-  const nextTarget = Math.min(1000, Math.ceil((followers + 1) / 100) * 100);
-  const toThousand = Math.max(0, 1000 - followers);
-  const roadmapPct = Math.min(100, (followers / 1000) * 100);
-  const milestones = Array.from({ length: 10 }, (_, i) => (i + 1) * 100);
+  const followers = resolveFollowerCount(user, metrics);
+  const { nextTarget } = followerChallenge(followers);
 
   return (
     <div className="space-y-7">
       <SectionTitle
         eyebrow="워크스페이스"
         title="콘텐츠 성과"
-        desc={handle ? `@${handle} 인사이트` : "인스타 계정을 연동하면 계정 단위 지표가 채워져요."}
         action={
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => { setRefreshedAt(updatedStamp()); load(); }}>
-              ↻ 새로고침
+          activeAccount?.mode === "정식" ? (
+            <Button size="sm" onClick={sync} disabled={syncing}>
+              {syncing ? "가져오는 중…" : "↧ 인스타에서 가져오기"}
             </Button>
-            {activeAccount?.mode === "정식" && (
-              <Button size="sm" onClick={sync} disabled={syncing}>
-                {syncing ? "가져오는 중…" : "↧ 인스타에서 가져오기"}
-              </Button>
-            )}
-          </div>
+          ) : undefined
         }
       />
-      <p className="text-xs text-muted -mt-3">인사이트 업데이트 {refreshedAt} · 수치는 안정적인 시간대(오전 4시) 기준</p>
 
       {syncMsg && (
         <Card className={`p-3 text-sm ${syncMsg.tone === "ok" ? "bg-teal-soft/40 border-teal-soft text-ink" : "bg-coral/10 border-coral/30 text-coral"}`}>
@@ -123,49 +117,99 @@ export default function InsightsPage() {
       <div className="grid sm:grid-cols-4 gap-3">
         <Stat label="총 팔로워" value={followers.toLocaleString()} tone="ink" />
         {followers >= 100 ? (
-          <Stat label="유입 / 이탈" value={`+${totals.follows} / -${Math.max(0, Math.round(totals.follows * 0.2))}`} tone="teal" />
+          <Stat label="유입 / 이탈" value={`+${followsTotal} / -${Math.max(0, Math.round(followsTotal * 0.2))}`} tone="teal" />
         ) : (
-          <Stat label="유입 / 이탈" value="100명+ 부터" tone="muted" hint="Meta 정책" />
+          <Stat label="유입 / 이탈" value="🔒" tone="muted" tip={<>Meta 정책상 팔로워 <b className="font-semibold text-ink">100명</b> 이상부터 유입·이탈 데이터를 볼 수 있어요.</>} />
         )}
         <Stat label="DM 리드마그넷" value={`${dmSent}건`} tone="amber" />
         <Stat label="발행 콘텐츠" value={`${cards.filter((c) => c.status === "업로드완료").length}건`} tone="ink" />
       </div>
 
-      {/* 게시물 단위 인사이트 */}
+      {/* 게시물 단위 인사이트 — 게시물별 누적(최신 스냅샷) 표 */}
       <Card className="p-6">
-        <div className="text-sm font-medium mb-4">게시물 단위 누적 인사이트</div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-y-4 gap-x-3">
-          <Mini label="조회" value={totals.views} />
-          <Mini label="도달" value={totals.reach} />
-          <Mini label="저장" value={totals.saves} />
-          <Mini label="공유" value={totals.shares} />
-          <Mini label="좋아요" value={totals.likes} />
-          <Mini label="댓글" value={totals.comments} />
-          <Mini label="프로필 방문" value={totals.profileVisits} />
-          <Mini label="기여 팔로우" value={totals.follows} />
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-sm font-medium">게시물 지표</span>
+          <InfoTip text="각 게시물의 발행 이후 누적 지표예요. 여러 번 수집돼도 가장 최근 스냅샷(누적값)을 기준으로 보여줍니다." />
         </div>
+        {postRows.length === 0 ? (
+          <div className="rounded-xl border border-line bg-paper-2/30 px-4 py-8 text-center text-sm text-ink-soft">
+            아직 수집된 게시물 지표가 없어요.{activeAccount?.mode === "정식" ? " 상단 ‘인스타에서 가져오기’로 지표를 불러오세요." : ""}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-line overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm whitespace-nowrap">
+                <thead>
+                  <tr className="text-muted bg-paper-2/50 border-b border-line">
+                    <th className="py-3 px-4 font-medium text-left">게시물</th>
+                    {["조회", "도달", "저장", "공유", "좋아요", "댓글", "프로필 방문", "기여 팔로우"].map((h) => (
+                      <th key={h} className="py-3 px-3 font-medium text-right">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {postRows.map((r) => (
+                    <tr key={r.key} className="border-b border-line/60 last:border-0">
+                      <td className="py-3 px-4 font-medium text-ink max-w-[220px] truncate" title={r.title}>{r.title}</td>
+                      <td className="py-3 px-3 text-right text-ink-soft">{r.m.views.toLocaleString()}</td>
+                      <td className="py-3 px-3 text-right text-ink-soft">{r.m.reach.toLocaleString()}</td>
+                      <td className="py-3 px-3 text-right text-ink-soft">{r.m.saves.toLocaleString()}</td>
+                      <td className="py-3 px-3 text-right text-ink-soft">{r.m.shares.toLocaleString()}</td>
+                      <td className="py-3 px-3 text-right text-ink-soft">{r.m.likes.toLocaleString()}</td>
+                      <td className="py-3 px-3 text-right text-ink-soft">{r.m.comments.toLocaleString()}</td>
+                      <td className="py-3 px-3 text-right text-ink-soft">{r.m.profileVisits.toLocaleString()}</td>
+                      <td className="py-3 px-3 text-right text-teal">{r.m.follows > 0 ? `+${r.m.follows}` : r.m.follows}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* 팔로워 달성 챌린지 */}
       <Card className="p-6">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-4">
           <div>
             <div className="text-xs font-semibold tracking-wide text-coral uppercase">팔로워 달성 챌린지</div>
             <div className="font-display text-2xl mt-1">{followers.toLocaleString()}명 · 다음 목표 {nextTarget}명</div>
           </div>
           <Badge tone="muted">100단위 로드맵</Badge>
         </div>
-        <div className="relative h-3 bg-paper-2 rounded-full overflow-hidden">
-          <div className="absolute inset-y-0 left-0 bg-coral rounded-full transition-all" style={{ width: `${roadmapPct}%` }} />
+
+        {/* 100단위 세그먼트 바 — 달성=코랄 / 현재 칸=강조 / 이후=회색 */}
+        <div className="flex gap-1">
+          {Array.from({ length: 10 }, (_, i) => {
+            const lo = i * 100;
+            const hi = (i + 1) * 100;
+            const fill = followers >= hi ? 100 : followers <= lo ? 0 : ((followers - lo) / 100) * 100;
+            const current = followers >= lo && followers < hi;
+            return (
+              <div key={i} className={`relative flex-1 h-3 rounded-full overflow-hidden ${current ? "bg-card ring-1 ring-inset ring-coral/60" : "bg-paper-2"}`}>
+                <div className="absolute inset-y-0 left-0 bg-coral rounded-full transition-all" style={{ width: `${fill}%` }} />
+              </div>
+            );
+          })}
         </div>
-        <div className="flex flex-wrap gap-1.5 mt-4">
-          {milestones.map((m) => (
-            <span key={m} className={`text-xs px-2 py-1 rounded-full ${followers >= m ? "bg-teal-soft text-teal" : "bg-paper-2 text-muted"}`}>
-              {followers >= m ? "🏅" : "🔒"} {m}
-            </span>
-          ))}
+        <div className="flex gap-1 mt-1.5">
+          {Array.from({ length: 10 }, (_, i) => {
+            const hi = (i + 1) * 100;
+            const done = followers >= hi;
+            const current = followers >= i * 100 && followers < hi;
+            return (
+              <div key={i} className={`flex-1 text-center text-[10px] ${current ? "text-coral font-semibold" : done ? "text-ink-soft" : "text-muted"}`}>{hi}</div>
+            );
+          })}
         </div>
-        <p className="text-sm text-ink-soft mt-3">1,000명까지 <span className="font-semibold text-ink">{toThousand.toLocaleString()}명</span> 남았어요. 기간은 약속하지 않아요 — 다음 100명에만 집중해요.</p>
+
+        <p className="text-sm text-ink-soft mt-4">
+          {followers >= 1000 ? (
+            "1,000명 달성! 다음 여정도 함께해요 🎉"
+          ) : (
+            <>다음 목표 <span className="font-semibold text-ink">{nextTarget}명</span>까지 <span className="font-semibold text-coral">{(nextTarget - followers).toLocaleString()}명</span> 남았어요 🎯</>
+          )}
+        </p>
       </Card>
 
       {/* 업로드 릴레이 — Contributions Graph */}
@@ -194,28 +238,32 @@ export default function InsightsPage() {
 
       {cards.length === 0 && (
         <Card className="p-5 text-center text-sm text-ink-soft">
-          아직 만든 콘텐츠가 없어요. <Link href="/app/plans" className="text-coral">AI 기획 리스트</Link>에서 시작하세요.
+          아직 만든 콘텐츠가 없어요. <Link href="/app/plans" className="text-coral">AI 콘텐츠 생성</Link>에서 시작하세요.
         </Card>
       )}
     </div>
   );
 }
 
-function Stat({ label, value, tone, hint }: { label: string; value: string; tone: "ink" | "teal" | "amber" | "muted"; hint?: string }) {
+function Stat({ label, value, tone, tip }: { label: string; value: string; tone: "ink" | "teal" | "amber" | "muted"; tip?: React.ReactNode }) {
   const color = { ink: "text-ink", teal: "text-teal", amber: "text-amber", muted: "text-muted" }[tone];
   return (
     <Card className="p-4">
-      <div className="text-xs text-muted">{label}{hint && <span className="ml-1">· {hint}</span>}</div>
+      <div className="text-xs text-muted flex items-center gap-1">{label}{tip && <InfoTip text={tip} />}</div>
       <div className={`font-display text-2xl mt-1 ${color}`}>{value}</div>
     </Card>
   );
 }
-function Mini({ label, value }: { label: string; value: number }) {
+
+// ⓘ 호버 툴팁 — 흰색 박스(깔끔한 부가 설명용). 아이콘 오른쪽 기준으로 왼쪽으로 펼쳐짐.
+function InfoTip({ text }: { text: React.ReactNode }) {
   return (
-    <div>
-      <div className="font-display text-2xl text-ink">{value.toLocaleString()}</div>
-      <div className="text-xs text-muted mt-0.5">{label}</div>
-    </div>
+    <span className="group relative inline-flex align-middle">
+      <span className="cursor-help w-4 h-4 inline-flex items-center justify-center rounded-full border border-line text-[10px] text-muted leading-none">i</span>
+      <span className="pointer-events-none absolute right-0 bottom-full mb-2 hidden group-hover:block w-max max-w-[240px] whitespace-normal text-left rounded-xl border border-line bg-card text-ink-soft text-xs font-normal leading-relaxed px-3 py-2 shadow-lg z-30">
+        {text}
+      </span>
+    </span>
   );
 }
 
@@ -227,14 +275,14 @@ function ContributionsGraph({ jobs }: { jobs: PublishJob[] }) {
       counts.set(k, (counts.get(k) ?? 0) + 1);
     }
   }
-  const WEEKS = 14;
+  const WEEKS = 53; // 약 1년 — 카드 폭을 채우는 밀도
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const start = new Date(today);
   start.setDate(start.getDate() - ((today.getDay() + 6) % 7) - (WEEKS - 1) * 7); // 월요일 정렬
   // Airbnb Rausch 톤 시퀀셜 스케일 (연분홍 → Rausch)
   const levels = ["#ffe8ec", "#ffc2ce", "#ff8fa6", "#ff5c7e", "#ff385c"];
-  const cell = (n: number) => levels[n >= 4 ? 4 : n];
+  const cellColor = (n: number) => levels[n >= 4 ? 4 : n];
 
   const cols: { date: Date; n: number }[][] = [];
   for (let w = 0; w < WEEKS; w++) {
@@ -247,30 +295,54 @@ function ContributionsGraph({ jobs }: { jobs: PublishJob[] }) {
     cols.push(col);
   }
   const total = Array.from(counts.values()).reduce((a, b) => a + b, 0);
+  // 월이 바뀌는 주에만 월 라벨 표시(GitHub 방식)
+  const monthLabel = (col: { date: Date; n: number }[], ci: number) => {
+    const d0 = col[0]?.date;
+    const prev = cols[ci - 1]?.[0]?.date;
+    if (!d0 || ci === 0 || !prev) return "";
+    return d0.getMonth() !== prev.getMonth() ? `${d0.getMonth() + 1}월` : "";
+  };
+  const weekdays = ["월", "", "수", "", "금", "", ""]; // 홀수 행만 표기(GitHub Mon/Wed/Fri)
 
   return (
-    <div>
-      <div className="flex gap-1 overflow-x-auto pb-1">
-        {cols.map((col, ci) => (
-          <div key={ci} className="flex flex-col gap-1">
-            {col.map((c, di) => (
-              <div
-                key={di}
-                title={c.n >= 0 ? `${dayKey(c.date.getTime())} · 발행 ${c.n}건` : ""}
-                className="w-3.5 h-3.5 rounded-sm"
-                style={{ background: c.n < 0 ? "transparent" : cell(c.n) }}
-              />
+    <div className="overflow-x-auto">
+      <div className="min-w-[720px]">
+        {/* 월 라벨 */}
+        <div className="flex gap-[3px] mb-1.5 text-[10px] text-muted">
+          <div className="w-6 shrink-0" />
+          {cols.map((col, ci) => (
+            <div key={ci} className="flex-1 min-w-0 whitespace-nowrap">{monthLabel(col, ci)}</div>
+          ))}
+        </div>
+        {/* 요일 라벨 + 그리드 */}
+        <div className="flex gap-[3px]">
+          <div className="w-6 shrink-0 flex flex-col gap-[3px] text-[10px] text-muted">
+            {weekdays.map((d, i) => (
+              <div key={i} className="flex-1 flex items-center leading-none">{d}</div>
             ))}
           </div>
-        ))}
-      </div>
-      <div className="flex items-center justify-between mt-3 text-xs text-muted">
-        <span>최근 {WEEKS}주 · 총 발행 {total}건</span>
-        <span className="flex items-center gap-1">
-          적음
-          {levels.map((l) => <span key={l} className="w-3 h-3 rounded-sm inline-block" style={{ background: l }} />)}
-          많음
-        </span>
+          {cols.map((col, ci) => (
+            <div key={ci} className="flex-1 flex flex-col gap-[3px]">
+              {col.map((c, di) => (
+                <div
+                  key={di}
+                  title={c.n >= 0 ? `${dayKey(c.date.getTime())} · 발행 ${c.n}건` : ""}
+                  className="w-full aspect-square rounded-[3px] ring-1 ring-inset ring-black/[0.04]"
+                  style={{ background: c.n < 0 ? "transparent" : cellColor(c.n) }}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+        {/* 캡션 + 범례 */}
+        <div className="flex items-center justify-between mt-3 text-xs text-muted">
+          <span>지난 1년 · 총 발행 {total}건</span>
+          <span className="flex items-center gap-1">
+            적음
+            {levels.map((l) => <span key={l} className="w-3 h-3 rounded-sm inline-block ring-1 ring-inset ring-black/[0.04]" style={{ background: l }} />)}
+            많음
+          </span>
+        </div>
       </div>
     </div>
   );
