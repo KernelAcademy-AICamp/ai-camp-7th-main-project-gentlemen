@@ -553,6 +553,10 @@ function ReviewTab({ card, dirty, onChange, onSaveNeeded, domain, consent, setCo
   const mustPass = issues.filter((f) => f.mustPass);
   const failCount = mustPass.filter((f) => f.level === "fail").length;
   const warnCount = mustPass.filter((f) => f.level === "warn").length;
+  // 표시 2축 / 내부 다축: 필수통과(규제·사실)만 화면에 노출. 나머지 축(톤·요청·형식 등)은
+  // 판정(decideVerdict)엔 그대로 반영되지만 화면엔 숨기고 건수만 안내한다.
+  const shownIssues = issues.filter((f) => f.mustPass);
+  const internalIssues = issues.filter((f) => !f.mustPass);
   const passed = card.status === "제작완료" || card.status === "예약업로드" || card.status === "업로드완료";
 
   async function runReview() {
@@ -601,17 +605,18 @@ function ReviewTab({ card, dirty, onChange, onSaveNeeded, domain, consent, setCo
       {/* 자동 점검 + 재검수 */}
       <div className="flex items-center justify-between">
         <div className="text-sm">
-          자동 점검: <span className="font-medium">{issues.length === 0 ? "감지된 항목 없음 ✓" : `${issues.length}건 감지`}</span>
+          자동 점검: <span className="font-medium">{shownIssues.length === 0 ? "규제·사실 이상 없음 ✓" : `${shownIssues.length}건 감지`}</span>
+          {internalIssues.length > 0 && <span className="text-muted"> · 내부 품질 점검 {internalIssues.length}건 반영됨</span>}
         </div>
         <Button variant="outline" size="sm" onClick={runReview} disabled={busy}>
           {busy ? "점검 중…" : "검수 다시 실행"}
         </Button>
       </div>
 
-      {/* 감지된 항목 */}
-      {issues.length > 0 && (
+      {/* 감지된 항목 — 규제·사실 2축만 노출 (나머지 축은 판정엔 반영하되 화면엔 숨김) */}
+      {shownIssues.length > 0 && (
         <div className="space-y-3">
-          {issues.map((f) => (
+          {shownIssues.map((f) => (
             <Card key={f.id} className="p-4">
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge tone={f.level === "fail" ? "rose" : f.mustPass ? "amber" : "muted"}>{f.axis ?? f.type}</Badge>
@@ -955,6 +960,8 @@ function ReelsEditor({
   const verdict = decideVerdict(card.reviewFlags);
   const meta = VERDICT_META[verdict];
   const issues = card.reviewFlags.filter((f) => !isChecklist(f));
+  const shownIssues = issues.filter((f) => f.mustPass); // 규제·사실만 노출
+  const internalIssues = issues.filter((f) => !f.mustPass); // 나머지 축은 판정 반영·화면 숨김
   const gate = verdictGate(verdict, consent);
   const hasVideo = !!card.hasVideo;
   const done = card.status === "업로드완료";
@@ -1081,16 +1088,17 @@ function ReelsEditor({
             <div className="font-medium text-sm">검수 <span style={{ color: meta.color }}>· {meta.emoji} {meta.label}</span></div>
             <button onClick={runReview} disabled={busy} className="text-xs text-muted hover:text-ink">다시 검수</button>
           </div>
-          {issues.length === 0 ? (
-            <p className="text-xs text-muted">감지된 항목이 없어요.</p>
+          {shownIssues.length === 0 ? (
+            <p className="text-xs text-muted">규제·사실 이상 없어요.{internalIssues.length > 0 ? ` (내부 품질 점검 ${internalIssues.length}건 반영)` : ""}</p>
           ) : (
             <div className="space-y-1.5">
-              {issues.map((f) => (
+              {shownIssues.map((f) => (
                 <div key={f.id} className="text-xs text-ink-soft flex items-center gap-1.5 flex-wrap">
                   <Badge tone={f.level === "fail" ? "rose" : f.mustPass ? "amber" : "muted"}>{f.axis ?? f.type}</Badge>
                   <span>{f.message}</span>
                 </div>
               ))}
+              {internalIssues.length > 0 && <div className="text-xs text-muted">· 내부 품질 점검 {internalIssues.length}건 반영됨</div>}
             </div>
           )}
           {verdict === "black" && (

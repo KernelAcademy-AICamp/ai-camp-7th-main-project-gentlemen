@@ -124,6 +124,9 @@ export interface ReviewFlag {
   axis?: ReviewAxis;
   mustPass?: boolean; // 필수통과 축(규제·사실) 여부
   level?: "fail" | "warn"; // 명백 위법(fail) vs 회색지대(warn) — 규제·사실 축에서만 의미
+  // AI 원본 7축 라벨(regulatory/factuality/request/tone/format/completeness/ux).
+  // 화면엔 표시하지 않고 내부 분석·지표(축별 지적 비율 등)용으로 보존한다.
+  sourceAxis?: string;
 }
 
 export interface ApprovalLogEntry {

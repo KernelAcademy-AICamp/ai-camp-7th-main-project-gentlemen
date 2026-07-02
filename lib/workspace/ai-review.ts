@@ -66,6 +66,7 @@ function toFlag(f: CardFinding): ReviewFlag {
     axis,
     mustPass,
     level,
+    sourceAxis: f.axis, // AI 원본 7축 라벨 보존 (화면 미표시, 내부 분석용)
   };
 }
 
