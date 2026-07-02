@@ -25,7 +25,12 @@ export async function POST(_req: Request, ctx: Ctx) {
     pageCount: card.pageCount,
     keyMessage: card.keyMessage,
   };
-  const result = await generateCard(guard.user.survey, input, card.pages);
+  let result;
+  try {
+    result = await generateCard(guard.user.survey, input, card.pages);
+  } catch {
+    return bad("지금 AI가 혼잡해요. 잠시 후 다시 시도해 주세요.", 503);
+  }
 
   const updated = await mutateDB((db) => {
     const c = db.cards.find((x) => x.id === id && x.userId === guard.user.id);
