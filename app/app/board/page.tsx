@@ -100,7 +100,7 @@ export default function BoardPage() {
 
       {cards.length === 0 ? (
         <Card>
-          <EmptyState title="콘텐츠가 없어요" desc="AI 기획 리스트에서 첫 기획을 추가해 보세요." action={<Link href="/app/plans"><Button>AI 기획 리스트로 →</Button></Link>} />
+          <EmptyState title="콘텐츠가 없어요" desc="AI 콘텐츠 생성에서 첫 기획을 추가해 보세요." action={<Link href="/app/plans"><Button>AI 콘텐츠 생성으로 →</Button></Link>} />
         </Card>
       ) : view === "칸반" ? (
         <div className="overflow-x-auto pb-2">

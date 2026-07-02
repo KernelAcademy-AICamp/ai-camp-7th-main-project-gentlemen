@@ -211,7 +211,7 @@ export default function HomePage() {
       {cards.length === 0 && (
         <Card className="p-6 text-center">
           <p className="text-ink-soft">아직 만든 콘텐츠가 없어요. 첫 기획부터 시작해 볼까요?</p>
-          <Link href="/app/plans" className="inline-block mt-3 text-coral font-medium">AI 기획 리스트로 →</Link>
+          <Link href="/app/plans" className="inline-block mt-3 text-coral font-medium">AI 콘텐츠 생성으로 →</Link>
         </Card>
       )}
     </div>
