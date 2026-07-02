@@ -1,6 +1,6 @@
 import { mutateDB } from "@/lib/workspace/db";
 import { bad, json, withUser } from "@/lib/workspace/api";
-import { canPublish, runReview } from "@/lib/workspace/compliance";
+import { reviewGate, runReview } from "@/lib/workspace/compliance";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -27,7 +27,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
   if ("res" in guard) return guard.res;
   const { id } = await ctx.params;
   const body = (await req.json().catch(() => null)) as
-    | { flagId?: string; resolved?: boolean; action?: "pass" }
+    | { flagId?: string; resolved?: boolean; action?: "pass"; consent?: boolean }
     | null;
   if (!body) return bad("잘못된 요청입니다.");
 
@@ -43,9 +43,14 @@ export async function PATCH(req: Request, ctx: Ctx) {
       return { card };
     }
     if (body.action === "pass") {
-      if (!canPublish(card)) return { error: "blocked" as const };
+      const gate = reviewGate(card, body.consent === true);
+      if (!gate.ok) return { error: "blocked" as const, reason: gate.reason };
       card.status = "제작완료";
-      card.approvalLog.push({ at: Date.now(), actor: guard.user.email, action: "검수 통과 · 사용자 승인" });
+      card.approvalLog.push({
+        at: Date.now(),
+        actor: guard.user.email,
+        action: body.consent ? "검수 통과 · 경고 책임 동의 후 승인" : "검수 통과 · 사용자 승인",
+      });
       card.updatedAt = Date.now();
       return { card };
     }
@@ -55,7 +60,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
   if ("error" in result) {
     if (result.error === "not_found") return bad("카드를 찾을 수 없습니다.", 404);
     if (result.error === "blocked")
-      return bad("미해결 검수 항목이 있어요. 모두 확인/수정해야 통과할 수 있습니다.", 409);
+      return bad(result.reason ?? "검수 게이트를 통과하지 못했어요.", 409);
     return bad("처리할 수 없습니다.", 400);
   }
   return json({ card: result.card });
