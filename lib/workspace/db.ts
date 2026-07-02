@@ -52,10 +52,40 @@ async function readSupabase(): Promise<DB> {
   return withDefaults((data?.data as Partial<DB> | undefined) ?? undefined);
 }
 
+// CAS(낙관적 락)용 — data 와 함께 현재 version 을 읽는다. 시드 행이 없으면 만들어 version 0 으로 시작.
+async function readSupabaseWithVersion(): Promise<{ db: DB; version: number }> {
+  const { data, error } = await sb().from("app_state").select("data, version").eq("id", 1).maybeSingle();
+  if (error) throw new Error(`app_state 읽기 실패: ${error.message}`);
+  if (!data) {
+    // 시드 행 부재(비정상) → version 0 행을 만들어 이후 CAS update 가 매칭되게 한다.
+    const { error: seedErr } = await sb().from("app_state").upsert({ id: 1, data: {}, version: 0 });
+    if (seedErr) throw new Error(`app_state 시드 실패: ${seedErr.message}`);
+    return { db: structuredClone(EMPTY_DB), version: 0 };
+  }
+  return {
+    db: withDefaults((data.data as Partial<DB> | undefined) ?? undefined),
+    version: (data.version as number | null) ?? 0,
+  };
+}
+
 async function writeSupabase(db: DB): Promise<void> {
   const { error } = await sb().from("app_state").upsert({ id: 1, data: db as unknown as object });
   if (error) throw new Error(`app_state 쓰기 실패: ${error.message}`);
 }
+
+// version 을 조건으로 한 CAS update. 갱신된 행이 있으면 성공, 0행이면 충돌(다른 요청이 먼저 커밋).
+async function casWriteSupabase(db: DB, expectedVersion: number): Promise<boolean> {
+  const { data, error } = await sb()
+    .from("app_state")
+    .update({ data: db as unknown as object, version: expectedVersion + 1, updated_at: new Date().toISOString() })
+    .eq("id", 1)
+    .eq("version", expectedVersion)
+    .select("id");
+  if (error) throw new Error(`app_state 쓰기 실패(CAS): ${error.message}`);
+  return Array.isArray(data) && data.length > 0;
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // ── 파일 백엔드 (로컬) ───────────────────────────────────────────────────────
 // KUP_DATA_DIR 로 데이터 디렉터리를 격리할 수 있다(기본: .data)
@@ -96,12 +126,28 @@ export async function writeDB(db: DB): Promise<void> {
   else writeFileDB(db);
 }
 
-// read-modify-write 를 하나의 호출로 묶어 일관성을 높인다.
+// read-modify-write 를 하나의 호출로 묶는다.
+//   Supabase: version 기반 CAS 로 동시 write 유실을 막는다(충돌 시 최신 상태로 재시도).
+//   파일(로컬): 단일 프로세스라 경합이 없어 그대로 read→write.
+// ⚠️ fn 은 부수효과 없이 db 만 변형해야 한다(충돌 시 최신 db 로 재실행되므로).
+const CAS_MAX_ATTEMPTS = 8;
+
 export async function mutateDB<T>(fn: (db: DB) => T): Promise<T> {
-  const db = await readDB();
-  const result = fn(db);
-  await writeDB(db);
-  return result;
+  if (!USE_SUPABASE) {
+    const db = readFileDB();
+    const result = fn(db);
+    writeFileDB(db);
+    return result;
+  }
+  // Supabase: 낙관적 동시성 제어 — read version → 변형 → CAS write → 충돌 시 재시도
+  for (let attempt = 0; attempt < CAS_MAX_ATTEMPTS; attempt++) {
+    const { db, version } = await readSupabaseWithVersion();
+    const result = fn(db);
+    if (await casWriteSupabase(db, version)) return result;
+    // 충돌: 다른 요청이 먼저 커밋됨 → 지수 백오프 + 지터 후 최신 상태로 재시도
+    await sleep(15 * (attempt + 1) + Math.floor(Math.random() * 25));
+  }
+  throw new Error(`app_state 동시 쓰기 충돌: ${CAS_MAX_ATTEMPTS}회 재시도 초과`);
 }
 
 export function uid(prefix = "id"): string {
