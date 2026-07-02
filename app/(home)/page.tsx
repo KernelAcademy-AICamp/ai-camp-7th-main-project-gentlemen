@@ -206,23 +206,7 @@ export default function HomePage() {
         strategy="afterInteractive"
         onLoad={() => setThreeReady(true)}
       />
-      {threeReady && (
-        <Script
-          src="/kup-hero-anim.js"
-          strategy="afterInteractive"
-          onLoad={() => {
-            // 원본 IIFE는 로드 직후 hero 높이를 한 번 재서 초기 progress를 계산한다(anim.js line 215).
-            // Next에선 landing.css 적용/레이아웃 확정이 이 실행보다 늦을 수 있어, hero를 340vh가 아닌
-            // ~100vh로 재는 순간 progress가 1쪽으로 튀어 타이틀이 숨고 구가 최종 상태로 보인다(상단 빈 섹션).
-            // anim.js는 그대로 두고, 레이아웃 확정 후 scroll을 한 번 흘려 updateProgress 재계산만 유도한다.
-            const kick = () => window.dispatchEvent(new Event("scroll"));
-            requestAnimationFrame(() => requestAnimationFrame(kick));
-            if (document.readyState !== "complete") {
-              window.addEventListener("load", kick, { once: true });
-            }
-          }}
-        />
-      )}
+      {threeReady && <Script src="/kup-hero-anim.js" strategy="afterInteractive" />}
     </div>
   );
 }
