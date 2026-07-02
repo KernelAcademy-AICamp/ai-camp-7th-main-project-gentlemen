@@ -109,7 +109,7 @@ export default function PlansPage() {
         eyebrow="워크스페이스"
         title="AI 기획 리스트"
         desc="전략에서 받은 주제로, 또는 내가 기획한 주제로 카드뉴스를 만들어요."
-        action={<Button size="sm" onClick={() => openAdd()}>+ 기획 추가</Button>}
+        action={plans.length > 0 ? <Button size="sm" onClick={() => openAdd()}>+ 기획 추가</Button> : undefined}
       />
 
       {/* 전략 요약 */}
@@ -146,6 +146,7 @@ export default function PlansPage() {
             title="기획이 비어 있어요"
             desc="추천 주제를 누르거나 ‘기획 추가’로 내 주제를 넣어 첫 기획을 만들어 보세요."
             action={<Button onClick={() => openAdd()}>기획 추가</Button>}
+            nowrapDesc
           />
         </Card>
       ) : (
