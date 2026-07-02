@@ -1,5 +1,5 @@
-/** 개인정보 처리방침 — 와이어프레임 page-privacy. (예시 문구, 정식 검토 필요) */
-const SECTIONS = [
+/** 개인정보 처리방침 — 예시 문구(정식 검토 필요). */
+const SECTIONS: [string, string][] = [
   ["제1조 수집하는 개인정보 항목", "KUP는 회원가입 및 서비스 제공을 위해 이메일, 닉네임, 결제 정보(카드번호는 PG사가 직접 수집·보관), 연동된 인스타그램 비즈니스 계정의 공개 데이터 및 인사이트 지표를 수집합니다."],
   ["제2조 개인정보의 수집·이용 목적", "회원 식별 및 관리, 콘텐츠 기획·제작·발행 기능 제공, 요금제 결제 및 정산, 서비스 개선과 통계 분석, 고객 문의 응대를 위해 이용합니다."],
   ["제3조 Meta(Instagram) 연동 데이터", "인스타그램 공식 OAuth 방식으로 연동하며 이용자의 비밀번호는 보관하지 않습니다. 부여받은 권한은 콘텐츠 발행과 인사이트 조회 목적에만 사용되며, 이용자는 언제든 연동을 해제할 수 있습니다."],
@@ -10,18 +10,20 @@ const SECTIONS = [
 
 export default function PrivacyPage() {
   return (
-    <div className="wrap section" style={{ maxWidth: 760 }}>
-      <div style={{ marginBottom: 32 }}>
-        <span className="eyebrow">약관 · 정책</span>
-        <h1 style={{ fontSize: 32, marginTop: 12 }}>개인정보 처리방침</h1>
-        <p style={{ color: "var(--ink3)", fontSize: 13, marginTop: 8 }}>시행일 2026.01.01 · 최종 개정 2026.06.01 · 예시 문구(정식 검토 필요)</p>
+    <section className="section narrow">
+      <div className="page-head left">
+        <span className="kicker">약관 · 정책</span>
+        <h1>개인정보 처리방침</h1>
+        <p className="policy-meta">시행일 2026.01.01 · 최종 개정 2026.06.01 · 예시 문구(정식 검토 필요)</p>
       </div>
-      {SECTIONS.map(([h, p]) => (
-        <section key={h} style={{ marginBottom: 24 }}>
-          <h4 style={{ fontSize: 16, marginBottom: 8 }}>{h}</h4>
-          <p style={{ color: "var(--ink2)", fontSize: 14 }}>{p}</p>
-        </section>
-      ))}
-    </div>
+      <div className="policy">
+        {SECTIONS.map(([h, p]) => (
+          <section key={h} className="policy-sec">
+            <h4>{h}</h4>
+            <p>{p}</p>
+          </section>
+        ))}
+      </div>
+    </section>
   );
 }
