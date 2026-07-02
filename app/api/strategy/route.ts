@@ -16,7 +16,12 @@ export async function POST() {
   if ("res" in guard) return guard.res;
   if (!guard.user.survey) return bad("먼저 시작 설문을 완료하세요.", 409);
 
-  const strategy = await generateStrategy(guard.user.survey);
+  let strategy;
+  try {
+    strategy = await generateStrategy(guard.user.survey);
+  } catch {
+    return bad("지금 AI가 혼잡해요. 잠시 후 다시 시도해 주세요.", 503);
+  }
   await mutateDB((db) => {
     db.strategies[guard.user.id] = strategy;
   });

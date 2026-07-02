@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { captureException } from "@/lib/sentry";
 import type {
   CardFormat,
   CardNews,
@@ -20,6 +21,11 @@ import type {
 
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-4-8";
 
+// 키 없음 = 의도된 mock 모드(키 없이도 제품이 돈다). 키 있는데 실패 = 실제 장애 → 조용히 mock 넣지 않는다.
+function hasApiKey(): boolean {
+  return !!process.env.ANTHROPIC_API_KEY;
+}
+
 function client(): Anthropic | null {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return null;
@@ -35,18 +41,37 @@ function extractJson(text: string): unknown {
   return JSON.parse(candidate.slice(start, end + 1));
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+// 일시적 오류만 재시도(rate limit·과부하·네트워크·파싱 실패). 400(크레딧)·401/403(인증)은 재시도 무의미 → 즉시 실패.
+const RETRY_BACKOFF_MS = [400, 1200];
+function isRetryable(e: unknown): boolean {
+  const status = (e as { status?: number })?.status;
+  if (typeof status === "number") return status === 429 || (status >= 500 && status < 600);
+  return true; // status 없음 = 네트워크/파싱 오류 → 재시도 가치 있음
+}
+
 async function callClaude(system: string, user: string, maxTokens = 4000): Promise<unknown> {
   const c = client();
   if (!c) throw new Error("no api key");
-  const res = await c.messages.create({
-    model: MODEL,
-    max_tokens: maxTokens,
-    system,
-    messages: [{ role: "user", content: user }],
-  });
-  const textBlock = res.content.find((b) => b.type === "text");
-  const text = textBlock && "text" in textBlock ? textBlock.text : "";
-  return extractJson(text);
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= RETRY_BACKOFF_MS.length; attempt++) {
+    try {
+      const res = await c.messages.create({
+        model: MODEL,
+        max_tokens: maxTokens,
+        system,
+        messages: [{ role: "user", content: user }],
+      });
+      const textBlock = res.content.find((b) => b.type === "text");
+      const text = textBlock && "text" in textBlock ? textBlock.text : "";
+      return extractJson(text);
+    } catch (e) {
+      lastErr = e;
+      if (attempt === RETRY_BACKOFF_MS.length || !isRetryable(e)) throw e;
+      await sleep(RETRY_BACKOFF_MS[attempt] ?? 500);
+    }
+  }
+  throw lastErr;
 }
 
 // ── 운영 단계 진단 ─────────────────────────────────────────────────────────────
@@ -65,15 +90,23 @@ function recommendedCount(survey: SurveyProfile): number {
 }
 
 // ── 전략 생성 ────────────────────────────────────────────────────────────────
-function strategySystemPrompt(): string {
+function strategySystemPrompt(survey: SurveyProfile, stage: OperationStage, count: number): string {
   return [
-    "당신은 인스타그램을 막 키우는 1인 인플루언서를 돕는 한국어 코파일럿입니다.",
+    "당신은 인스타그램을 막 키우는 1인 인플루언서를 돕는 한국어 콘텐츠 전략 코파일럿입니다.",
     "원칙: 자동화를 과시하지 말고 사용자의 시간 절감과 통제감을 돕는다. 산출물은 수정 가능한 초안.",
+    `계정 컨셉 — 주제: ${survey.niche || "(미정)"} / 브랜드 키워드: ${survey.brandKeywords.join(", ") || "(없음)"} / 문체: ${survey.voiceExample || "(없음)"}${survey.benchmark ? ` / 벤치마크: ${survey.benchmark}` : ""}.`,
+    `운영 단계: ${stage} (팔로워·운영기간 기반). 단계에 맞는 목표를 잡는다 — 초기(세팅·누적)는 도달·저장·팔로우로 ‘무엇을 주는 계정인지’ 각인이 먼저고, 문의·방문·매출은 계정 목적에 실제로 포함될 때만 뒤에 붙인다.`,
+    `[주간 추천 리스트 ★] topics = 이번 주에 그대로 올릴 콘텐츠 ${count}개. 사용자의 주간 업로드 역량에 맞춘 ‘이번 주 발행 계획’이다. 개수를 정확히 ${count}개로 맞추고, 서로 각도·형식이 겹치지 않게 다양하게(정보형·관점형·큐레이션형·후기형 등을 섞어) 한 주 분량이 되도록 구성한다.`,
+    "[구체·계정 맞춤 ★] 주제는 이 계정의 니치·키워드에 밀착한 구체적인 것으로. ‘입문자가 하는 실수 5’·‘3분 요약’처럼 어느 계정에나 붙는 뻔한 템플릿은 금지. 실제로 저장·공유할 만한 알맹이가 보이는 제목으로.",
+    "[정직 ★] 지어낸 통계·수치·순위·트렌드로 주제를 만들지 않는다. 주제는 아이디어이므로 구체적이되, 검증 안 된 사실을 단정하는 제목은 피한다.",
+    "topics[].goal = 이 주제에 가장 맞는 목표 하나 — 조회/저장/공유/방문/문의/팔로우/댓글 중에서 위 운영 단계 원칙에 따라 고른다(초기엔 저장·팔로우·공유 위주).",
+    "topics[].hookDirection = 첫 장을 어떻게 후킹할지 한 줄(구체적으로). topics[].why = 지금 이 계정 상황에 왜 이 주제인지 짧게.",
+    survey.sensitiveDomain !== "없음"
+      ? `민감 도메인(${survey.sensitiveDomain}): 권유·단정·보장·효능 표현을 피하고 정보 제공형으로 제안한다.`
+      : "",
     "결과는 JSON 객체만 출력합니다. 설명/마크다운/코드펜스 없이.",
-    "스키마: {diagnosis: string(한 줄 진단), weeklyGoal: string(이번 주 실행 목표), focus: string[3](전략 방향), topics: [{title, goal, hookDirection, why}] x4}",
-    "topics 의 goal 은 조회/저장/공유/방문/문의 중 하나의 의도를 담고, why 는 이 계정 상황에 맞는 이유를 짧게.",
-    "민감 도메인(금융·의료 등)일 경우 권유/단정/보장 표현을 피하고 정보 제공형으로 제안.",
-  ].join("\n");
+    `스키마: {diagnosis: string(한 줄 진단), weeklyGoal: string(이번 주 실행 목표, 주 ${count}회 발행 전제), focus: string[3](전략 방향), topics: [{title, goal, hookDirection, why}] x${count}}`,
+  ].filter(Boolean).join("\n");
 }
 
 function profileForPrompt(survey: SurveyProfile, stage: OperationStage) {
@@ -95,9 +128,10 @@ function profileForPrompt(survey: SurveyProfile, stage: OperationStage) {
 export async function generateStrategy(survey: SurveyProfile): Promise<Strategy> {
   const stage = diagnoseStage(survey);
   const count = recommendedCount(survey);
+  if (!hasApiKey()) return templateStrategy(survey, stage, count); // 의도된 mock
   try {
     const data = (await callClaude(
-      strategySystemPrompt(),
+      strategySystemPrompt(survey, stage, count),
       JSON.stringify(profileForPrompt(survey, stage))
     )) as { diagnosis: string; weeklyGoal: string; focus: string[]; topics: StrategyTopic[] };
     return {
@@ -106,12 +140,13 @@ export async function generateStrategy(survey: SurveyProfile): Promise<Strategy>
       weeklyGoal: data.weeklyGoal,
       recommendedCount: count,
       focus: (data.focus || []).slice(0, 3),
-      topics: (data.topics || []).slice(0, 6),
+      topics: (data.topics || []).slice(0, count),
       generatedBy: "ai",
       createdAt: Date.now(),
     };
-  } catch {
-    return templateStrategy(survey, stage, count);
+  } catch (e) {
+    captureException(e, { op: "generateStrategy", niche: survey.niche }); // 실제 장애는 관측되게
+    throw e; // 조용히 mock 넣지 않고 위로 던짐 → 라우트가 503
   }
 }
 
@@ -158,7 +193,7 @@ function templateStrategy(survey: SurveyProfile, stage: OperationStage, count: n
       why: "방문·문의 동선을 카드 마지막 장에서 안내해요.",
     },
   ];
-  return { stage, diagnosis: sc.diag, weeklyGoal: sc.goal, recommendedCount: count, focus: sc.focus, topics, generatedBy: "template", createdAt: Date.now() };
+  return { stage, diagnosis: sc.diag, weeklyGoal: sc.goal, recommendedCount: count, focus: sc.focus, topics: topics.slice(0, count), generatedBy: "template", createdAt: Date.now() };
 }
 
 // ── 카드 입력 ─────────────────────────────────────────────────────────────────
@@ -181,14 +216,20 @@ export interface PlanOutline {
 
 export async function generatePlanOutline(survey: SurveyProfile, input: CardGenInput): Promise<PlanOutline> {
   const photo = input.format === "사진첨부형 카드뉴스";
+  if (!hasApiKey()) return templatePlan(survey, input); // 의도된 mock
   try {
     const system = [
-      "당신은 한국어 인스타 카드뉴스 ‘기획’ 어시스턴트입니다. 본문 전체가 아니라 페이지별 아웃라인만 만듭니다.",
+      "당신은 한국어 인스타 카드뉴스 ‘기획’ 어시스턴트입니다. 본문 전체가 아니라 페이지별 아웃라인(뼈대)만 만듭니다.",
       `브랜드 키워드: ${survey.brandKeywords.join(", ") || "(없음)"} / 문체: ${survey.voiceExample || "(없음)"}`,
-      "결과는 JSON 객체만. 스키마: {title, pages:[{index, headline(각 장 서브타이틀), body(한 줄 요약)" +
+      "구성은 서사 흐름을 따른다: 후킹 → 왜 지금 중요한가 → 흔한 문제·오해 → 관점 전환(핵심 인사이트) → 구체 예시 → 핵심(가장 저장할 만한 장) → 적용법 → 마무리 CTA.",
+      `페이지 수(${input.pageCount})에 맞춰 압축한다: 장수가 적으면 인접 단계를 합치고(예: 5장 = 후킹/문제/핵심/적용/CTA), 많으면 관점전환·예시·적용을 늘린다.`,
+      "★ 단, 주제가 ‘추천·베스트·모음·리스트’처럼 구체적 항목 나열을 기대하는 유형이면 서사 아크를 강요하지 말고 [첫 장 후킹 → 중간 각 장 = 추천 항목 하나씩 → 마지막 CTA]로 구성한다(실제 항목명은 제작 단계에서 채움). ‘고르는 법’만 설명하는 구성은 이 유형에선 실패다.",
+      "한 장에는 한 가지 생각만. 첫 장(index 0)은 스크롤을 멈추는 후킹, 마지막 장은 자연스러운 CTA 방향(값싼 참여유도 금지).",
+      "중간 슬라이드는 실질 정보(운동 동작·요리 단계·추천 항목 등)로 채운다 — 개념·‘하는 법 개요’로 때우지 않는다. 통계·가격·영업시간처럼 검증이 필요한 수치만 지어내지 않는다.",
+      "결과는 JSON 객체만(설명·마크다운·코드펜스 없이). 디자인·색·폰트·HTML은 생성하지 않는다.",
+      "스키마: {title, pages:[{index, headline(각 장 서브타이틀), body(한 줄 요약)" +
         (photo ? ", photoNote(이 장에 넣을 사진 설명)" : "") +
         "}]}",
-      "첫 장은 후킹, 마지막 장은 CTA 방향.",
     ].join("\n");
     const user = JSON.stringify({ 주제: input.topicTitle, 형식: input.format, 목적: input.objective, 페이지수: input.pageCount, 핵심메시지: input.keyMessage });
     const data = (await callClaude(system, user, 1500)) as { title: string; pages: CardPage[] };
@@ -199,8 +240,9 @@ export async function generatePlanOutline(survey: SurveyProfile, input: CardGenI
       photoNote: photo ? p.photoNote : undefined,
     }));
     return { title: data.title || input.topicTitle, pages: pages.length ? pages : templatePlan(survey, input).pages, generatedBy: "ai" };
-  } catch {
-    return templatePlan(survey, input);
+  } catch (e) {
+    captureException(e, { op: "generatePlanOutline", topic: input.topicTitle });
+    throw e; // 조용히 mock 넣지 않고 위로 던짐 → 라우트가 503
   }
 }
 
@@ -228,35 +270,48 @@ export interface CardGenResult {
   generatedBy: "ai" | "template";
 }
 
-function cardSystemPrompt(survey: SurveyProfile, format: CardFormat): string {
+// export: 프롬프트 비교 하버스(scripts/compare-card-prompt.ts)가 "라이브와 동일한" A 프롬프트로 대조하기 위함. 런타임 동작 변화 없음.
+export function cardSystemPrompt(survey: SurveyProfile, format: CardFormat): string {
   const common = [
     `브랜드 키워드: ${survey.brandKeywords.join(", ") || "(없음)"}`,
     `문체 예시: ${survey.voiceExample || "(없음)"}`,
     `금지 표현: ${survey.forbiddenExpressions.join(", ") || "(없음)"}`,
     `캡션 길이 선호: ${survey.captionLength} / 해시태그 스타일: ${survey.hashtagStyle} / CTA 스타일: ${survey.ctaStyle}`,
     survey.sensitiveDomain !== "없음"
-      ? `민감 도메인(${survey.sensitiveDomain}): 권유·강요·단정·보장 표현 금지, 정보 제공형 + 면책 고지.`
+      ? `민감 도메인(${survey.sensitiveDomain}): 실질 정보는 충분히 담되 권유·강요·단정·보장·효능 표현만 피한다. 캡션에 명시적 면책 한 줄 + 공식·전문 확인 권고.`
       : "",
+  ];
+  // 품질 규칙(스키마 무관, 제작 공통). 사실 최종검증은 발행 전 사람 검수(runReview 출처확인 게이트)가 담당.
+  const qualityRules = [
+    "[구성] 주어진 아웃라인의 흐름을 따르되 각 장의 본문을 완성한다. 한 장 = 한 가지 생각. 첫 장(index 0)은 스크롤을 멈추는 후킹, 마지막 장은 자연스러운 CTA(값싼 참여유도 금지).",
+    "[카피] 문장은 짧고 리듬 있게, 강한 대비, 자연스러운 구어체 한국어. 과장·전문가인 척·SNS 상투어·느낌표 남발 금지. 추상적 동기부여 대신 구체적이고 바로 써먹을 내용. 이모지는 장당 0~1개.",
+    "[빈 카피 금지] ★가장 중요 — ‘핵심 1’·‘여기에 한 줄 요약’·‘정리했어요’ 같은 알맹이 없는 placeholder·메타 표현 절대 금지. 말하지 말고 실제 내용을 써라.",
+    "[정보 밀도 ★] 중간 슬라이드는 실질 정보로 꽉 채운다. 노하우·운동·요리·뷰티면 실제 동작·단계·성분·수치(횟수·시간)를 구체적으로, 추천이면 실제 항목(곡·책·작품·장소·맛집·제품)을 이름으로. 사용자가 이 카드만 보고 바로 실행·소비할 수 있어야 한다. 개념 설명·‘하는 법 개요’로 때우지 않는다.",
+    "[본문 작성 공식] headline = 그 장의 핵심을 한마디로. body = 쉬운 정의·설명 + 구체 예시·수치·항목.",
+    "[추천·로컬 — 실물을 이름으로] 노래·책·작품·장소·맛집·제품 추천이면 장르·무드로 뭉개지 말고 실존 항목을 이름으로 제시한다(곡='가수 - 제목', 작품='제목', 장소='지역·상호', 맛집·카페도 알려진 곳은 실명). 널리 알려진 것 위주로 다양하게. 명언은 유명한 것 위주로 인용하고 출처를 밝힌다. ‘직접 채우세요’ 빈칸 틀은 정말 개인적인 것에만 쓰고 남발하지 않는다.",
+    "[지어내지 말 것 — 검증형 하드팩트만] 통계·퍼센트·순위·가격·영업시간·주소·전화번호·최신 수치, 법·제도의 구체 금액·기한은 지어내지 않는다(틀리면 바로 들통나 신뢰를 깎음). 이것만 조심하고 나머지 질적·구체 정보는 풍부하게 담는다.",
   ];
   if (format === "릴스") {
     return [
       "당신은 한국어 인스타 릴스(짧은 세로 영상) 기획자입니다. 사용자가 직접 촬영·편집할 수 있도록 ‘대본’을 짭니다. 영상 자체는 만들지 않습니다.",
       ...common,
-      "결과는 JSON 객체만. 스키마: {title, pages:[{index, headline(구간/장면, 예: '후킹 0~3초'), body(대사·자막 문구), note(화면 연출·동작 지시)}], caption, hashtags:string[8~12], cta}",
-      "30~60초 분량. index 0 = 첫 3초 강한 후킹(스크롤 멈추게). 마지막 장면 = 행동 유도(CTA: 팔로우·저장·댓글 등).",
-      "각 body 는 실제 말할 대사/화면 자막으로, 1~2문장 짧게.",
+      ...qualityRules,
+      "결과는 JSON 객체만(설명·마크다운·코드펜스 없이). 디자인·색·폰트·HTML은 생성하지 않는다. 스키마: {title, pages:[{index, headline(구간/장면, 예: '후킹 0~3초'), body(대사·자막 문구), note(화면 연출·동작 지시)}], caption, hashtags:string[8~12], cta}",
+      "30~60초 분량. index 0 = 첫 3초 강한 후킹(스크롤 멈추게). 마지막 장면 = 행동 유도(CTA: 팔로우·저장·댓글 등). 각 body 는 실제 말할 대사/화면 자막으로 1~2문장 짧게.",
     ].filter(Boolean).join("\n");
   }
   return [
     "당신은 한국어 인스타 카드뉴스 카피라이터입니다. 사용자의 톤을 그대로 살린 ‘수정 가능한 초안’을 만듭니다.",
     `형식: ${format}` + (format === "사진첨부형 카드뉴스" ? " (각 장 사진 위에 얹을 짧은 카피 중심)" : ""),
     ...common,
-    "결과는 JSON 객체만. 스키마: {title, pages:[{index, headline, body, photoNote}], caption, hashtags:string[8~12], cta}",
-    "첫 페이지(index 0)는 강한 후킹. 마지막 페이지는 행동 유도(CTA). 각 body 는 1~3문장.",
+    ...qualityRules,
+    "결과는 JSON 객체만(설명·마크다운·코드펜스 없이). 디자인·색·폰트·HTML은 생성하지 않는다(렌더는 고정 템플릿 담당). 스키마: {title, pages:[{index, headline, body, photoNote}], caption, hashtags:string[8~12], cta}. 각 body 는 1~3문장.",
+    "최종 출력 전 스스로 점검(점검 내용은 출력하지 말 것): 중간 슬라이드가 실질 정보(동작·단계·실제 항목)로 차 있는가, 개념으로 때우지 않았는가? 한국어만 읽어도 바로 써먹을 수 있는가? 첫 장이 스크롤을 멈추는가? 지어낸 하드팩트(수치·가격·영업시간)는 없는가? 민감 주제면 면책을 넣었는가? 미달이면 고쳐서 낸다.",
   ].filter(Boolean).join("\n");
 }
 
 export async function generateCard(survey: SurveyProfile, input: CardGenInput, outline?: CardPage[]): Promise<CardGenResult> {
+  if (!hasApiKey()) return templateCard(survey, input, outline); // 의도된 mock
   try {
     const user = JSON.stringify({
       주제: input.topicTitle,
@@ -290,8 +345,9 @@ export async function generateCard(survey: SurveyProfile, input: CardGenInput, o
       cta: data.cta || "",
       generatedBy: "ai",
     };
-  } catch {
-    return templateCard(survey, input, outline);
+  } catch (e) {
+    captureException(e, { op: "generateCard", topic: input.topicTitle });
+    throw e; // 조용히 mock 넣지 않고 위로 던짐 → 라우트가 503
   }
 }
 
