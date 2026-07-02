@@ -238,7 +238,7 @@ export default function InsightsPage() {
 
       {cards.length === 0 && (
         <Card className="p-5 text-center text-sm text-ink-soft">
-          아직 만든 콘텐츠가 없어요. <Link href="/app/plans" className="text-coral">AI 기획 리스트</Link>에서 시작하세요.
+          아직 만든 콘텐츠가 없어요. <Link href="/app/plans" className="text-coral">AI 콘텐츠 생성</Link>에서 시작하세요.
         </Card>
       )}
     </div>
