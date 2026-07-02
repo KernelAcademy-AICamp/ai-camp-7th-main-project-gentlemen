@@ -2,10 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { api } from "@/lib/workspace/client";
-import { Badge, Button, Card } from "@/components/workspace/ui";
-import { activeIgHandle, KANBAN_COLUMNS, kanbanColumnOf, type CardNews, type CardStatus, type MetricEntry, type PublicUser, type PublishJob, type Strategy } from "@/lib/workspace/types";
-import { followerChallenge, resolveFollowerCount } from "@/lib/workspace/followers";
+import { api, formatDay } from "@/lib/workspace/client";
+import { Badge, Card } from "@/components/workspace/ui";
+import { findIgAccount, DM_LIMITS, type CardNews, type CardStatus, type DmRule, type MetricEntry, type PublicUser, type PublishJob } from "@/lib/workspace/types";
+import { resolveFollowerCount } from "@/lib/workspace/followers";
 
 function weekStart(ts: number): number {
   const d = new Date(ts);
@@ -19,172 +19,219 @@ function dayKey(ts: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-const STAGE_TONE: Record<CardStatus, string> = {
-  기획중: "#6a6a6a", 기획완료: "#a8710a", 제작중: "#a8710a", 제작완료: "#008489", 예약업로드: "#a8710a", 업로드완료: "#008489",
-};
+// 카드 상태 → 최근 콘텐츠 리스트의 상태 필(pill) 라벨·톤
+type BadgeTone = "ink" | "coral" | "teal" | "amber" | "muted" | "rose";
+function statusPill(status: CardStatus): { label: string; tone: BadgeTone } {
+  switch (status) {
+    case "기획중":
+    case "기획완료":
+      return { label: "기획", tone: "muted" };
+    case "제작중":
+      return { label: "제작 중", tone: "amber" };
+    case "제작완료":
+      return { label: "검수", tone: "amber" };
+    case "예약업로드":
+      return { label: "예약", tone: "coral" };
+    case "업로드완료":
+      return { label: "완료", tone: "teal" };
+  }
+}
+function statusSub(status: CardStatus): string {
+  switch (status) {
+    case "기획중":
+      return "AI 초안 · 기획 중";
+    case "기획완료":
+      return "기획 완료 · 제작 대기";
+    case "제작중":
+      return "제작 중";
+    case "제작완료":
+      return "검수 대기";
+    case "예약업로드":
+      return "예약 발행";
+    case "업로드완료":
+      return "발행 완료";
+  }
+}
 
 export default function HomePage() {
   const [user, setUser] = useState<PublicUser | null>(null);
-  const [strategy, setStrategy] = useState<Strategy | null>(null);
   const [cards, setCards] = useState<CardNews[]>([]);
   const [jobs, setJobs] = useState<PublishJob[]>([]);
   const [metrics, setMetrics] = useState<MetricEntry[]>([]);
+  const [dmRules, setDmRules] = useState<DmRule[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function load() {
-    const [me, st, cd, sc, mt] = await Promise.all([
+    const [me, cd, sc, mt, dm] = await Promise.all([
       api<{ user: PublicUser }>("/api/auth/me"),
-      api<{ strategy: Strategy | null }>("/api/strategy"),
       api<{ cards: CardNews[] }>("/api/cards"),
       api<{ jobs: PublishJob[] }>("/api/schedule"),
       api<{ entries: MetricEntry[] }>("/api/metrics"),
+      api<{ rules: DmRule[] }>("/api/dm/rules"),
     ]);
     setUser(me.user);
-    setStrategy(st.strategy);
     setCards(cd.cards);
     setJobs(sc.jobs);
     setMetrics(mt.entries);
+    setDmRules(dm.rules);
     setLoading(false);
   }
   useEffect(() => {
     load();
   }, []);
 
-  const { thisWeekDone, streak } = useMemo(() => {
-    const published = jobs.filter((j) => j.status === "발행완료" && j.publishedAt);
+  // 이번 주 / 지난주 발행 건수 — 발행완료 job 의 publishedAt 기준(업로드 그래프·인사이트와 동일 소스)
+  const { thisWeekDone, lastWeekDone } = useMemo(() => {
     const byWeek = new Map<number, number>();
-    for (const j of published) {
-      const w = weekStart(j.publishedAt!);
-      byWeek.set(w, (byWeek.get(w) ?? 0) + 1);
+    for (const j of jobs) {
+      if (j.status === "발행완료" && j.publishedAt) {
+        const w = weekStart(j.publishedAt);
+        byWeek.set(w, (byWeek.get(w) ?? 0) + 1);
+      }
     }
     const nowWeek = weekStart(Date.now());
-    let streak = 0;
-    let w = nowWeek;
-    while ((byWeek.get(w) ?? 0) >= 1) {
-      streak++;
-      w -= 7 * 24 * 60 * 60 * 1000;
-    }
-    return { thisWeekDone: byWeek.get(nowWeek) ?? 0, streak };
+    const WEEK = 7 * 24 * 60 * 60 * 1000;
+    return { thisWeekDone: byWeek.get(nowWeek) ?? 0, lastWeekDone: byWeek.get(nowWeek - WEEK) ?? 0 };
   }, [jobs]);
 
   if (loading || !user) return <div className="py-20 text-center text-muted">불러오는 중…</div>;
 
-  const handle = activeIgHandle(user);
-  const target = strategy?.recommendedCount ?? Math.max(2, user.survey?.weeklyCapacity ?? 2);
+  const account = findIgAccount(user);
   const followers = resolveFollowerCount(user, metrics);
-  const { nextTarget, roadmapPct } = followerChallenge(followers);
-  // 칸반 표시 열 기준 집계 — 게이트 상태(기획완료/제작완료)는 각 '중' 열에 접어서 센다
-  const columnCount = (col: CardStatus) => cards.filter((c) => kanbanColumnOf(c.status) === col).length;
+  const weeklyGrowth = account?.weeklyGrowth ?? 0;
+  const publishDelta = thisWeekDone - lastWeekDone;
+
+  // 예약 대기 — 아직 발행 안 된 예약 job. 가장 가까운 예약 시각을 부제로.
+  const reservedJobs = jobs.filter((j) => j.status === "예약");
+  const nextReservedAt = reservedJobs.map((j) => j.scheduledAt).sort((a, b) => a - b)[0];
+
+  // DM 발송 — 규칙별 누적 발송 합 / 플랜 한도
+  const dmSent = dmRules.reduce((s, r) => s + r.sentCount, 0);
+  const dmLimit = DM_LIMITS[user.plan];
+
+  // 이번 주 콘텐츠 흐름 — 파이프라인 단계별 스냅샷
+  const count = (fn: (c: CardNews) => boolean) => cards.filter(fn).length;
+  const flow = [
+    { label: "기획", n: count((c) => c.status === "기획중" || c.status === "기획완료") },
+    { label: "제작", n: count((c) => c.status === "제작중") },
+    { label: "검수", n: count((c) => c.status === "제작완료") },
+    { label: "발행", n: thisWeekDone, on: true },
+  ];
+
+  const recentCards = [...cards].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 4);
+
+  const quickActions = [
+    { icon: "≣", label: "AI로 콘텐츠 기획하기", href: "/app/plans" },
+    { icon: "✦", label: "카드뉴스 제작하기", href: "/app/create" },
+    { icon: "↗", label: "이번 주 성과 보기", href: "/app/insights" },
+  ];
 
   return (
     <div className="space-y-6">
-      {/* 인사 + 단계 */}
+      {/* 헤더 — 우측 액션 버튼(새 기획·카드뉴스 만들기)은 삭제, 자리는 비워둠 */}
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
-          <div className="text-sm text-ink-soft">안녕하세요, {user.name}님 👋</div>
-          <h1 className="font-display text-3xl mt-1">워크스페이스</h1>
+          <h1 className="font-display text-3xl">안녕하세요, {user.name}님 👋</h1>
+          <p className="text-sm text-ink-soft mt-1">이번 주 콘텐츠 현황이에요.</p>
         </div>
-        {strategy && <Badge tone="coral">운영 단계 · {strategy.stage}</Badge>}
       </div>
 
-      {/* 빠른 액션 */}
-      <div className="grid sm:grid-cols-3 gap-3">
-        <Link href="/app/plans"><Card className="p-4 hover:-translate-y-0.5 transition"><div className="text-2xl">✦</div><div className="font-medium mt-1">기획 추가</div><div className="text-xs text-muted">주제로 카드 만들기</div></Card></Link>
-        <Link href="/app/board"><Card className="p-4 hover:-translate-y-0.5 transition"><div className="text-2xl">▦</div><div className="font-medium mt-1">콘텐츠 관리</div><div className="text-xs text-muted">칸반으로 진행 관리</div></Card></Link>
-        <Link href="/app/insights"><Card className="p-4 hover:-translate-y-0.5 transition"><div className="text-2xl">◆</div><div className="font-medium mt-1">콘텐츠 성과</div><div className="text-xs text-muted">인사이트·챌린지</div></Card></Link>
+      {/* 통계 4칸 */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard k="총 팔로워" v={followers.toLocaleString()} d={weeklyGrowth > 0 ? `주간 +${weeklyGrowth}` : "주간 변화 없음"} dTone={weeklyGrowth > 0 ? "teal" : "muted"} />
+        <StatCard k="이번 주 발행" v={String(thisWeekDone)} d={publishDelta === 0 ? "지난주와 같음" : `지난주 대비 ${publishDelta > 0 ? "+" : ""}${publishDelta}`} dTone={publishDelta > 0 ? "teal" : "muted"} />
+        <StatCard k="예약 대기" v={String(reservedJobs.length)} d={nextReservedAt ? `${formatDay(nextReservedAt)} 발행 예정` : "예약 없음"} dTone="muted" />
+        <StatCard k="DM 발송" v={<>{dmSent}<span className="text-sm text-muted">/{dmLimit === Infinity ? "∞" : dmLimit}</span></>} d={`${user.plan} 한도`} dTone="muted" />
       </div>
 
+      {/* 2단 — 좌: 빠른 시작(+이번 주 업로드) / 우: 이번 주 콘텐츠 흐름(+최근 콘텐츠) */}
       <div className="grid lg:grid-cols-2 gap-4">
-        {/* 이번 주 루틴 */}
+        {/* 빠른 시작 */}
         <Card className="p-5">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-sm font-medium">이번 주 루틴</div>
-            <Badge tone={thisWeekDone >= target ? "teal" : "amber"}>{thisWeekDone} / {target} 발행</Badge>
-          </div>
-          <div className="flex gap-1.5">
-            {Array.from({ length: Math.max(target, thisWeekDone) }).map((_, i) => (
-              <div key={i} className={`h-2.5 flex-1 rounded-full ${i < thisWeekDone ? "bg-teal" : "bg-paper-2"}`} />
+          <div className="text-sm font-medium mb-3">빠른 시작</div>
+          <div className="space-y-2">
+            {quickActions.map((a) => (
+              <Link key={a.href} href={a.href} className="flex items-center gap-3 rounded-xl border border-line bg-card px-4 py-3 hover:bg-paper-2 transition">
+                <span className="w-7 h-7 grid place-items-center rounded-lg bg-coral-soft text-coral text-sm">{a.icon}</span>
+                <span className="text-sm font-medium">{a.label}</span>
+              </Link>
             ))}
           </div>
-          <div className="flex items-center justify-between mt-3">
-            <p className="text-sm text-ink-soft">{thisWeekDone >= target ? "이번 주 목표 달성! 🎉" : `${Math.max(0, target - thisWeekDone)}건 더 올리면 완성`}</p>
-            <span className="text-sm text-coral font-medium">연속 {streak}주 🔥</span>
-          </div>
-          {strategy && <p className="text-xs text-muted mt-2 preserve-lines">{strategy.weeklyGoal}</p>}
-        </Card>
 
-        {/* 팔로워 챌린지 요약 */}
-        <Card className="p-5">
-          <div className="text-sm font-medium mb-1">팔로워 챌린지</div>
-          <div className="font-display text-2xl">{followers.toLocaleString()}명 <span className="text-base text-muted">· 다음 {nextTarget}</span></div>
-          <div className="relative h-2.5 bg-paper-2 rounded-full overflow-hidden mt-3">
-            <div className="absolute inset-y-0 left-0 bg-coral rounded-full" style={{ width: `${roadmapPct}%` }} />
-          </div>
-          <Link href="/app/insights" className="text-xs text-coral mt-2 inline-block">성과·챌린지 자세히 →</Link>
-        </Card>
-      </div>
-
-      {/* 연동 계정 + 발행 대기 */}
-      <div className="grid lg:grid-cols-2 gap-4">
-        <Card className="p-5">
-          <div className="text-sm font-medium mb-2">연동 인스타 계정</div>
-          {user.igAccounts.length === 0 ? (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-ink-soft">아직 연동된 계정이 없어요.</p>
-              <Link href="/app/accounts"><Button size="sm">연동하기</Button></Link>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-8 h-8 rounded-full bg-ink text-paper grid place-items-center text-sm">{handle?.[0]?.toUpperCase()}</span>
-                <div>
-                  <div className="font-medium">@{handle}</div>
-                  <div className="text-xs text-muted">{user.igAccounts.length}개 계정 · {user.igAccounts.find((a) => a.id === user.activeIgAccountId)?.mode === "정식" ? "정식 연동" : "테스터"}</div>
-                </div>
-              </div>
-              <Link href="/app/accounts"><Button variant="outline" size="sm">관리</Button></Link>
-            </div>
-          )}
-        </Card>
-
-        <Card className="p-5">
-          <div className="flex items-center justify-between mb-1">
+          {/* 이번 주 업로드 — 기존 '이번 주 현황' 자리 대체 */}
+          <div className="flex items-center justify-between mt-6 mb-1">
             <div className="text-sm font-medium">이번 주 업로드</div>
             <Link href="/app/insights" className="text-xs text-coral">전체 릴레이 →</Link>
           </div>
           <p className="text-xs text-muted mb-4">요일별 발행 건수를 색 농도로 — 꾸준히 올리고 있는지 한눈에.</p>
           <WeeklyUploadGraph jobs={jobs} />
         </Card>
-      </div>
 
-      {/* 기획 현황 (미니 칸반) */}
-      <Card className="p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-sm font-medium">기획 현황</div>
-          <Link href="/app/board" className="text-xs text-coral">콘텐츠 관리 →</Link>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {KANBAN_COLUMNS.map((col) => (
-            <div key={col} className="rounded-xl bg-paper-2/50 p-3 text-center">
-              <div className="font-display text-2xl" style={{ color: STAGE_TONE[col] }}>{columnCount(col)}</div>
-              <div className="text-[11px] text-muted mt-1">{col}</div>
+        {/* 이번 주 콘텐츠 흐름 */}
+        <Card className="p-5">
+          <div className="text-sm font-medium mb-3">이번 주 콘텐츠 흐름</div>
+          <div className="flex items-center gap-1.5">
+            {flow.map((s, i) => (
+              <div key={s.label} className="contents">
+                <div className={`flex-1 flex flex-col items-center gap-0.5 rounded-xl py-2.5 ${s.on ? "bg-coral-soft" : "bg-paper-2"}`}>
+                  <span className={`font-display text-lg ${s.on ? "text-coral" : "text-ink"}`}>{s.n}</span>
+                  <span className={`text-xs ${s.on ? "text-coral" : "text-ink-soft"}`}>{s.label}</span>
+                </div>
+                {i < flow.length - 1 && <span className="text-muted text-sm">→</span>}
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between mt-5 mb-2">
+            <div className="text-sm font-medium">최근 콘텐츠</div>
+            <Link href="/app/board" className="text-xs text-coral">전체 보기 →</Link>
+          </div>
+          {recentCards.length === 0 ? (
+            <p className="text-sm text-ink-soft py-4">아직 만든 콘텐츠가 없어요.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {recentCards.map((c) => {
+                const pill = statusPill(c.status);
+                return (
+                  <Link key={c.id} href="/app/board" className="flex items-center gap-3 rounded-xl px-2 py-2 -mx-2 hover:bg-paper-2/60 transition">
+                    <span className="w-10 h-10 rounded-lg bg-paper-2 shrink-0" style={{ background: c.brandColor || undefined }} />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium truncate">{c.title}</div>
+                      <div className="text-xs text-muted truncate">{statusSub(c.status)}</div>
+                    </div>
+                    <Badge tone={pill.tone}>{pill.label}</Badge>
+                  </Link>
+                );
+              })}
             </div>
-          ))}
-        </div>
-      </Card>
+          )}
+        </Card>
+      </div>
 
       {cards.length === 0 && (
         <Card className="p-6 text-center">
           <p className="text-ink-soft">아직 만든 콘텐츠가 없어요. 첫 기획부터 시작해 볼까요?</p>
-          <Link href="/app/plans" className="inline-block mt-3"><Button>AI 기획 리스트로 →</Button></Link>
+          <Link href="/app/plans" className="inline-block mt-3 text-coral font-medium">AI 기획 리스트로 →</Link>
         </Card>
       )}
     </div>
   );
 }
 
+// 통계 카드 한 칸
+function StatCard({ k, v, d, dTone }: { k: string; v: React.ReactNode; d: string; dTone: BadgeTone }) {
+  const tone = { ink: "text-ink", coral: "text-coral", teal: "text-teal", amber: "text-amber", muted: "text-muted", rose: "text-rose" }[dTone];
+  return (
+    <Card className="p-4">
+      <div className="text-xs text-muted">{k}</div>
+      <div className="font-display text-2xl mt-1">{v}</div>
+      <div className={`text-xs mt-1 ${tone}`}>{d}</div>
+    </Card>
+  );
+}
+
 // 이번 주(월~일) 요일별 발행 건수를 색 농도로 — 인사이트 '업로드 릴레이'와 같은 시각 언어.
-// 데이터 소스: 발행완료 job 의 publishedAt (이번 주 루틴과 동일 → 숫자 정합).
+// 데이터 소스: 발행완료 job 의 publishedAt (이번 주 발행 통계와 동일 → 숫자 정합).
 function WeeklyUploadGraph({ jobs }: { jobs: PublishJob[] }) {
   const counts = new Map<string, number>();
   for (const j of jobs) {
@@ -208,7 +255,6 @@ function WeeklyUploadGraph({ jobs }: { jobs: PublishJob[] }) {
     const future = t > today.getTime();
     return { label: labels[i], n: future ? -1 : counts.get(dayKey(t)) ?? 0, isToday: t === today.getTime() };
   });
-  const total = days.reduce((a, d) => a + Math.max(0, d.n), 0);
 
   return (
     <div>
@@ -224,8 +270,7 @@ function WeeklyUploadGraph({ jobs }: { jobs: PublishJob[] }) {
           </div>
         ))}
       </div>
-      <div className="flex items-center justify-between mt-3 text-xs text-muted">
-        <span>이번 주 총 발행 {total}건</span>
+      <div className="flex items-center justify-end mt-3 text-xs text-muted">
         <span className="flex items-center gap-1">
           적음
           {levels.map((l) => <span key={l} className="w-3 h-3 rounded-sm inline-block border border-black/5" style={{ background: l }} />)}
