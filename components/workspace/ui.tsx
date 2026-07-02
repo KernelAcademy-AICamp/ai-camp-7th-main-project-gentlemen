@@ -64,7 +64,7 @@ export function Badge({
   };
   return (
     <span
-      className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full ${tones[tone]}`}
+      className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${tones[tone]}`}
     >
       {children}
     </span>
@@ -154,10 +154,12 @@ export function EmptyState({
   title,
   desc,
   action,
+  nowrapDesc = false, // 설명을 줄바꿈 없이 한 줄로(넓은 카드용)
 }: {
   title: string;
   desc?: string;
   action?: ReactNode;
+  nowrapDesc?: boolean;
 }) {
   return (
     <div className="text-center py-14 px-6">
@@ -165,7 +167,7 @@ export function EmptyState({
         ✦
       </div>
       <h3 className="font-display text-lg text-ink">{title}</h3>
-      {desc && <p className="text-sm text-ink-soft mt-1 max-w-sm mx-auto">{desc}</p>}
+      {desc && <p className={`text-sm text-ink-soft mt-1 ${nowrapDesc ? "whitespace-nowrap" : "max-w-sm mx-auto"}`}>{desc}</p>}
       {action && <div className="mt-4 flex justify-center">{action}</div>}
     </div>
   );
