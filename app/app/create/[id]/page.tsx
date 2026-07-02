@@ -571,15 +571,15 @@ function ReviewTab({ card, dirty, onChange, onSaveNeeded, domain, consent, setCo
     <div className="space-y-5">
       {/* 신호등 판정 헤더 */}
       <div className="border rounded-2xl p-5" style={{ background: meta.soft, borderColor: meta.color }}>
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div className="flex items-start gap-3">
-            <span className="text-2xl leading-none mt-0.5">{meta.emoji}</span>
-            <div>
-              <div className="font-semibold text-lg" style={{ color: meta.color }}>{meta.label}</div>
-              <p className="text-sm text-ink-soft mt-1 max-w-xl">{meta.desc}</p>
-            </div>
+        <div className="flex items-start gap-3">
+          <span className="text-2xl leading-none mt-0.5">{meta.emoji}</span>
+          <div>
+            <div className="font-semibold text-lg" style={{ color: meta.color }}>{meta.label}</div>
+            <p className="text-sm text-ink-soft mt-1 max-w-xl">{meta.desc}</p>
+            {domain && domain !== "없음" && (
+              <div className="mt-2"><Badge tone="muted">검수 기준 · {domain}</Badge></div>
+            )}
           </div>
-          {domain && domain !== "없음" && <Badge tone="muted">검수 기준 · {domain}</Badge>}
         </div>
       </div>
 
