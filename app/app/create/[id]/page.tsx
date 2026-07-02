@@ -6,7 +6,8 @@ import { api, formatDate } from "@/lib/workspace/client";
 import { Badge, Button, Card, Field, inputClass } from "@/components/workspace/ui";
 import { Generating } from "@/components/workspace/Generating";
 import { CardCanvas, THEMES, getTheme } from "@/components/workspace/CardCanvas";
-import { activeIgHandle, findIgAccount, type CardNews, type CardPage, type IgAccount, type PublicUser, type ReviewFlag } from "@/lib/workspace/types";
+import { activeIgHandle, findIgAccount, type CardNews, type CardPage, type IgAccount, type PublicUser, type ReviewFlag, type SensitiveDomain } from "@/lib/workspace/types";
+import { decideVerdict, verdictGate, VERDICT_META, isChecklist, LEGAL_BASIS_NOTE } from "@/lib/workspace/verdict";
 
 const STEPS = ["편집", "검수", "업로드"] as const;
 type Step = 0 | 1 | 2;
@@ -94,6 +95,7 @@ export default function EditorPage() {
   const [photos, setPhotos] = useState<Record<number, string>>({});
 
   const [draft, setDraft] = useState<{ title: string; pages: CardPage[]; caption: string; cta: string; theme: string; brandColor: string; photoStyle: "top" | "bg"; ratio: "1:1" | "3:4" } | null>(null);
+  const [consent, setConsent] = useState(false); // 🔴 경고 판정 시 책임 동의
 
   const loadPhotos = useCallback(async (cardId: string) => {
     try {
@@ -211,13 +213,14 @@ export default function EditorPage() {
         setAdvancing(false);
       }
     } else if (step === 1) {
-      if (card.reviewFlags.some((f) => !f.resolved)) {
-        setStepMsg("미해결 검수 항목을 모두 확인해 주세요.");
+      const gate = verdictGate(decideVerdict(card.reviewFlags), consent);
+      if (!gate.ok) {
+        setStepMsg(gate.reason ?? "검수 게이트를 통과하지 못했어요.");
         return;
       }
       setAdvancing(true);
       try {
-        const { card: c } = await api<{ card: CardNews }>(`/api/cards/${id}/review`, { method: "PATCH", body: { action: "pass" } });
+        const { card: c } = await api<{ card: CardNews }>(`/api/cards/${id}/review`, { method: "PATCH", body: { action: "pass", consent } });
         setCard(c);
         setStep(2);
       } catch (e) {
@@ -238,6 +241,7 @@ export default function EditorPage() {
     );
 
   const niche = user.survey?.niche ?? "";
+  const reviewVerdict = decideVerdict(card.reviewFlags);
   const handle = activeIgHandle(user) ?? user.name;
   const activeAccount = findIgAccount(user);
   const isReels = card.format === "릴스";
@@ -402,7 +406,7 @@ export default function EditorPage() {
               {step === 0 && (
                 <EditLeft draft={draft} photo={photo} photos={photos} activePage={activePage} hashtagsText={hashtagsText} setHashtagsText={(v) => { setHashtagsText(v); setDirty(true); }} patchDraft={patchDraft} patchPage={patchPage} uploadPhoto={uploadPhoto} removePhoto={removePhoto} />
               )}
-              {step === 1 && <ReviewTab card={card} dirty={dirty} onChange={setCard} onSaveNeeded={save} />}
+              {step === 1 && <ReviewTab card={card} dirty={dirty} onChange={setCard} onSaveNeeded={save} domain={user.survey?.sensitiveDomain} consent={consent} setConsent={setConsent} />}
               {step === 2 && <PublishTab card={card} draft={draft} photo={photo} photoStyle={draft.photoStyle} ratio={draft.ratio} photos={photos} niche={niche} handle={handle} account={activeAccount} publicBase={publicBase} reload={load} />}
             </div>
           </div>
@@ -412,8 +416,16 @@ export default function EditorPage() {
             <div className="mt-6 flex items-center justify-end gap-3 flex-wrap">
               {stepMsg && <span className="text-sm text-coral mr-auto">{stepMsg}</span>}
               {step > 0 && <Button variant="ghost" onClick={() => setStep((step - 1) as Step)}>← 이전</Button>}
-              <Button onClick={confirmStep} disabled={advancing}>
-                {advancing ? "처리 중…" : step === 0 ? "확인 — 검수로 →" : "확인 — 승인하고 업로드로 →"}
+              <Button onClick={confirmStep} disabled={advancing || (step === 1 && reviewVerdict === "black")}>
+                {advancing
+                  ? "처리 중…"
+                  : step === 0
+                    ? "확인 — 검수로 →"
+                    : reviewVerdict === "black"
+                      ? "차단 — 발행 불가"
+                      : reviewVerdict === "red"
+                        ? "동의하고 업로드로 →"
+                        : "확인 — 승인하고 업로드로 →"}
               </Button>
             </div>
           )}
@@ -521,10 +533,27 @@ function EditLeft({ draft, photo, photos, activePage, hashtagsText, setHashtagsT
   );
 }
 
-function ReviewTab({ card, dirty, onChange, onSaveNeeded }: { card: CardNews; dirty: boolean; onChange: (c: CardNews) => void; onSaveNeeded: () => Promise<void> }) {
+function ReviewTab({ card, dirty, onChange, onSaveNeeded, domain, consent, setConsent }: {
+  card: CardNews;
+  dirty: boolean;
+  onChange: (c: CardNews) => void;
+  onSaveNeeded: () => Promise<void>;
+  domain?: SensitiveDomain;
+  consent: boolean;
+  setConsent: (v: boolean) => void;
+}) {
   const [busy, setBusy] = useState(false);
-  const unresolved = card.reviewFlags.filter((f) => !f.resolved);
-  const allResolved = unresolved.length === 0;
+  const [showLegal, setShowLegal] = useState(false);
+  const [showIso, setShowIso] = useState(false);
+
+  const verdict = decideVerdict(card.reviewFlags);
+  const meta = VERDICT_META[verdict];
+  const issues = card.reviewFlags.filter((f) => !isChecklist(f));
+  const checklist = card.reviewFlags.filter(isChecklist);
+  const mustPass = issues.filter((f) => f.mustPass);
+  const failCount = mustPass.filter((f) => f.level === "fail").length;
+  const warnCount = mustPass.filter((f) => f.level === "warn").length;
+  const passed = card.status === "제작완료" || card.status === "예약업로드" || card.status === "업로드완료";
 
   async function runReview() {
     setBusy(true);
@@ -538,58 +567,144 @@ function ReviewTab({ card, dirty, onChange, onSaveNeeded }: { card: CardNews; di
     onChange(c);
   }
 
-  const passed = card.status === "제작완료" || card.status === "예약업로드" || card.status === "업로드완료";
-
   return (
     <div className="space-y-5">
-      <Card className="p-5 bg-amber-soft/50 border-amber-soft">
+      {/* 신호등 판정 헤더 */}
+      <div className="border rounded-2xl p-5" style={{ background: meta.soft, borderColor: meta.color }}>
         <div className="flex items-start gap-3">
-          <span className="text-xl">🛡</span>
+          <span className="text-2xl leading-none mt-0.5">{meta.emoji}</span>
           <div>
-            <div className="font-medium">검수 = 필수 게이트 (휴먼인더루프)</div>
-            <p className="text-sm text-ink-soft mt-1">
-              발행 전 검수를 반드시 거쳐요. ‘AI 생성물’ 표기 · 출처 확인 · 민감 표현(권유·강요) · 표기 누락을
-              확인/수정해야 발행 버튼이 켜집니다. 플래그 중심으로 1~2분이면 충분해요.
-            </p>
+            <div className="font-semibold text-lg" style={{ color: meta.color }}>{meta.label}</div>
+            <p className="text-sm text-ink-soft mt-1 max-w-xl">{meta.desc}</p>
+            {domain && domain !== "없음" && (
+              <div className="mt-2"><Badge tone="muted">검수 기준 · {domain}</Badge></div>
+            )}
           </div>
         </div>
-      </Card>
+      </div>
 
+      {/* 필수통과 2축 요약 */}
+      <div className="grid grid-cols-2 gap-3">
+        {(["규제 안전성", "사실 정확성"] as const).map((ax) => {
+          const hit = mustPass.filter((f) => f.axis === ax);
+          const fail = hit.some((f) => f.level === "fail");
+          const warn = hit.some((f) => f.level === "warn");
+          return (
+            <Card key={ax} className="p-3 flex items-center justify-between gap-2">
+              <span className="text-sm font-medium">🔒 {ax}</span>
+              <Badge tone={fail ? "rose" : warn ? "amber" : "teal"}>{fail ? "차단" : warn ? "경고" : "이상 없음"}</Badge>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* 자동 점검 + 재검수 */}
       <div className="flex items-center justify-between">
         <div className="text-sm">
-          자동 점검: <span className="font-medium">{card.reviewFlags.length === 0 ? "플래그 없음 ✓" : `${unresolved.length}건 확인 필요`}</span>
+          자동 점검: <span className="font-medium">{issues.length === 0 ? "감지된 항목 없음 ✓" : `${issues.length}건 감지`}</span>
         </div>
         <Button variant="outline" size="sm" onClick={runReview} disabled={busy}>
           {busy ? "점검 중…" : "검수 다시 실행"}
         </Button>
       </div>
 
-      <div className="space-y-3">
-        {card.reviewFlags.map((f) => (
-          <Card key={f.id} className={`p-4 ${f.resolved ? "opacity-60" : ""}`}>
-            <div className="flex items-start gap-3">
-              <input type="checkbox" checked={f.resolved} onChange={() => toggleFlag(f)} className="mt-1 w-4 h-4 accent-[#ff385c]" />
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <Badge tone={f.severity === "high" ? "rose" : f.severity === "medium" ? "amber" : "muted"}>{f.type}</Badge>
-                  {f.excerpt && <span className="text-xs text-muted">“{f.excerpt}”</span>}
-                </div>
-                <p className="text-sm text-ink-soft mt-1.5">{f.message}</p>
+      {/* 감지된 항목 */}
+      {issues.length > 0 && (
+        <div className="space-y-3">
+          {issues.map((f) => (
+            <Card key={f.id} className="p-4">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge tone={f.level === "fail" ? "rose" : f.mustPass ? "amber" : "muted"}>{f.axis ?? f.type}</Badge>
+                {f.mustPass && <span className="text-xs text-muted">🔒 필수통과</span>}
+                {f.excerpt && <span className="text-xs text-muted">“{f.excerpt}”</span>}
               </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+              <p className="text-sm text-ink-soft mt-1.5">{f.message}</p>
+            </Card>
+          ))}
+        </div>
+      )}
 
+      {/* ⚫ 차단 — 발행 불가 + 법적 근거 토글 (박스 바로 아래) */}
+      {verdict === "black" && (
+        <div className="border rounded-2xl p-5" style={{ background: VERDICT_META.black.soft, borderColor: VERDICT_META.black.color }}>
+          <div className="flex items-start gap-3">
+            <span className="w-7 h-7 rounded-full grid place-items-center text-white text-sm shrink-0" style={{ background: VERDICT_META.black.color }}>⚫</span>
+            <div className="flex-1">
+              <div className="font-medium">발행 불가 {failCount}건</div>
+              <p className="text-sm text-ink-soft mt-1">법령 위반 소지가 뚜렷한 표현이 있어 이 콘텐츠는 발행할 수 없어요. 위 표현을 수정한 뒤 ‘검수 다시 실행’을 눌러주세요.</p>
+              <button type="button" onClick={() => setShowLegal((v) => !v)} className="text-sm underline text-muted hover:text-ink mt-2">
+                {showLegal ? "법적 근거 접기" : "법적 근거 보기"}
+              </button>
+              {showLegal && <p className="text-xs text-ink-soft mt-2 leading-relaxed">{LEGAL_BASIS_NOTE}</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🔴 경고 — 책임 동의 후 발행 */}
+      {verdict === "red" && (
+        <div className="border rounded-2xl p-5" style={{ background: VERDICT_META.red.soft, borderColor: VERDICT_META.red.color }}>
+          <div className="font-medium" style={{ color: VERDICT_META.red.color }}>🔴 경고 {warnCount}건 — 발행은 가능해요</div>
+          <p className="text-sm text-ink-soft mt-1">
+            규제·사실 관련 회색지대 표현이 있어요. 그래도 발행하려면, <b>우리가 이만큼 안내했음에도 발행하는 만큼 최종 책임은 본인에게 있음</b>에 동의해 주세요.
+          </p>
+          <label className="flex items-start gap-2 mt-3 text-sm">
+            <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#C0392B]" />
+            <span>위 경고를 확인했고, 발행에 따른 최종 책임이 본인에게 있음에 동의합니다.</span>
+          </label>
+          <button type="button" onClick={() => setShowLegal((v) => !v)} className="text-sm underline text-muted hover:text-ink mt-2">
+            {showLegal ? "법적 근거 접기" : "법적 근거 보기"}
+          </button>
+          {showLegal && <p className="text-xs text-ink-soft mt-2 leading-relaxed">{LEGAL_BASIS_NOTE}</p>}
+        </div>
+      )}
+
+      {/* 확인 항목(체크리스트) */}
+      {checklist.length > 0 && (
+        <Card className="p-4">
+          <div className="text-sm font-medium mb-2">확인 항목</div>
+          <div className="space-y-2">
+            {checklist.map((f) => (
+              <label key={f.id} className={`flex items-start gap-2 text-sm ${f.resolved ? "opacity-60" : ""}`}>
+                <input type="checkbox" checked={f.resolved} onChange={() => toggleFlag(f)} className="mt-0.5 w-4 h-4 accent-[#2E9E5B]" />
+                <span className="text-ink-soft">{f.message}</span>
+              </label>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* 승인 상태 */}
       <Card className="p-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <div className="font-medium">검수 통과 · 사용자 승인</div>
-            <p className="text-sm text-ink-soft">{passed ? "이미 통과했어요." : allResolved ? "모든 항목을 확인했어요. 아래 ‘확인 — 승인하고 업로드로’ 버튼으로 통과하세요." : "미해결 항목을 모두 체크해야 통과할 수 있어요."}</p>
+            <p className="text-sm text-ink-soft">
+              {passed
+                ? "이미 통과했어요."
+                : verdict === "black"
+                  ? "차단 항목을 수정해야 승인할 수 있어요."
+                  : verdict === "red"
+                    ? "책임 동의 체크 후 아래 ‘동의하고 업로드로’ 버튼으로 통과하세요."
+                    : "아래 ‘승인하고 업로드로’ 버튼으로 통과하세요."}
+            </p>
           </div>
-          {passed ? <Badge tone="teal">✓ 통과됨</Badge> : <Badge tone={allResolved ? "teal" : "amber"}>{allResolved ? "승인 준비됨" : `${unresolved.length}건 남음`}</Badge>}
+          {passed ? <Badge tone="teal">✓ 통과됨</Badge> : <Badge tone={verdict === "black" ? "rose" : verdict === "red" ? "amber" : "teal"}>{meta.label}</Badge>}
         </div>
       </Card>
+
+      {/* 신뢰 장치 (ISO 원칙) */}
+      <div>
+        <button type="button" onClick={() => setShowIso((v) => !v)} className="text-xs text-muted hover:text-ink">
+          🛡 국제표준 원칙 기반 3단 점검 {showIso ? "▲" : "▼"}
+        </button>
+        {showIso && (
+          <p className="text-xs text-ink-soft leading-relaxed mt-2">
+            코드 규칙 → AI 자가점검(사실성·규제·톤·요청준수·완전성·형식·UX 7축) → 사람 승인의 3단 게이트로 검수해요.
+            AI 관리·품질·위험 관련 국제표준(ISO/IEC 42001·25059·23894) 원칙을 참고했어요(인증은 아니에요).
+          </p>
+        )}
+      </div>
 
       {card.approvalLog.length > 0 && (
         <Card className="p-5">
@@ -833,14 +948,18 @@ function ReelsEditor({
   const [scheduleAt, setScheduleAt] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [consent, setConsent] = useState(false);
+  const [showLegal, setShowLegal] = useState(false);
 
   const live = account?.mode === "정식";
-  const unresolved = card.reviewFlags.filter((f) => !f.resolved);
-  const allResolved = unresolved.length === 0;
+  const verdict = decideVerdict(card.reviewFlags);
+  const meta = VERDICT_META[verdict];
+  const issues = card.reviewFlags.filter((f) => !isChecklist(f));
+  const gate = verdictGate(verdict, consent);
   const hasVideo = !!card.hasVideo;
   const done = card.status === "업로드완료";
   const reserved = card.status === "예약업로드";
-  const canPublishNow = allResolved && hasVideo && !(live && !publicBase);
+  const canPublishNow = gate.ok && hasVideo && !(live && !publicBase);
 
   async function runReview() {
     setBusy(true);
@@ -848,10 +967,6 @@ function ReelsEditor({
     const { card: c } = await api<{ card: CardNews }>(`/api/cards/${card.id}/review`, { method: "POST" });
     onChange(c);
     setBusy(false);
-  }
-  async function toggleFlag(f: ReviewFlag) {
-    const { card: c } = await api<{ card: CardNews }>(`/api/cards/${card.id}/review`, { method: "PATCH", body: { flagId: f.id, resolved: !f.resolved } });
-    onChange(c);
   }
   async function uploadVideo(file: File) {
     setUploading(true);
@@ -963,20 +1078,33 @@ function ReelsEditor({
 
         <Card className="p-5">
           <div className="flex items-center justify-between mb-2">
-            <div className="font-medium text-sm">검수 {allResolved ? "✓" : `· ${unresolved.length}건`}</div>
+            <div className="font-medium text-sm">검수 <span style={{ color: meta.color }}>· {meta.emoji} {meta.label}</span></div>
             <button onClick={runReview} disabled={busy} className="text-xs text-muted hover:text-ink">다시 검수</button>
           </div>
-          {card.reviewFlags.length === 0 ? (
+          {issues.length === 0 ? (
             <p className="text-xs text-muted">감지된 항목이 없어요.</p>
           ) : (
-            <div className="space-y-2">
-              {card.reviewFlags.map((f) => (
-                <label key={f.id} className={`flex items-start gap-2 text-xs ${f.resolved ? "opacity-60" : ""}`}>
-                  <input type="checkbox" checked={f.resolved} onChange={() => toggleFlag(f)} className="mt-0.5 w-3.5 h-3.5 accent-[#ff385c]" />
-                  <span className="text-ink-soft"><b>{f.type}</b> {f.message}</span>
-                </label>
+            <div className="space-y-1.5">
+              {issues.map((f) => (
+                <div key={f.id} className="text-xs text-ink-soft flex items-center gap-1.5 flex-wrap">
+                  <Badge tone={f.level === "fail" ? "rose" : f.mustPass ? "amber" : "muted"}>{f.axis ?? f.type}</Badge>
+                  <span>{f.message}</span>
+                </div>
               ))}
             </div>
+          )}
+          {verdict === "black" && (
+            <div className="mt-3 text-xs rounded-lg p-2.5" style={{ background: VERDICT_META.black.soft }}>
+              ⚫ 법령 위반 소지가 뚜렷해 발행할 수 없어요.
+              <button type="button" onClick={() => setShowLegal((v) => !v)} className="underline ml-1 text-muted hover:text-ink">{showLegal ? "접기" : "법적 근거"}</button>
+              {showLegal && <p className="mt-1 leading-relaxed text-ink-soft">{LEGAL_BASIS_NOTE}</p>}
+            </div>
+          )}
+          {verdict === "red" && (
+            <label className="mt-3 flex items-start gap-2 text-xs rounded-lg p-2.5" style={{ background: VERDICT_META.red.soft }}>
+              <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 w-3.5 h-3.5 accent-[#C0392B]" />
+              <span>🔴 경고 — 회색지대 표현이 있어요. 최종 책임이 본인에게 있음에 동의하고 발행합니다.</span>
+            </label>
           )}
         </Card>
 
@@ -993,7 +1121,7 @@ function ReelsEditor({
             </p>
             {live && !publicBase && <p className="text-xs text-coral">PUBLIC_BASE_URL 미설정 — 실제 발행 불가</p>}
             {!hasVideo && <p className="text-xs text-amber">영상을 먼저 업로드하세요.</p>}
-            {!allResolved && <p className="text-xs text-amber">검수 항목을 모두 확인하세요.</p>}
+            {!gate.ok && <p className="text-xs text-amber">{gate.reason}</p>}
             {reserved && <p className="text-xs text-ink-soft">예약됨 — 콘텐츠 관리에서 취소 가능.</p>}
             <Button className="w-full" onClick={() => publish(true)} disabled={!canPublishNow || publishing}>
               {publishing ? "발행 중…" : live ? "지금 인스타 발행" : "지금 발행"}
