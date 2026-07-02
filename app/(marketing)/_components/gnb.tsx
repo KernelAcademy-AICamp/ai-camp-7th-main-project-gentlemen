@@ -5,7 +5,7 @@ import { useState } from "react";
 import { AuthButton } from "./auth-modal";
 
 /**
- * 홍보 사이트 GNB (와이어프레임 .gnb). 모바일 햄버거 토글.
+ * 홍보 사이트 GNB — 홈(kup-hero)과 동일한 핑크 헤더. 모바일 햄버거 토글.
  * 로그인 상태에 따라 우측 CTA 분기:
  *  - 로그아웃: 로그인 · 시작하기(팝업)
  *  - 로그인:   워크스페이스로 · 로그아웃
@@ -19,7 +19,7 @@ const NAV = [
 function LogoutButton({ className }: { className?: string }) {
   // 로그아웃 = /auth/signout 로 POST (세션 종료 후 홈으로)
   return (
-    <form action="/auth/signout" method="post" style={{ display: "inline" }}>
+    <form action="/auth/signout" method="post" style={{ display: "inline-flex" }}>
       <button type="submit" className={className}>
         로그아웃
       </button>
@@ -31,17 +31,17 @@ function Cta({ loggedIn, mobile }: { loggedIn: boolean; mobile?: boolean }) {
   if (loggedIn) {
     return (
       <>
-        <Link href="/app/home" className="btn primary">
+        <Link href="/app/home" className="btn btn-primary">
           워크스페이스로
         </Link>
-        <LogoutButton className={mobile ? "btn line" : "btn ghost"} />
+        <LogoutButton className={mobile ? "btn btn-line" : "btn btn-ghost"} />
       </>
     );
   }
   return (
     <>
-      <AuthButton className={mobile ? "btn line" : "btn ghost"}>로그인</AuthButton>
-      <AuthButton className="btn primary">시작하기</AuthButton>
+      <AuthButton className={mobile ? "btn btn-line" : "btn btn-ghost"}>로그인</AuthButton>
+      <AuthButton className="btn btn-primary">시작하기</AuthButton>
     </>
   );
 }
@@ -53,7 +53,8 @@ export function Gnb({ loggedIn }: { loggedIn: boolean }) {
     <header className="gnb">
       <div className="gnb-inner">
         <Link href="/" className="logo">
-          <span className="mark">K</span>KUP
+          <span className="dot" />
+          KUP
         </Link>
         <nav className="gnb-nav">
           {NAV.map((n) => (
