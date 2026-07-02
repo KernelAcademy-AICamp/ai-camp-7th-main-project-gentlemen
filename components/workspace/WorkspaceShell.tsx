@@ -9,7 +9,7 @@ import { activeIgHandle, type PublicUser } from "@/lib/workspace/types";
 
 const NAV = [
   { href: "/app/home", label: "홈", icon: "⌂", desc: "워크스페이스 개요" },
-  { href: "/app/plans", label: "AI 기획 리스트", icon: "✦", desc: "주제 기획·제작" },
+  { href: "/app/plans", label: "AI 콘텐츠 생성", icon: "✦", desc: "주제 기획·제작" },
   { href: "/app/board", label: "콘텐츠 관리", icon: "▦", desc: "칸반 보드" },
   { href: "/app/insights", label: "콘텐츠 성과", icon: "◆", desc: "인사이트·챌린지" },
   { href: "/app/dm", label: "DM 리드마그넷", icon: "✉", desc: "자동화 설정" },
