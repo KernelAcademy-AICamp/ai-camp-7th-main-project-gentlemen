@@ -1,5 +1,6 @@
 import { mutateDB } from "@/lib/workspace/db";
 import { bad, json, withUser } from "@/lib/workspace/api";
+import { detectSensitiveDomain } from "@/lib/workspace/sensitivity";
 import type { SurveyProfile } from "@/lib/workspace/types";
 
 export async function GET() {
@@ -36,7 +37,8 @@ export async function PUT(req: Request) {
     hashtagStyle: (body.hashtagStyle || "").trim(),
     ctaStyle: (body.ctaStyle || "").trim(),
     visualGuide: (body.visualGuide || "").trim(),
-    sensitiveDomain: body.sensitiveDomain || "없음",
+    // 설문에서 안 받고 니치로 자동 감지(안전 가드레일 유지). body 값이 오면 존중.
+    sensitiveDomain: body.sensitiveDomain || detectSensitiveDomain((body.niche || "").trim()),
     benchmark: (body.benchmark || "").trim(),
   };
 

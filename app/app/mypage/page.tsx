@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, formatDate } from "@/lib/workspace/client";
-import { Badge, Button, Card, Field, inputClass, SectionTitle } from "@/components/workspace/ui";
+import { Button, Card, Field, inputClass, SectionTitle } from "@/components/workspace/ui";
 import { SurveyForm } from "@/components/workspace/SurveyForm";
 import type { CardNews, PublicUser } from "@/lib/workspace/types";
 
@@ -62,7 +62,6 @@ export default function MyPage() {
               {user.survey ? (
                 <dl className="grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
                   <Row label="주제" value={user.survey.niche} />
-                  <Row label="팔로워" value={`${user.survey.followers}명`} />
                   <Row label="운영 목적" value={user.survey.goals.join(", ") || "—"} />
                   <Row label="주당 업로드" value={`${user.survey.weeklyCapacity}회`} />
                   <Row label="브랜드 키워드" value={user.survey.brandKeywords.join(", ") || "—"} />
