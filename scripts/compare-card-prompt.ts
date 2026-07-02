@@ -87,6 +87,22 @@ const SCENARIOS: Record<string, Scenario> = {
       keyMessage: "쓰는 돈과 모으는 돈을 물리적으로 분리한다",
     },
   },
+  songs: {
+    label: "플레이리스트 · 카드뉴스 (환각 유발 — 실존 곡/가수 지어내나)",
+    survey: baseSurvey({
+      niche: "감성 플레이리스트 큐레이션",
+      brandKeywords: ["플레이리스트", "감성음악"],
+      voiceExample: "잔잔하고 감성적인 존댓말",
+      ctaStyle: "저장해두고 오늘 밤에 들어보세요",
+    }),
+    input: {
+      topicTitle: "비 오는 날 듣기 좋은 노래 추천",
+      format: "카드뉴스",
+      objective: "저장",
+      pageCount: 5,
+      keyMessage: "빗소리에 어울리는 곡을 장면별로 골랐어요",
+    },
+  },
   reels: {
     label: "홈카페 · 릴스 대본",
     survey: baseSurvey({}),
@@ -146,6 +162,52 @@ function cardSystemPromptV2(survey: SurveyProfile, format: CardFormat): string {
     ...qualityRules,
     "결과는 JSON 객체만. 스키마: {title, pages:[{index, headline, body, photoNote}], caption, hashtags:string[8~12], cta}",
     "첫 페이지(index 0)는 강한 후킹(질문형·숫자형·통념반전형 중 1). 마지막 페이지는 행동 유도(CTA). 각 body 는 1~3문장.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+// ── C: P5 신규안 — "콘텐츠 규칙 코어"(참고 지침 발췌) + B의 빈카피금지/작성공식 병합 ──
+// (출력 스키마 그대로. 서사 아크는 P4 아웃라인 담당이라 여기선 아웃라인 준수 + 카피/사실성/자문에 집중)
+function cardSystemPromptV3(survey: SurveyProfile, format: CardFormat): string {
+  const common = [
+    `브랜드 키워드: ${survey.brandKeywords.join(", ") || "(없음)"}`,
+    `문체 예시: ${survey.voiceExample || "(없음)"}`,
+    `금지 표현: ${survey.forbiddenExpressions.join(", ") || "(없음)"}`,
+    `캡션 길이 선호: ${survey.captionLength} / 해시태그 스타일: ${survey.hashtagStyle} / CTA 스타일: ${survey.ctaStyle}`,
+    survey.sensitiveDomain !== "없음"
+      ? `민감 도메인(${survey.sensitiveDomain}): 권유·강요·단정·보장 표현 금지, 정보 제공형 + 면책 뉘앙스.`
+      : "",
+  ];
+
+  const qualityRules = [
+    "[구성] 주어진 아웃라인의 흐름을 따르되 각 장의 본문을 완성한다. 한 장 = 한 가지 생각. 첫 장(index 0)은 스크롤을 멈추는 후킹, 마지막 장은 자연스러운 CTA(값싼 참여유도 금지).",
+    "[카피] 문장은 짧고 리듬 있게, 강한 대비, 자연스러운 구어체 한국어. 과장·전문가인 척·SNS 상투어·느낌표 남발 금지. 추상적 동기부여 대신 구체적이고 바로 써먹을 내용. 이모지는 장당 0~1개.",
+    "[빈 카피 금지] ★가장 중요 — '핵심 1'·'여기에 한 줄 요약'·'정리했어요' 같은 알맹이 없는 placeholder·메타 표현 절대 금지. 말하지 말고 실제 내용을 써라.",
+    "[본문 작성 공식] headline = 그 장의 핵심을 한마디로. body = 쉬운 정의·설명 + 구체 예시나 비유 1개. (○ 'X는 ~라는 뜻이에요. 예를 들면 ~.'  ✗ '핵심을 한 문장으로 정리했어요.')",
+    "[사실성] 통계·연구·순위·시장 데이터, 실존 브랜드/매장/곡/종목/날짜를 지어내지 않는다(사용자가 준 데이터만 사용). 확신 없는 고유명사는 단정하지 말고 '예시' 프레임으로 쓰거나 사용자가 채울 자리로 남긴다.",
+  ];
+
+  if (format === "릴스") {
+    return [
+      "당신은 한국어 인스타 릴스(짧은 세로 영상) 기획자입니다. 사용자가 직접 촬영·편집할 수 있도록 ‘대본’을 짭니다. 영상 자체는 만들지 않습니다.",
+      ...common,
+      ...qualityRules,
+      "결과는 JSON 객체만(설명·마크다운·코드펜스 없이). 디자인·색·폰트·HTML은 생성하지 않는다.",
+      "스키마: {title, pages:[{index, headline(구간/장면, 예: '후킹 0~3초'), body(대사·자막 문구), note(화면 연출·동작 지시)}], caption, hashtags:string[8~12], cta}",
+      "30~60초 분량. index 0 = 첫 3초 강한 후킹. 마지막 장면 = 행동 유도. 각 body 는 실제 말할 대사/자막으로 1~2문장.",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+  return [
+    "당신은 한국어 인스타 카드뉴스 카피라이터입니다. 사용자의 톤을 그대로 살린 ‘수정 가능한 초안’을 만듭니다.",
+    `형식: ${format}` + (format === "사진첨부형 카드뉴스" ? " (각 장 사진 위에 얹을 짧은 카피 중심)" : ""),
+    ...common,
+    ...qualityRules,
+    "결과는 JSON 객체만(설명·마크다운·코드펜스 없이). 디자인·색·폰트·HTML은 생성하지 않는다(렌더는 고정 템플릿 담당).",
+    "스키마: {title, pages:[{index, headline, body, photoNote}], caption, hashtags:string[8~12], cta}. 각 body 는 1~3문장.",
+    "최종 출력 전 스스로 점검(점검 내용은 출력하지 말 것): 한국어만 읽어도 가치가 완전한가? 첫 장이 스크롤을 멈추는가? 각 장이 다음 장을 넘기게 하는가? 지어낸 수치·고유명사는 없는가? CTA가 자연스러운가? 미달이면 고쳐서 낸다.",
   ]
     .filter(Boolean)
     .join("\n");
@@ -235,12 +297,14 @@ async function main() {
   for (let i = 1; i <= runs; i++) {
     const suffix = runs > 1 ? `  [${i}/${runs}회차]` : "";
     // 동일 user, 시스템 프롬프트만 A vs B
-    const [a, b] = await Promise.all([
+    const [a, b, c] = await Promise.all([
       callClaude(client, cardSystemPrompt(survey, input.format), user),
       callClaude(client, cardSystemPromptV2(survey, input.format), user),
+      callClaude(client, cardSystemPromptV3(survey, input.format), user),
     ]);
     printDeck(`A · 현재 라이브 프롬프트${suffix}`, a);
-    printDeck(`B · 품질 규칙 이식 실험 프롬프트${suffix}`, b);
+    printDeck(`B · (어제) 품질 규칙 이식 실험${suffix}`, b);
+    printDeck(`C · (P5 신규) 콘텐츠 규칙 코어 병합${suffix}`, c);
   }
   console.log(`\n${"─".repeat(64)}`);
   console.log("👀 위를 나란히 비교하세요. B가 일관되게 나으면 cardSystemPrompt 에 반영 → PR.");
