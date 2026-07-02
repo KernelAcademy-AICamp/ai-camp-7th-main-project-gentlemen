@@ -742,7 +742,7 @@ function PublishTab({ card, draft, photo, photoStyle, ratio, photos, niche, hand
   const [downloading, setDownloading] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [stage, setStage] = useState("");
-  const [scheduleAt, setScheduleAt] = useState("");
+  const [scheduleAt] = useState(""); // 예약 발행 미지원 — 항상 즉시 발행(추후 예약 기능 시 setter 복구)
   const [msg, setMsg] = useState("");
 
   const ready = card.status === "제작완료";
@@ -871,16 +871,13 @@ function PublishTab({ card, draft, photo, photoStyle, ratio, photos, niche, hand
               ? "‘지금 발행’을 누르면 카드 이미지를 만들어 인스타그램에 실제로 업로드해요(캐러셀)."
               : "지금 발행하거나 시간을 정해 예약하세요. 정식 연동 전에는 모의 발행으로 흐름을 검증해요."}
           </p>
-          <div className="grid sm:grid-cols-2 gap-3 items-end">
+          <div className="grid sm:grid-cols-2 gap-3">
             <Button onClick={() => publish(true)} disabled={!ready || publishing || (live && !publicBase)}>
               {publishing ? stage || "발행 중…" : live ? "지금 인스타 발행" : "지금 발행"}
             </Button>
-            <div className="flex gap-2 items-end">
-              <Field label="예약 시각">
-                <input type="datetime-local" className={inputClass} value={scheduleAt} onChange={(e) => setScheduleAt(e.target.value)} />
-              </Field>
-              <Button variant="outline" onClick={() => publish(false)} disabled={!ready || publishing || !scheduleAt || (live && !publicBase)}>예약</Button>
-            </div>
+            <Button variant="outline" disabled title="예약 발행은 곧 지원돼요">
+              예약 발행
+            </Button>
           </div>
           {live && (
             <p className="text-xs text-muted">실제 발행은 카드 이미지를 공개 주소로 서빙해 인스타가 가져갑니다. 발행에 10~30초 걸릴 수 있어요.</p>
@@ -945,7 +942,7 @@ function ReelsEditor({
 }) {
   const [uploading, setUploading] = useState(false);
   const [publishing, setPublishing] = useState(false);
-  const [scheduleAt, setScheduleAt] = useState("");
+  const [scheduleAt] = useState(""); // 예약 발행 미지원 — 항상 즉시 발행(추후 예약 기능 시 setter 복구)
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const [consent, setConsent] = useState(false);
@@ -1126,12 +1123,9 @@ function ReelsEditor({
             <Button className="w-full" onClick={() => publish(true)} disabled={!canPublishNow || publishing}>
               {publishing ? "발행 중…" : live ? "지금 인스타 발행" : "지금 발행"}
             </Button>
-            <div className="flex gap-2 items-end">
-              <Field label="예약 시각">
-                <input type="datetime-local" className={inputClass} value={scheduleAt} onChange={(e) => setScheduleAt(e.target.value)} />
-              </Field>
-              <Button variant="outline" onClick={() => publish(false)} disabled={!canPublishNow || publishing || !scheduleAt}>예약</Button>
-            </div>
+            <Button variant="outline" className="w-full" disabled title="예약 발행은 곧 지원돼요">
+              예약 발행
+            </Button>
           </Card>
         )}
         {msg && <p className="text-sm text-teal">{msg}</p>}
