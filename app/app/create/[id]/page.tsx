@@ -553,10 +553,11 @@ function ReviewTab({ card, dirty, onChange, onSaveNeeded, domain, consent, setCo
   const mustPass = issues.filter((f) => f.mustPass);
   const failCount = mustPass.filter((f) => f.level === "fail").length;
   const warnCount = mustPass.filter((f) => f.level === "warn").length;
-  // 표시 2축 / 내부 다축: 필수통과(규제·사실)만 화면에 노출. 나머지 축(톤·요청·형식 등)은
-  // 판정(decideVerdict)엔 그대로 반영되지만 화면엔 숨기고 건수만 안내한다.
-  const shownIssues = issues.filter((f) => f.mustPass);
-  const internalIssues = issues.filter((f) => !f.mustPass);
+  // 표시 규칙: 필수통과(규제·사실) + 사용자가 직접 등록한 금지어(요청 준수·민감표현)만 화면에 노출.
+  // 나머지 축(톤·완전성·형식·UX 등)은 판정(decideVerdict)엔 반영하되 화면엔 숨기고 건수만 안내.
+  const isShown = (f: ReviewFlag) => Boolean(f.mustPass) || (f.type === "민감표현" && f.axis === "요청 준수");
+  const shownIssues = issues.filter(isShown);
+  const internalIssues = issues.filter((f) => !isShown(f));
   const passed = card.status === "제작완료" || card.status === "예약업로드" || card.status === "업로드완료";
 
   async function runReview() {
@@ -605,7 +606,7 @@ function ReviewTab({ card, dirty, onChange, onSaveNeeded, domain, consent, setCo
       {/* 자동 점검 + 재검수 */}
       <div className="flex items-center justify-between">
         <div className="text-sm">
-          자동 점검: <span className="font-medium">{shownIssues.length === 0 ? "규제·사실 이상 없음 ✓" : `${shownIssues.length}건 감지`}</span>
+          자동 점검: <span className="font-medium">{shownIssues.length === 0 ? "감지된 항목 없음 ✓" : `${shownIssues.length}건 감지`}</span>
           {internalIssues.length > 0 && <span className="text-muted"> · 내부 품질 점검 {internalIssues.length}건 반영됨</span>}
         </div>
         <Button variant="outline" size="sm" onClick={runReview} disabled={busy}>
@@ -960,8 +961,10 @@ function ReelsEditor({
   const verdict = decideVerdict(card.reviewFlags);
   const meta = VERDICT_META[verdict];
   const issues = card.reviewFlags.filter((f) => !isChecklist(f));
-  const shownIssues = issues.filter((f) => f.mustPass); // 규제·사실만 노출
-  const internalIssues = issues.filter((f) => !f.mustPass); // 나머지 축은 판정 반영·화면 숨김
+  // 표시: 규제·사실(필수통과) + 사용자 금지어(요청 준수·민감표현). 나머지 축은 판정 반영·화면 숨김
+  const isShown = (f: ReviewFlag) => Boolean(f.mustPass) || (f.type === "민감표현" && f.axis === "요청 준수");
+  const shownIssues = issues.filter(isShown);
+  const internalIssues = issues.filter((f) => !isShown(f));
   const gate = verdictGate(verdict, consent);
   const hasVideo = !!card.hasVideo;
   const done = card.status === "업로드완료";
@@ -1089,7 +1092,7 @@ function ReelsEditor({
             <button onClick={runReview} disabled={busy} className="text-xs text-muted hover:text-ink">다시 검수</button>
           </div>
           {shownIssues.length === 0 ? (
-            <p className="text-xs text-muted">규제·사실 이상 없어요.{internalIssues.length > 0 ? ` (내부 품질 점검 ${internalIssues.length}건 반영)` : ""}</p>
+            <p className="text-xs text-muted">감지된 항목이 없어요.{internalIssues.length > 0 ? ` (내부 품질 점검 ${internalIssues.length}건 반영)` : ""}</p>
           ) : (
             <div className="space-y-1.5">
               {shownIssues.map((f) => (
