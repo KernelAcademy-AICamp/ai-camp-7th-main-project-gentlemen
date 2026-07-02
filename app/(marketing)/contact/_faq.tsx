@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-/** FAQ — 와이어프레임 faqs. 카테고리 탭 + 아코디언. */
+/** FAQ — 카테고리 탭 + 아코디언. */
 const CATS = [
   { key: "login", label: "계정·로그인" },
   { key: "join", label: "회원가입" },
@@ -30,10 +30,11 @@ const FAQS: Record<string, [string, string][]> = {
 export function Faq() {
   const [cat, setCat] = useState<string>("login");
   const [open, setOpen] = useState<number | null>(0);
+  const items = FAQS[cat] ?? [];
 
   return (
     <>
-      <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 24, flexWrap: "wrap" }}>
+      <div className="faq-tabs">
         {CATS.map((c) => (
           <button
             key={c.key}
@@ -41,24 +42,23 @@ export function Faq() {
               setCat(c.key);
               setOpen(0);
             }}
-            className={`btn ${cat === c.key ? "primary" : "line"} sm`}
+            className={`btn btn-sm ${cat === c.key ? "btn-primary" : "btn-line"}`}
           >
             {c.label}
           </button>
         ))}
       </div>
 
-      <div style={{ maxWidth: 720, margin: "0 auto" }}>
-        {(FAQS[cat] ?? []).map(([q, a], i) => (
-          <div key={q} style={{ borderBottom: "1px solid var(--border)" }}>
-            <button
-              onClick={() => setOpen(open === i ? null : i)}
-              style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 4px", background: "none", border: "none", fontSize: 15, fontWeight: 600, textAlign: "left" }}
-            >
+      <div className="faq-list">
+        {items.map(([q, a], i) => (
+          <div key={q} className="faq-item">
+            <button className="faq-q" aria-expanded={open === i} onClick={() => setOpen(open === i ? null : i)}>
               {q}
-              <span style={{ color: "var(--ink3)", transform: open === i ? "rotate(180deg)" : "none", transition: ".15s" }}>▾</span>
+              <svg className="caret" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </button>
-            {open === i && <p style={{ padding: "0 4px 18px", color: "var(--ink2)", fontSize: 14 }}>{a}</p>}
+            {open === i && <p className="faq-a">{a}</p>}
           </div>
         ))}
       </div>

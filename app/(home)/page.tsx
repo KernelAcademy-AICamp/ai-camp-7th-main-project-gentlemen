@@ -32,8 +32,7 @@ export default function HomePage() {
         <nav className="nav">
           <Link className="logo" href="/"><span className="dot" />KUP</Link>
           <div className="nav-links">
-            <a href="#feat">주요 기능</a>
-            <Link href="/features">활용 사례</Link>
+            <Link href="/features">주요 기능</Link>
             <Link href="/pricing">요금제</Link>
             <Link href="/contact">문의하기</Link>
           </div>
