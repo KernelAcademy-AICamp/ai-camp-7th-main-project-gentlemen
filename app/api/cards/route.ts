@@ -48,9 +48,14 @@ export async function POST(req: Request) {
 
   const isReels = input.format === "릴스";
   // 릴스: 기획 단계에서 대본·캡션·해시태그까지 완성(제작 단계 없음). 카드뉴스: 가벼운 아웃라인.
-  const gen = isReels
-    ? await generateCard(guard.user.survey, input)
-    : await generatePlanOutline(guard.user.survey, input);
+  let gen;
+  try {
+    gen = isReels
+      ? await generateCard(guard.user.survey, input)
+      : await generatePlanOutline(guard.user.survey, input);
+  } catch {
+    return bad("지금 AI가 혼잡해요. 잠시 후 다시 시도해 주세요.", 503);
+  }
 
   const card: CardNews = {
     id: uid("card"),
