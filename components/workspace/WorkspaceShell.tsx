@@ -235,8 +235,8 @@ export function WorkspaceShell({
               </Button>
             </Link>
             {user.guest && (
-              <Link href="/signup" onClick={() => setProfileOpen(false)}>
-                <Button className="w-full">정식 회원가입</Button>
+              <Link href="/?auth=1" onClick={() => setProfileOpen(false)}>
+                <Button className="w-full">로그인 / 회원가입</Button>
               </Link>
             )}
             <button onClick={logout} className="w-full text-sm text-coral py-2">

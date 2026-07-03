@@ -8,9 +8,15 @@ import { createSession, newUser } from "@/lib/workspace/auth";
 import { mutateDB } from "@/lib/workspace/db";
 
 /**
- * 로그인 서버 액션 — 세션 발급은 Supabase Auth가 담당.
- * 로그인 성공 후 워크스페이스 파일DB로 브릿지(supabase-bridge.ts) → /app 진입.
+ * 인증 서버 액션 — 세션 발급은 Supabase Auth가 담당.
+ * 로그인 진입점은 오직 온보딩(홈 "/") 팝업 모달 하나. 별도 로그인 페이지는 없다.
+ * 실패 시 홈으로 되돌리고 `?authError=`로 모달을 다시 띄워 사유를 보여준다.
  */
+
+/** 로그인/가입 실패 → 홈으로 되돌려 모달 재오픈(+에러 표시) */
+function backToModal(message: string): never {
+  redirect(`/?authError=${encodeURIComponent(message)}`);
+}
 
 /** 구글 OAuth 시작 → 구글 동의 화면 → /auth/callback 에서 세션 교환 + 브릿지 */
 export async function signInWithGoogle() {
@@ -20,14 +26,14 @@ export async function signInWithGoogle() {
     provider: "google",
     options: { redirectTo: `${origin}/auth/callback` },
   });
-  if (error) redirect(`/login?error=${encodeURIComponent(error.message)}`);
+  if (error) backToModal(error.message);
   if (data?.url) redirect(data.url);
 }
 
 /** Supabase 세션 확보 후 워크스페이스 진입(survey 유무로 분기) */
 async function enterWorkspace(): Promise<never> {
   const { ok, survey } = await bridgeSupabaseSession();
-  if (!ok) redirect(`/login?error=${encodeURIComponent("세션을 만들지 못했어요")}`);
+  if (!ok) backToModal("세션을 만들지 못했어요");
   redirect(survey ? "/app/home" : "/onboarding");
 }
 
@@ -38,7 +44,7 @@ export async function signInWithPassword(formData: FormData) {
     email: String(formData.get("email") ?? ""),
     password: String(formData.get("password") ?? ""),
   });
-  if (error) redirect(`/login?error=${encodeURIComponent(error.message)}`);
+  if (error) backToModal(error.message);
   await enterWorkspace();
 }
 
@@ -49,7 +55,7 @@ export async function signUpWithPassword(formData: FormData) {
     email: String(formData.get("email") ?? ""),
     password: String(formData.get("password") ?? ""),
   });
-  if (error) redirect(`/login?error=${encodeURIComponent(error.message)}`);
+  if (error) backToModal(error.message);
   await enterWorkspace();
 }
 
