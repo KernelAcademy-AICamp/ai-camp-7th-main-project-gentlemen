@@ -69,6 +69,8 @@
   .sub { margin-top: 24px; max-width: 34ch; font-size: clamp(16px, 1.7vw, 20px); line-height: 1.6; color: var(--ink-soft); font-weight: 500; }
   .hero-cta { margin-top: 34px; display: flex; gap: 12px; pointer-events: auto; flex-wrap: wrap; }
   .hero-cta .btn { padding: 14px 24px; font-size: 16px; border-radius: 14px; }
+  /* 단일 CTA는 옆으로 넓게 (데모 보기 제거로 버튼 1개) */
+  .hero-cta .btn-wide { min-width: 240px; padding-left: 48px; padding-right: 48px; }
 
   .hero-block { transition: opacity .1s linear; }
 
