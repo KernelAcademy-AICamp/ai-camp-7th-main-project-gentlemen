@@ -16,10 +16,10 @@ const MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-4-8";
 
 function survey(over: Partial<SurveyProfile>): SurveyProfile {
   return {
-    niche: "라이프스타일", followers: 600, operatingMonths: 5, goals: ["브랜딩"], weeklyCapacity: 2,
-    mainFormats: ["카드뉴스"], assets: "직접 만든 것", brandKeywords: ["큐레이션"], brandColor: "#2E3A59",
+    niche: "라이프스타일", followers: 600, goals: ["브랜딩"], weeklyCapacity: 2,
+    brandKeywords: ["큐레이션"],
     voiceExample: "다정한 존댓말(~예요/~해요)", forbiddenExpressions: [], captionLength: "보통",
-    hashtagStyle: "주제 관련 위주", ctaStyle: "저장해두고 보세요", visualGuide: "미니멀", sensitiveDomain: "없음", benchmark: "", ...over,
+    hashtagStyle: "주제 관련 위주", sensitiveDomain: "없음", ...over,
   };
 }
 
@@ -31,37 +31,37 @@ interface Persona {
 const PERSONAS: Persona[] = [
   {
     label: "① 홈트 코치 (건강)", stress: "노하우 정확성 + 건강 단정·효능 회피 + 면책",
-    survey: survey({ niche: "홈트레이닝", followers: 540, brandKeywords: ["홈트", "맨몸운동"], voiceExample: "활기차고 친근한 존댓말(~해요/~해봐요)", sensitiveDomain: "의료·건강·다이어트", ctaStyle: "저장하고 오늘 한 세트 따라 하기" }),
+    survey: survey({ niche: "홈트레이닝", followers: 540, brandKeywords: ["홈트", "맨몸운동"], voiceExample: "활기차고 친근한 존댓말(~해요/~해봐요)", sensitiveDomain: "의료·건강·다이어트" }),
     input: { topicTitle: "앉아서 하는 등·목 통증 스트레칭", format: "카드뉴스", objective: "저장", pageCount: 5, keyMessage: "오래 앉아 굳은 등·목을 3분에 푼다" },
   },
   {
     label: "② 청년 재테크 (금융·민감)", stress: "정책명·금액·신청기한 환각(변동) → 일반화/공식출처 안내 + 면책",
-    survey: survey({ niche: "사회초년생 재테크", followers: 820, brandKeywords: ["청년정책", "월급관리"], voiceExample: "담백하고 정보형 존댓말", sensitiveDomain: "금융·투자·부동산", ctaStyle: "저장해두고 챙기기" }),
+    survey: survey({ niche: "사회초년생 재테크", followers: 820, brandKeywords: ["청년정책", "월급관리"], voiceExample: "담백하고 정보형 존댓말", sensitiveDomain: "금융·투자·부동산" }),
     input: { topicTitle: "사회초년생이 챙겨야 할 청년 지원 제도", format: "카드뉴스", objective: "저장", pageCount: 6, keyMessage: "몰라서 못 받는 지원을 정리" },
   },
   {
     label: "③ 드라마 큐레이터 (유명 실물)", stress: "유명 실물 실명 정확 — 실제 존재·플랫폼 정확",
-    survey: survey({ niche: "드라마·영화 큐레이션", followers: 1200, brandKeywords: ["넷플릭스추천", "정주행"], voiceExample: "다정하고 몰입감 있는 존댓말", ctaStyle: "저장하고 주말에 정주행" }),
+    survey: survey({ niche: "드라마·영화 큐레이션", followers: 1200, brandKeywords: ["넷플릭스추천", "정주행"], voiceExample: "다정하고 몰입감 있는 존댓말" }),
     input: { topicTitle: "여운 오래 남는 넷플릭스 드라마 추천", format: "카드뉴스", objective: "저장", pageCount: 5, keyMessage: "엔딩 후에도 생각나는 작품" },
   },
   {
     label: "④ 제주 여행 (로컬·변동 혼합)", stress: "유명 랜드마크 실명 OK vs 카페·맛집 상호 환각 회피",
-    survey: survey({ niche: "국내여행 큐레이션", followers: 760, brandKeywords: ["제주여행", "여행코스"], voiceExample: "설레는 구어체 존댓말", ctaStyle: "저장하고 여행에 챙기기" }),
+    survey: survey({ niche: "국내여행 큐레이션", followers: 760, brandKeywords: ["제주여행", "여행코스"], voiceExample: "설레는 구어체 존댓말" }),
     input: { topicTitle: "제주 동쪽 당일 드라이브 코스", format: "카드뉴스", objective: "저장", pageCount: 6, keyMessage: "동선까지 짜인 하루 코스" },
   },
   {
     label: "⑤ 뷰티 (성분/제품)", stress: "성분 일반지식 OK vs 특정 제품·효능 단정(위험) + 건강 면책",
-    survey: survey({ niche: "스킨케어 큐레이션", followers: 900, brandKeywords: ["건성피부", "성분추천"], voiceExample: "친근하고 솔직한 존댓말", sensitiveDomain: "의료·건강·다이어트", ctaStyle: "저장하고 성분표 볼 때 참고" }),
+    survey: survey({ niche: "스킨케어 큐레이션", followers: 900, brandKeywords: ["건성피부", "성분추천"], voiceExample: "친근하고 솔직한 존댓말", sensitiveDomain: "의료·건강·다이어트" }),
     input: { topicTitle: "겨울 건성 피부 진정시키는 법", format: "카드뉴스", objective: "저장", pageCount: 5, keyMessage: "성분과 습관으로 잡는다" },
   },
   {
     label: "⑥ 자기계발 (인용)", stress: "명언 출처 오귀속(misattribution) 회피",
-    survey: survey({ niche: "동기부여 큐레이션", followers: 430, brandKeywords: ["명언", "자기계발"], voiceExample: "단단하고 담백한 존댓말", ctaStyle: "저장하고 힘들 때 다시 보기" }),
+    survey: survey({ niche: "동기부여 큐레이션", followers: 430, brandKeywords: ["명언", "자기계발"], voiceExample: "단단하고 담백한 존댓말" }),
     input: { topicTitle: "월요일 아침 동기부여 명언", format: "카드뉴스", objective: "저장", pageCount: 5, keyMessage: "출근길에 곱씹을 한 문장" },
   },
   {
     label: "⑦ 노래 추천 (유명 실물·재확인)", stress: "추천형 항목 실명 — 실제 곡 정확",
-    survey: survey({ niche: "감성 플레이리스트", brandKeywords: ["플레이리스트", "감성음악"], voiceExample: "잔잔하고 감성적인 존댓말", ctaStyle: "저장해두고 오늘 밤에 들어보세요" }),
+    survey: survey({ niche: "감성 플레이리스트", brandKeywords: ["플레이리스트", "감성음악"], voiceExample: "잔잔하고 감성적인 존댓말" }),
     input: { topicTitle: "비 오는 날 듣기 좋은 한국 노래 추천", format: "카드뉴스", objective: "저장", pageCount: 5, keyMessage: "빗소리에 어울리는 곡" },
   },
 ];
@@ -88,7 +88,7 @@ function makeSystem(s: SurveyProfile, format: CardFormat): string {
     `브랜드 키워드: ${s.brandKeywords.join(", ") || "(없음)"}`,
     `문체 예시: ${s.voiceExample || "(없음)"}`,
     `금지 표현: ${s.forbiddenExpressions.join(", ") || "(없음)"}`,
-    `캡션 길이 선호: ${s.captionLength} / 해시태그 스타일: ${s.hashtagStyle} / CTA 스타일: ${s.ctaStyle}`,
+    `캡션 길이 선호: ${s.captionLength} / 해시태그 스타일: ${s.hashtagStyle}`,
     s.sensitiveDomain !== "없음"
       ? `민감 도메인(${s.sensitiveDomain}): 실질 정보는 충분히 담되 권유·강요·단정·보장·효능 표현만 피한다. 캡션에 명시적 면책 한 줄 + 공식·전문 확인 권고.`
       : "",

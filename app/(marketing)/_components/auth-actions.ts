@@ -35,7 +35,7 @@ export async function signInWithGoogle() {
   if (data?.url) redirect(data.url);
 }
 
-/** Supabase 세션 확보 후 워크스페이스 진입(survey 유무로 분기) */
+/** Supabase 세션 확보 후 워크스페이스 진입 — 설문 강제 없이 홈으로(설문은 홈에서 유도) */
 async function enterWorkspace(): Promise<never> {
   const { ok, survey } = await bridgeSupabaseSession();
   if (!ok) backToModal("세션을 만들지 못했어요");
@@ -76,5 +76,5 @@ export async function continueAsGuest() {
   });
   await mutateDB((d) => d.users.push(guest));
   await createSession(guest.id);
-  redirect("/onboarding");
+  redirect("/app/home");
 }

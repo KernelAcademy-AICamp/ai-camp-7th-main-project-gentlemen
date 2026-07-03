@@ -1,5 +1,6 @@
 import { mutateDB } from "@/lib/workspace/db";
 import { bad, json, withUser } from "@/lib/workspace/api";
+import { detectSensitiveDomain } from "@/lib/workspace/sensitivity";
 import type { SurveyProfile } from "@/lib/workspace/types";
 
 export async function GET() {
@@ -18,26 +19,20 @@ export async function PUT(req: Request) {
   const survey: SurveyProfile = {
     niche: (body.niche || "").trim(),
     followers: Number(body.followers) || 0,
-    operatingMonths: Number(body.operatingMonths) || 0,
     goals: Array.isArray(body.goals) ? body.goals : [],
     weeklyCapacity: Number(body.weeklyCapacity) || 2,
-    mainFormats: Array.isArray(body.mainFormats) ? body.mainFormats : ["카드뉴스"],
-    assets: (body.assets || "").trim(),
     brandKeywords: (Array.isArray(body.brandKeywords) ? body.brandKeywords : [])
       .map((s) => s.trim())
       .filter(Boolean)
       .slice(0, 5),
-    brandColor: (body.brandColor || "#ef5a35").trim(),
     voiceExample: (body.voiceExample || "").trim(),
     forbiddenExpressions: (Array.isArray(body.forbiddenExpressions) ? body.forbiddenExpressions : [])
       .map((s) => s.trim())
       .filter(Boolean),
     captionLength: body.captionLength === "짧게" || body.captionLength === "길게" ? body.captionLength : "보통",
     hashtagStyle: (body.hashtagStyle || "").trim(),
-    ctaStyle: (body.ctaStyle || "").trim(),
-    visualGuide: (body.visualGuide || "").trim(),
-    sensitiveDomain: body.sensitiveDomain || "없음",
-    benchmark: (body.benchmark || "").trim(),
+    // 설문에서 안 받고 니치로 자동 감지(안전 가드레일 유지). body 값이 오면 존중.
+    sensitiveDomain: body.sensitiveDomain || detectSensitiveDomain((body.niche || "").trim()),
   };
 
   if (!survey.niche) return bad("주제(니치)는 필수입니다.");

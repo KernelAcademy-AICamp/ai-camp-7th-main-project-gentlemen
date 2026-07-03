@@ -11,7 +11,6 @@ export type OperationGoal =
   | "문의"
   | "포트폴리오";
 
-export type ContentFormat = "카드뉴스" | "릴스" | "사진" | "스토리";
 export type CardFormat = "카드뉴스" | "사진첨부형 카드뉴스" | "릴스";
 
 export type SensitiveDomain =
@@ -24,22 +23,15 @@ export type SensitiveDomain =
 // §4-A 시작 설문 — 1회 입력 후 모든 생성에 상속, 마이페이지에서 수정
 export interface SurveyProfile {
   niche: string;
-  followers: number;
-  operatingMonths: number;
+  followers: number; // 미연동·테스터 계정의 팔로워 fallback base(resolveFollowerCount). 설문에선 안 받음.
   goals: OperationGoal[];
   weeklyCapacity: number;
-  mainFormats: ContentFormat[];
-  assets: string;
   brandKeywords: string[];
-  brandColor: string; // 비주얼: 브랜드 컬러(템플릿+브랜드컬러)
   voiceExample: string;
   forbiddenExpressions: string[];
   captionLength: "짧게" | "보통" | "길게";
   hashtagStyle: string;
-  ctaStyle: string;
-  visualGuide: string;
   sensitiveDomain: SensitiveDomain;
-  benchmark: string;
 }
 
 export type OperationStage =
