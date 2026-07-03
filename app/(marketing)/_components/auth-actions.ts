@@ -24,7 +24,12 @@ export async function signInWithGoogle() {
   const origin = (await headers()).get("origin") ?? "http://localhost:3000";
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: `${origin}/auth/callback` },
+    options: {
+      redirectTo: `${origin}/auth/callback`,
+      // 로그아웃 후 재로그인 시 구글이 조용히 재인증하지 않도록 계정 선택창을 항상 띄운다.
+      // (지속 로그인 편의는 유지 — 유효 쿠키로 재방문하면 이 경로를 안 타고 바로 워크스페이스)
+      queryParams: { prompt: "select_account" },
+    },
   });
   if (error) backToModal(error.message);
   if (data?.url) redirect(data.url);
