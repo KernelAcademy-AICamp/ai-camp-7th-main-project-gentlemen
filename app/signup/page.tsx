@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/workspace/client";
-import { signInWithGoogle } from "@/app/login/actions";
+import { signInWithGoogle } from "@/app/(marketing)/_components/auth-actions";
 import { Button, Field, inputClass } from "@/components/workspace/ui";
 import { AuthShell } from "@/components/workspace/AuthShell";
 
@@ -117,7 +117,7 @@ export default function SignupPage() {
 
       <p className="text-sm text-ink-soft mt-5 text-center">
         이미 계정이 있나요?{" "}
-        <Link href="/login" className="text-coral font-medium">
+        <Link href="/?auth=1" className="text-coral font-medium">
           로그인
         </Link>
       </p>

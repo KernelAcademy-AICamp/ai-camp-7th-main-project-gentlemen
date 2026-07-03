@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Script from "next/script";
-import { AuthButton } from "@/app/(marketing)/_components/auth-modal";
+import { AuthButton, useAuthModal } from "@/app/(marketing)/_components/auth-modal";
 import "./landing.css";
 
 /**
@@ -24,6 +24,8 @@ export default function HomePage() {
   const [threeReady, setThreeReady] = useState(false);
   const [tab, setTab] = useState<(typeof SHOWCASE)[number]["key"]>("plan");
   const active = SHOWCASE.find((s) => s.key === tab)!;
+  // 로그인 상태면 랜딩 CTA를 "워크스페이스로" 하나로 바꾼다(이미 회원인데 "무료로 시작하기"는 어색).
+  const { loggedIn } = useAuthModal();
 
   return (
     <div className="kup-landing">
@@ -37,8 +39,14 @@ export default function HomePage() {
             <Link href="/contact">문의하기</Link>
           </div>
           <div className="nav-cta">
-            <AuthButton className="btn btn-ghost">로그인</AuthButton>
-            <AuthButton className="btn btn-primary">무료로 시작하기</AuthButton>
+            {loggedIn ? (
+              <AuthButton className="btn btn-primary">워크스페이스로</AuthButton>
+            ) : (
+              <>
+                <AuthButton className="btn btn-ghost">로그인</AuthButton>
+                <AuthButton className="btn btn-primary">무료로 시작하기</AuthButton>
+              </>
+            )}
           </div>
         </nav>
       </header>
@@ -53,8 +61,9 @@ export default function HomePage() {
               <h1>카드 한 장으로<br /><span className="hl">채널을 채우세요</span></h1>
               <p className="sub">KUP가 당신의 말투를 학습해 카드뉴스를 만들고, 정해진 시간에 올리고, 성과까지 정리해 드려요.</p>
               <div className="hero-cta">
-                <AuthButton className="btn btn-primary">무료로 시작하기</AuthButton>
-                <AuthButton className="btn btn-line">데모 보기</AuthButton>
+                <AuthButton className="btn btn-primary btn-wide">
+                  {loggedIn ? "워크스페이스로" : "무료로 시작하기"}
+                </AuthButton>
               </div>
             </div>
           </div>
@@ -186,8 +195,9 @@ export default function HomePage() {
         <span className="kicker">지금 시작하세요</span>
         <h2 className="h2">첫 카드부터, 꾸준한 채널까지</h2>
         <div className="hero-cta">
-          <AuthButton className="btn btn-primary">무료로 시작하기</AuthButton>
-          <AuthButton className="btn btn-line">데모 보기</AuthButton>
+          <AuthButton className="btn btn-primary btn-wide">
+            {loggedIn ? "워크스페이스로" : "무료로 시작하기"}
+          </AuthButton>
         </div>
       </section>
 

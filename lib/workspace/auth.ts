@@ -80,12 +80,16 @@ export function toPublicUser(user: User): PublicUser {
 
 export async function createSession(userId: string): Promise<void> {
   const token = uid("sess") + randomBytes(16).toString("hex");
+  const now = Date.now();
   await mutateDB((db) => {
-    db.sessions.push({ token, userId, createdAt: Date.now() });
+    // 만료된 세션 정리(무한 누적 방지) — 쓰기가 일어나는 로그인 시점에만 수행(읽기 경로엔 부담 X)
+    db.sessions = db.sessions.filter((s) => now - s.createdAt <= COOKIE_MAX_AGE * 1000);
+    db.sessions.push({ token, userId, createdAt: now });
   });
   const store = await cookies();
   store.set(COOKIE, token, {
     httpOnly: true,
+    secure: process.env.NODE_ENV === "production", // 프로덕션(HTTPS)에선 secure 쿠키
     sameSite: "lax",
     path: "/",
     maxAge: COOKIE_MAX_AGE,
@@ -110,6 +114,8 @@ export async function getCurrentUser(): Promise<User | null> {
   const db = (await readDB());
   const session = db.sessions.find((s) => s.token === token);
   if (!session) return null;
+  // 서버측 만료 검사 — 쿠키가 남아 있어도 발급 후 30일 지난 세션은 무효(토큰 무기한 유효 방지)
+  if (Date.now() - session.createdAt > COOKIE_MAX_AGE * 1000) return null;
   return db.users.find((u) => u.id === session.userId) ?? null;
 }
 

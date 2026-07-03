@@ -1,13 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { createContext, useContext, useState, type ReactNode } from "react";
-import { continueAsGuest, signInWithGoogle, signInWithPassword, signUpWithPassword } from "@/app/login/actions";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { createContext, Suspense, useContext, useEffect, useState, type ReactNode } from "react";
+import { continueAsGuest, signInWithGoogle, signInWithPassword, signUpWithPassword } from "./auth-actions";
 
 /**
  * 로그인/회원가입 모달 (화면흐름 L1/L2 — 팝업) + 로그인 상태 인식.
+ * 서비스 로그인 진입점은 이 팝업 하나뿐(별도 로그인 페이지 없음).
  * - 로그아웃 상태: 버튼 → 팝업(구글·이메일·비회원 둘러보기)
- * - 로그인 상태: 버튼 → 워크스페이스(/dashboard)로 바로 이동 (AuthButton)
+ * - 로그인 상태: 버튼 → 워크스페이스(/app/home)로 바로 이동 (AuthButton)
+ * - URL 쿼리로도 열린다: `/?auth=1`(모달 열기), `/?authError=메시지`(에러와 함께 열기).
+ *   워크스페이스 프로필의 로그인/회원가입, 로그인 실패 리다이렉트가 이 경로로 되돌아온다.
  */
 const INP: React.CSSProperties = {
   width: "100%",
@@ -18,14 +22,27 @@ const INP: React.CSSProperties = {
   background: "#fff",
 };
 
-const Ctx = createContext<{ open: () => void; close: () => void; loggedIn: boolean } | null>(null);
+const Ctx = createContext<{ open: (error?: string) => void; close: () => void; loggedIn: boolean } | null>(null);
 
 export function AuthModalProvider({ loggedIn = false, children }: { loggedIn?: boolean; children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   return (
-    <Ctx.Provider value={{ open: () => setIsOpen(true), close: () => setIsOpen(false), loggedIn }}>
+    <Ctx.Provider
+      value={{
+        open: (err?: string) => {
+          setError(err ?? null);
+          setIsOpen(true);
+        },
+        close: () => setIsOpen(false),
+        loggedIn,
+      }}
+    >
       {children}
-      {isOpen && <AuthModalOverlay onClose={() => setIsOpen(false)} />}
+      <Suspense fallback={null}>
+        <AuthUrlSync />
+      </Suspense>
+      {isOpen && <AuthModalOverlay error={error} onClose={() => setIsOpen(false)} />}
     </Ctx.Provider>
   );
 }
@@ -34,6 +51,33 @@ export function useAuthModal() {
   const c = useContext(Ctx);
   if (!c) throw new Error("useAuthModal must be used within <AuthModalProvider>");
   return c;
+}
+
+/**
+ * URL 쿼리(`auth`, `authError`)를 감지해 모달을 자동으로 연 뒤 쿼리를 정리한다.
+ * (뒤로가기·새로고침에 모달이 다시 뜨지 않도록 열자마자 pathname으로 replace)
+ */
+function AuthUrlSync() {
+  const { open } = useAuthModal();
+  const params = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
+  const authError = params.get("authError");
+  const auth = params.get("auth");
+
+  useEffect(() => {
+    if (authError !== null) {
+      open(authError || "로그인에 실패했어요");
+    } else if (auth !== null) {
+      open();
+    } else {
+      return;
+    }
+    router.replace(pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authError, auth]);
+
+  return null;
 }
 
 /** 로그아웃 상태 → 팝업 / 로그인 상태 → 워크스페이스 이동. */
@@ -47,13 +91,13 @@ export function AuthButton({ className, children }: { className?: string; childr
     );
   }
   return (
-    <button type="button" className={className} onClick={open}>
+    <button type="button" className={className} onClick={() => open()}>
       {children}
     </button>
   );
 }
 
-function AuthModalOverlay({ onClose }: { onClose: () => void }) {
+function AuthModalOverlay({ error, onClose }: { error: string | null; onClose: () => void }) {
   return (
     <div
       onClick={(e) => {
@@ -75,6 +119,12 @@ function AuthModalOverlay({ onClose }: { onClose: () => void }) {
         <p style={{ textAlign: "center", color: "var(--ink3)", fontSize: 14, marginTop: 6, marginBottom: 22 }}>
           구글 계정으로 1초 만에 시작하세요
         </p>
+
+        {error && (
+          <p style={{ background: "var(--coral-soft, #fdecec)", color: "var(--coral, #ff385c)", fontSize: 13, borderRadius: 8, padding: "9px 12px", marginBottom: 16, textAlign: "center" }}>
+            {error}
+          </p>
+        )}
 
         <form action={signInWithGoogle}>
           <button type="submit" className="btn line block" style={{ gap: 8 }}>
