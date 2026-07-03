@@ -50,8 +50,13 @@ export function WorkspaceShell({
     <div className="flex flex-col h-full">
       {/* 연동 인스타 계정 — 스위처 드롭다운 */}
       <div className="px-2 mb-4 relative">
-        <div className="text-[11px] font-semibold tracking-wide text-muted uppercase mb-1.5 px-1.5">
+        <div className="text-[11px] font-semibold tracking-wide text-muted uppercase mb-1.5 px-1.5 flex items-center gap-1.5">
           연동 인스타 계정
+          {user.igAccounts.length > 0 && (
+            <span className="inline-grid place-items-center min-w-[18px] h-[18px] px-1 rounded-full bg-teal-soft text-teal text-[10px] leading-none normal-case">
+              {user.igAccounts.length}
+            </span>
+          )}
         </div>
         {user.igAccounts.length === 0 ? (
           <Link
@@ -171,21 +176,15 @@ export function WorkspaceShell({
             {user.guest && <Badge tone="amber">비회원</Badge>}
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/app/accounts">
-              <Button variant="outline" size="sm">
-                계정 연동하기
-                {user.igAccounts.length > 0 && (
-                  <span className="ml-1 inline-grid place-items-center min-w-5 h-5 px-1 rounded-full bg-teal-soft text-teal text-[11px]">
-                    {user.igAccounts.length}
-                  </span>
-                )}
-              </Button>
-            </Link>
-            <Link href="/app/pricing" className="hidden sm:block">
-              <Button variant="ghost" size="sm">
-                요금제
-              </Button>
-            </Link>
+            {/* 연동 계정이 없을 때만: 이 제품의 핵심 첫 액션인 인스타 연동 CTA.
+                연동되면 좌측바 '연동 인스타 계정'(카운트 배지 포함)이 관리를 담당한다. */}
+            {user.igAccounts.length === 0 && (
+              <Link href="/app/accounts">
+                <Button variant="outline" size="sm">
+                  계정 연동하기
+                </Button>
+              </Link>
+            )}
             <button
               onClick={() => setProfileOpen(true)}
               className="w-9 h-9 rounded-full bg-ink text-paper grid place-items-center text-sm font-medium"
