@@ -14,10 +14,10 @@ import type { ContentObjective, SurveyProfile } from "@/lib/workspace/types";
  */
 function base(over: Partial<SurveyProfile>): SurveyProfile {
   return {
-    niche: "", followers: 600, operatingMonths: 5, goals: ["브랜딩"], weeklyCapacity: 2,
-    mainFormats: ["카드뉴스"], assets: "직접 만든 것", brandKeywords: [], brandColor: "#2E3A59",
+    niche: "", followers: 600, goals: ["브랜딩"], weeklyCapacity: 2,
+    brandKeywords: [], brandColor: "#2E3A59",
     voiceExample: "", forbiddenExpressions: [], captionLength: "보통",
-    hashtagStyle: "주제 관련 위주", ctaStyle: "", visualGuide: "미니멀", sensitiveDomain: "없음", benchmark: "", ...over,
+    hashtagStyle: "주제 관련 위주", ctaStyle: "", sensitiveDomain: "없음", ...over,
   };
 }
 

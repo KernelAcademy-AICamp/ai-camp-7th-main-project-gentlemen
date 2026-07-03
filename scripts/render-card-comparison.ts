@@ -25,11 +25,8 @@ const PRICE: Record<string, [number, number]> = {
 const survey: SurveyProfile = {
   niche: "감성 음악 큐레이션",
   followers: 780,
-  operatingMonths: 6,
   goals: ["브랜딩"],
   weeklyCapacity: 3,
-  mainFormats: ["카드뉴스"],
-  assets: "직접 고른 플레이리스트",
   brandKeywords: ["감성플레이리스트", "음악추천"],
   brandColor: "#2E3A59",
   voiceExample: "잔잔하고 다정한 존댓말(~예요/~해요)",
@@ -37,9 +34,7 @@ const survey: SurveyProfile = {
   captionLength: "보통",
   hashtagStyle: "음악·감성 관련 위주",
   ctaStyle: "저장해두고 오늘 밤에 들어보세요",
-  visualGuide: "어두운 남색 배경, 미니멀 타이포",
   sensitiveDomain: "없음",
-  benchmark: "",
 };
 const TOPIC = "비 오는 날 듣기 좋은 감성 노래";
 const KEY = "빗소리에 어울리는 잔잔한 한국 노래를 모았어요";

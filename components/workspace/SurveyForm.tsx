@@ -4,13 +4,11 @@ import { useState } from "react";
 import { api } from "@/lib/workspace/client";
 import { Button, Field, inputClass } from "@/components/workspace/ui";
 import type {
-  ContentFormat,
   OperationGoal,
   SurveyProfile,
 } from "@/lib/workspace/types";
 
 const GOALS: OperationGoal[] = ["취미", "브랜딩", "협찬", "매출", "문의", "포트폴리오"];
-const FORMATS: ContentFormat[] = ["카드뉴스", "릴스", "사진", "스토리"];
 const LENGTHS = ["짧게", "보통", "길게"] as const;
 const WEEKLY = [2, 3, 4, 5, 6, 7];
 
@@ -18,17 +16,13 @@ const WEEKLY = [2, 3, 4, 5, 6, 7];
 const VOICE_PRESETS = ["담백한 존댓말", "다정한 반말", "활기찬 존댓말(~해요/~해봐요)", "전문적·신뢰감 있는", "위트 있는 구어체"];
 const CTA_PRESETS = ["저장 유도", "프로필 방문 유도", "공유 유도", "댓글 유도", "팔로우 유도"];
 const HASHTAG_PRESETS = ["니치 위주 8~12개", "대형+니치 혼합", "최소한만(3~5개)", "트렌드 태그 포함"];
-const VISUAL_PRESETS = ["미니멀", "따뜻한 크림톤", "비비드·선명", "모노톤", "파스텔"];
 const FORBIDDEN_PRESETS = ["과장·보장 표현", "이모지 남발", "반말", "영어 남용", "느낌표 남발"];
 
 const EMPTY: SurveyProfile = {
   niche: "",
   followers: 0,
-  operatingMonths: 0,
   goals: [],
   weeklyCapacity: 2,
-  mainFormats: ["카드뉴스"],
-  assets: "",
   brandKeywords: [],
   brandColor: "#ff385c",
   voiceExample: "",
@@ -36,9 +30,7 @@ const EMPTY: SurveyProfile = {
   captionLength: "보통",
   hashtagStyle: "",
   ctaStyle: "",
-  visualGuide: "",
   sensitiveDomain: "없음",
-  benchmark: "",
 };
 
 function Chip({
@@ -202,30 +194,15 @@ export function SurveyForm({
           ))}
         </div>
       </Field>
-      <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="주당 업로드 가능 횟수" hint="주 2회 권장">
-          <div className="flex flex-wrap gap-2 pt-1">
-            {WEEKLY.map((n) => (
-              <Chip key={n} active={s.weeklyCapacity === n} onClick={() => set("weeklyCapacity", n)}>
-                주 {n}회
-              </Chip>
-            ))}
-          </div>
-        </Field>
-        <Field label="주 콘텐츠 형식" hint="복수 선택">
-          <div className="flex flex-wrap gap-2 pt-1">
-            {FORMATS.map((f) => (
-              <Chip
-                key={f}
-                active={s.mainFormats.includes(f)}
-                onClick={() => set("mainFormats", toggle(s.mainFormats, f))}
-              >
-                {f}
-              </Chip>
-            ))}
-          </div>
-        </Field>
-      </div>
+      <Field label="주당 업로드 가능 횟수" hint="주 2회 권장">
+        <div className="flex flex-wrap gap-2 pt-1">
+          {WEEKLY.map((n) => (
+            <Chip key={n} active={s.weeklyCapacity === n} onClick={() => set("weeklyCapacity", n)}>
+              주 {n}회
+            </Chip>
+          ))}
+        </div>
+      </Field>
 
       {/* 톤앤매너 — 생성 톤의 핵심 */}
       <div className="flex items-center gap-3 pt-2">
@@ -288,14 +265,6 @@ export function SurveyForm({
         value={s.ctaStyle}
         onChange={(v) => set("ctaStyle", v)}
         placeholder="또는 직접 입력 (예: 저장 유도 / 프로필 방문 안내)"
-      />
-      <PresetField
-        label="비주얼 가이드"
-        hint="색감·무드"
-        presets={VISUAL_PRESETS}
-        value={s.visualGuide}
-        onChange={(v) => set("visualGuide", v)}
-        placeholder="또는 직접 입력"
       />
 
       {err && <p className="text-sm text-coral">{err}</p>}

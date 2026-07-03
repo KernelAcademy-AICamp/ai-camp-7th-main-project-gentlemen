@@ -20,11 +20,8 @@ function baseSurvey(over: Partial<SurveyProfile>): SurveyProfile {
   return {
     niche: "홈카페",
     followers: 320,
-    operatingMonths: 4,
     goals: ["브랜딩"],
     weeklyCapacity: 2,
-    mainFormats: ["카드뉴스"],
-    assets: "직접 찍은 사진",
     brandKeywords: ["홈카페", "라떼아트"],
     brandColor: "#8B5E3C",
     voiceExample: "편하게 반말 섞인 친근한 존댓말(~예요/~해요)",
@@ -32,9 +29,7 @@ function baseSurvey(over: Partial<SurveyProfile>): SurveyProfile {
     captionLength: "보통",
     hashtagStyle: "주제 관련 위주",
     ctaStyle: "저장하고 따라 해보세요 🔖",
-    visualGuide: "따뜻한 우드톤, 자연광",
     sensitiveDomain: "없음",
-    benchmark: "",
     ...over,
   };
 }

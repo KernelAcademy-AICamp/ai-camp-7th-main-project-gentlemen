@@ -12,11 +12,8 @@ import type { SurveyProfile } from "@/lib/workspace/types";
 const DEFAULT_SURVEY: SurveyProfile = {
   niche: "내 주제",
   followers: 0,
-  operatingMonths: 0,
   goals: [],
   weeklyCapacity: 2,
-  mainFormats: ["카드뉴스"],
-  assets: "",
   brandKeywords: [],
   brandColor: "#ff385c",
   voiceExample: "",
@@ -24,9 +21,7 @@ const DEFAULT_SURVEY: SurveyProfile = {
   captionLength: "보통",
   hashtagStyle: "",
   ctaStyle: "",
-  visualGuide: "",
   sensitiveDomain: "없음",
-  benchmark: "",
 };
 
 export function OnboardingClient({ initial }: { initial: SurveyProfile | null }) {

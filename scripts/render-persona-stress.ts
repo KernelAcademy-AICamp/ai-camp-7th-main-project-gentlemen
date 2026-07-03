@@ -16,10 +16,10 @@ const MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-4-8";
 
 function survey(over: Partial<SurveyProfile>): SurveyProfile {
   return {
-    niche: "라이프스타일", followers: 600, operatingMonths: 5, goals: ["브랜딩"], weeklyCapacity: 2,
-    mainFormats: ["카드뉴스"], assets: "직접 만든 것", brandKeywords: ["큐레이션"], brandColor: "#2E3A59",
+    niche: "라이프스타일", followers: 600, goals: ["브랜딩"], weeklyCapacity: 2,
+    brandKeywords: ["큐레이션"], brandColor: "#2E3A59",
     voiceExample: "다정한 존댓말(~예요/~해요)", forbiddenExpressions: [], captionLength: "보통",
-    hashtagStyle: "주제 관련 위주", ctaStyle: "저장해두고 보세요", visualGuide: "미니멀", sensitiveDomain: "없음", benchmark: "", ...over,
+    hashtagStyle: "주제 관련 위주", ctaStyle: "저장해두고 보세요", sensitiveDomain: "없음", ...over,
   };
 }
 

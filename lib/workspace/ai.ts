@@ -75,12 +75,12 @@ async function callClaude(system: string, user: string, maxTokens = 4000): Promi
 }
 
 // ── 운영 단계 진단 ─────────────────────────────────────────────────────────────
-export function diagnoseStage(survey: SurveyProfile): OperationStage {
-  const f = survey.followers;
-  if (survey.operatingMonths < 1 || f < 100) return "세팅";
-  if (f < 500) return "누적";
-  if (f < 1000) return "반응 탐색";
-  if (f < 3000) return "성장 실험";
+// 팔로워 수 기반 운영단계 진단. followers 는 resolveFollowerCount(IG 실값 우선)로 계산해 넘긴다.
+export function diagnoseStage(followers: number): OperationStage {
+  if (followers < 100) return "세팅";
+  if (followers < 500) return "누적";
+  if (followers < 1000) return "반응 탐색";
+  if (followers < 3000) return "성장 실험";
   return "수익화 준비";
 }
 
@@ -94,8 +94,8 @@ function strategySystemPrompt(survey: SurveyProfile, stage: OperationStage, coun
   return [
     "당신은 인스타그램을 막 키우는 1인 인플루언서를 돕는 한국어 콘텐츠 전략 코파일럿입니다.",
     "원칙: 자동화를 과시하지 말고 사용자의 시간 절감과 통제감을 돕는다. 산출물은 수정 가능한 초안.",
-    `계정 컨셉 — 주제: ${survey.niche || "(미정)"} / 브랜드 키워드: ${survey.brandKeywords.join(", ") || "(없음)"} / 문체: ${survey.voiceExample || "(없음)"}${survey.benchmark ? ` / 벤치마크: ${survey.benchmark}` : ""}.`,
-    `운영 단계: ${stage} (팔로워·운영기간 기반). 단계에 맞는 목표를 잡는다 — 초기(세팅·누적)는 도달·저장·팔로우로 ‘무엇을 주는 계정인지’ 각인이 먼저고, 문의·방문·매출은 계정 목적에 실제로 포함될 때만 뒤에 붙인다.`,
+    `계정 컨셉 — 주제: ${survey.niche || "(미정)"} / 브랜드 키워드: ${survey.brandKeywords.join(", ") || "(없음)"} / 문체: ${survey.voiceExample || "(없음)"}.`,
+    `운영 단계: ${stage} (팔로워 기반). 단계에 맞는 목표를 잡는다 — 초기(세팅·누적)는 도달·저장·팔로우로 ‘무엇을 주는 계정인지’ 각인이 먼저고, 문의·방문·매출은 계정 목적에 실제로 포함될 때만 뒤에 붙인다.`,
     `[주간 추천 리스트 ★] topics = 이번 주에 그대로 올릴 콘텐츠 ${count}개. 사용자의 주간 업로드 역량에 맞춘 ‘이번 주 발행 계획’이다. 개수를 정확히 ${count}개로 맞추고, 서로 각도·형식이 겹치지 않게 다양하게(정보형·관점형·큐레이션형·후기형 등을 섞어) 한 주 분량이 되도록 구성한다.`,
     "[구체·계정 맞춤 ★] 주제는 이 계정의 니치·키워드에 밀착한 구체적인 것으로. ‘입문자가 하는 실수 5’·‘3분 요약’처럼 어느 계정에나 붙는 뻔한 템플릿은 금지. 실제로 저장·공유할 만한 알맹이가 보이는 제목으로.",
     "[정직 ★] 지어낸 통계·수치·순위·트렌드로 주제를 만들지 않는다. 주제는 아이디어이므로 구체적이되, 검증 안 된 사실을 단정하는 제목은 피한다.",
@@ -109,30 +109,27 @@ function strategySystemPrompt(survey: SurveyProfile, stage: OperationStage, coun
   ].filter(Boolean).join("\n");
 }
 
-function profileForPrompt(survey: SurveyProfile, stage: OperationStage) {
+function profileForPrompt(survey: SurveyProfile, stage: OperationStage, followers: number) {
   return {
     운영단계: stage,
     주제: survey.niche,
-    팔로워: survey.followers,
-    운영개월: survey.operatingMonths,
+    팔로워: followers,
     목적: survey.goals,
     주당가능업로드: survey.weeklyCapacity,
     브랜드키워드: survey.brandKeywords,
     문체예시: survey.voiceExample,
-    비주얼무드: survey.visualGuide,
     민감도메인: survey.sensitiveDomain,
-    벤치마크: survey.benchmark,
   };
 }
 
-export async function generateStrategy(survey: SurveyProfile): Promise<Strategy> {
-  const stage = diagnoseStage(survey);
+export async function generateStrategy(survey: SurveyProfile, followers: number): Promise<Strategy> {
+  const stage = diagnoseStage(followers);
   const count = recommendedCount(survey);
   if (!hasApiKey()) return templateStrategy(survey, stage, count); // 의도된 mock
   try {
     const data = (await callClaude(
       strategySystemPrompt(survey, stage, count),
-      JSON.stringify(profileForPrompt(survey, stage))
+      JSON.stringify(profileForPrompt(survey, stage, followers))
     )) as { diagnosis: string; weeklyGoal: string; focus: string[]; topics: StrategyTopic[] };
     return {
       stage,
@@ -384,7 +381,7 @@ function templateCard(survey: SurveyProfile, input: CardGenInput, outline?: Card
     index: 0,
     headline: outline?.[0]?.headline || topic,
     body: `${survey.niche || "이 주제"}, 이거 하나만 알아도 달라져요.`,
-    note: `${survey.visualGuide || "브랜드 무드"} / 큰 제목 + 시선 끄는 배경`,
+    note: `브랜드 무드 / 큰 제목 + 시선 끄는 배경`,
     photoNote: photo ? "대표 사진" : undefined,
   });
   const middle = n - 2;
