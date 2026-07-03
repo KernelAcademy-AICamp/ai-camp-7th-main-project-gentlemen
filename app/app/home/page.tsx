@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { api, formatDay } from "@/lib/workspace/client";
 import { Badge, Button, Card } from "@/components/workspace/ui";
 import { SurveyModal } from "@/components/workspace/SurveyModal";
-import { findIgAccount, DM_LIMITS, type CardNews, type CardStatus, type DmRule, type MetricEntry, type PublicUser, type PublishJob } from "@/lib/workspace/types";
+import { findIgAccount, DM_LIMITS, type CardNews, type CardStatus, type DmRule, type MetricEntry, type PublicUser, type PublishJob, type SurveyProfile } from "@/lib/workspace/types";
 import { resolveFollowerCount } from "@/lib/workspace/followers";
 
 function weekStart(ts: number): number {
@@ -130,15 +130,20 @@ export default function HomePage() {
 
   return (
     <div className="space-y-6">
-      {/* 헤더 — 우측: 계정 설문(작성/수정) 진입 */}
-      <div className="flex items-start justify-between flex-wrap gap-3">
+      {/* 헤더 — 우측: 계정 컨셉 요약(케밥 수정) / 미설정 시 설정 유도 */}
+      <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
           <h1 className="font-display text-3xl">안녕하세요, {user.name}님 👋</h1>
           <p className="text-sm text-ink-soft mt-1">이번 주 콘텐츠 현황이에요.</p>
         </div>
-        <Button variant={user.survey ? "ghost" : "primary"} onClick={() => setShowSurvey(true)}>
-          {user.survey ? "✏️ 계정 설문 수정" : "📝 계정 설문 작성"}
-        </Button>
+        {user.survey ? (
+          <ConceptCard survey={user.survey} onEdit={() => setShowSurvey(true)} />
+        ) : (
+          <div className="flex items-center gap-3 self-end">
+            <span className="text-sm text-muted">계정 컨셉을 아직 안 정했어요</span>
+            <Button onClick={() => setShowSurvey(true)}>컨셉 설정</Button>
+          </div>
+        )}
       </div>
 
       {showSurvey && (
@@ -227,6 +232,56 @@ export default function HomePage() {
           <Link href="/app/plans" className="inline-block mt-3 text-coral font-medium">AI 콘텐츠 생성으로 →</Link>
         </Card>
       )}
+    </div>
+  );
+}
+
+// 헤더 우측 · 계정 컨셉 요약(박스) + ⋮ 케밥 메뉴(수정 → 설문 모달). 앱 board·plans 케밥과 동일 톤.
+function ConceptCard({ survey, onEdit }: { survey: SurveyProfile; onEdit: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+  return (
+    <div className="relative flex items-start gap-6 rounded-xl border border-line py-3 pl-4 pr-11">
+      <ConceptItem label="주제" value={survey.niche || "—"} />
+      <ConceptItem label="운영 목적" value={survey.goals.join(", ") || "—"} />
+      <ConceptItem label="브랜드 키워드" value={survey.brandKeywords.join(", ") || "—"} />
+      <div className="absolute top-2 right-2" ref={ref}>
+        <button
+          onClick={() => setOpen((o) => !o)}
+          aria-label="계정 컨셉 메뉴"
+          className="w-6 h-6 grid place-items-center rounded-md text-muted hover:bg-paper-2 hover:text-ink transition leading-none"
+        >
+          ⋮
+        </button>
+        {open && (
+          <div className="absolute right-0 top-7 z-20 w-24 rounded-xl border border-line bg-card shadow-lg py-1 text-sm">
+            <button
+              onClick={() => { setOpen(false); onEdit(); }}
+              className="w-full text-left px-3 py-2 hover:bg-paper-2 text-ink"
+            >
+              수정
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// 컨셉 요약 한 칸(마이페이지 Row 스타일 — 작은 회색 라벨 위 · 값 아래)
+function ConceptItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <div className="text-xs text-muted">{label}</div>
+      <div className="text-sm font-medium text-ink truncate max-w-[150px]" title={value}>{value}</div>
     </div>
   );
 }
