@@ -17,10 +17,10 @@ import type { CardFormat, ContentObjective, SurveyProfile } from "@/lib/workspac
 
 function survey(over: Partial<SurveyProfile>): SurveyProfile {
   return {
-    niche: "라이프스타일", followers: 600, operatingMonths: 5, goals: ["브랜딩"], weeklyCapacity: 2,
-    mainFormats: ["카드뉴스"], assets: "직접 만든 것", brandKeywords: ["큐레이션"], brandColor: "#2E3A59",
+    niche: "라이프스타일", followers: 600, goals: ["브랜딩"], weeklyCapacity: 2,
+    brandKeywords: ["큐레이션"],
     voiceExample: "다정한 존댓말(~예요/~해요)", forbiddenExpressions: [], captionLength: "보통",
-    hashtagStyle: "주제 관련 위주", ctaStyle: "저장해두고 보세요", visualGuide: "미니멀", sensitiveDomain: "없음", benchmark: "", ...over,
+    hashtagStyle: "주제 관련 위주", sensitiveDomain: "없음", ...over,
   };
 }
 
@@ -32,22 +32,22 @@ interface Persona {
 const PERSONAS: Persona[] = [
   {
     label: "① 청년 재테크 (금융·민감)", stress: "정책명·금액·신청기한 환각(변동) 회피 + 제도 리스트 실명 + 면책",
-    survey: survey({ niche: "사회초년생 재테크", followers: 820, brandKeywords: ["청년정책", "월급관리"], voiceExample: "담백하고 정보형 존댓말", sensitiveDomain: "금융·투자·부동산", ctaStyle: "저장해두고 챙기기" }),
+    survey: survey({ niche: "사회초년생 재테크", followers: 820, brandKeywords: ["청년정책", "월급관리"], voiceExample: "담백하고 정보형 존댓말", sensitiveDomain: "금융·투자·부동산" }),
     input: { topicTitle: "사회초년생이 챙겨야 할 청년 지원 제도", format: "카드뉴스", objective: "저장", pageCount: 6, keyMessage: "몰라서 못 받는 지원을 정리" },
   },
   {
     label: "② 드라마 큐레이터 (유명 실물)", stress: "추천/리스트형 → 중간 슬라이드가 실제 작품 1개씩 실명(서사아크로 뭉개지지 않음)",
-    survey: survey({ niche: "드라마·영화 큐레이션", followers: 1200, brandKeywords: ["넷플릭스추천", "정주행"], voiceExample: "다정하고 몰입감 있는 존댓말", ctaStyle: "저장하고 주말에 정주행" }),
+    survey: survey({ niche: "드라마·영화 큐레이션", followers: 1200, brandKeywords: ["넷플릭스추천", "정주행"], voiceExample: "다정하고 몰입감 있는 존댓말" }),
     input: { topicTitle: "여운 오래 남는 넷플릭스 드라마 추천", format: "카드뉴스", objective: "저장", pageCount: 5, keyMessage: "엔딩 후에도 생각나는 작품" },
   },
   {
     label: "③ 자기계발 (인용)", stress: "명언 출처 오귀속(misattribution) 회피",
-    survey: survey({ niche: "동기부여 큐레이션", followers: 430, brandKeywords: ["명언", "자기계발"], voiceExample: "단단하고 담백한 존댓말", ctaStyle: "저장하고 힘들 때 다시 보기" }),
+    survey: survey({ niche: "동기부여 큐레이션", followers: 430, brandKeywords: ["명언", "자기계발"], voiceExample: "단단하고 담백한 존댓말" }),
     input: { topicTitle: "월요일 아침 동기부여 명언", format: "카드뉴스", objective: "저장", pageCount: 5, keyMessage: "출근길에 곱씹을 한 문장" },
   },
   {
     label: "④ 홈트 코치 (릴스 분기)", stress: "릴스=기획 건너뛰고 generateCard 직접 + 노하우 정확성·건강 면책",
-    survey: survey({ niche: "홈트레이닝", followers: 540, mainFormats: ["릴스"], brandKeywords: ["홈트", "맨몸운동"], voiceExample: "활기차고 친근한 존댓말(~해요/~해봐요)", sensitiveDomain: "의료·건강·다이어트", ctaStyle: "저장하고 오늘 한 세트 따라 하기" }),
+    survey: survey({ niche: "홈트레이닝", followers: 540, brandKeywords: ["홈트", "맨몸운동"], voiceExample: "활기차고 친근한 존댓말(~해요/~해봐요)", sensitiveDomain: "의료·건강·다이어트" }),
     input: { topicTitle: "앉아서 하는 등·목 통증 스트레칭", format: "릴스", objective: "저장", pageCount: 5, keyMessage: "오래 앉아 굳은 등·목을 3분에 푼다" },
   },
 ];

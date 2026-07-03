@@ -79,7 +79,7 @@ export async function POST(req: Request) {
     generatedBy: isReels ? (gen as { generatedBy: "ai" | "template" }).generatedBy : "기획",
     hasVideo: isReels ? false : undefined,
     theme: "cream",
-    brandColor: guard.user.survey.brandColor || "#ef5a35",
+    brandColor: "#ef5a35", // 기본 브랜드색. 카드별로 제작 화면에서 변경(설문에선 안 받음).
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };

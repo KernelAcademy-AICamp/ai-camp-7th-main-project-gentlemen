@@ -14,10 +14,10 @@ import type { ContentObjective, SurveyProfile } from "@/lib/workspace/types";
  */
 function base(over: Partial<SurveyProfile>): SurveyProfile {
   return {
-    niche: "", followers: 600, operatingMonths: 5, goals: ["브랜딩"], weeklyCapacity: 2,
-    mainFormats: ["카드뉴스"], assets: "직접 만든 것", brandKeywords: [], brandColor: "#2E3A59",
+    niche: "", followers: 600, goals: ["브랜딩"], weeklyCapacity: 2,
+    brandKeywords: [],
     voiceExample: "", forbiddenExpressions: [], captionLength: "보통",
-    hashtagStyle: "주제 관련 위주", ctaStyle: "", visualGuide: "미니멀", sensitiveDomain: "없음", benchmark: "", ...over,
+    hashtagStyle: "주제 관련 위주", sensitiveDomain: "없음", ...over,
   };
 }
 
@@ -27,11 +27,11 @@ const MINIMAL = base({}); // 니치·키워드·톤·민감도 전부 빔 — "�
 const TRIALS: Trial[] = [
   {
     label: "① 건강·민감(면책·톤 검증)", topic: "앉아서 하는 등·목 통증 스트레칭", objective: "저장", pageCount: 5,
-    full: base({ niche: "홈트레이닝", brandKeywords: ["홈트", "맨몸운동"], voiceExample: "활기차고 친근한 존댓말(~해요/~해봐요)", sensitiveDomain: "의료·건강·다이어트", forbiddenExpressions: ["대박", "완벽"], ctaStyle: "저장하고 오늘 한 세트 따라 하기" }),
+    full: base({ niche: "홈트레이닝", brandKeywords: ["홈트", "맨몸운동"], voiceExample: "활기차고 친근한 존댓말(~해요/~해봐요)", sensitiveDomain: "의료·건강·다이어트", forbiddenExpressions: ["대박", "완벽"] }),
   },
   {
     label: "② 추천/실물(실속이 설문 없이도 서나)", topic: "여운 오래 남는 넷플릭스 드라마 추천", objective: "저장", pageCount: 5,
-    full: base({ niche: "드라마·영화 큐레이션", brandKeywords: ["넷플릭스추천", "정주행"], voiceExample: "다정하고 몰입감 있는 존댓말", ctaStyle: "저장하고 주말에 정주행" }),
+    full: base({ niche: "드라마·영화 큐레이션", brandKeywords: ["넷플릭스추천", "정주행"], voiceExample: "다정하고 몰입감 있는 존댓말" }),
   },
 ];
 

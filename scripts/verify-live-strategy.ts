@@ -10,23 +10,23 @@ import type { SurveyProfile } from "@/lib/workspace/types";
  */
 function survey(over: Partial<SurveyProfile>): SurveyProfile {
   return {
-    niche: "라이프스타일", followers: 600, operatingMonths: 5, goals: ["브랜딩"], weeklyCapacity: 3,
-    mainFormats: ["카드뉴스"], assets: "직접 만든 것", brandKeywords: ["큐레이션"], brandColor: "#2E3A59",
+    niche: "라이프스타일", followers: 600, goals: ["브랜딩"], weeklyCapacity: 3,
+    brandKeywords: ["큐레이션"],
     voiceExample: "다정한 존댓말(~예요/~해요)", forbiddenExpressions: [], captionLength: "보통",
-    hashtagStyle: "주제 관련 위주", ctaStyle: "저장해두고 보세요", visualGuide: "미니멀", sensitiveDomain: "없음", benchmark: "", ...over,
+    hashtagStyle: "주제 관련 위주", sensitiveDomain: "없음", ...over,
   };
 }
 
 const CASES: { label: string; survey: SurveyProfile }[] = [
-  { label: "① 홈트 코치 · 초기(누적) · 주2회", survey: survey({ niche: "홈트레이닝", followers: 480, operatingMonths: 3, weeklyCapacity: 2, brandKeywords: ["홈트", "맨몸운동"], sensitiveDomain: "의료·건강·다이어트", benchmark: "땅끄부부" }) },
-  { label: "② 드라마 큐레이터 · 성장실험 · 주5회", survey: survey({ niche: "드라마·영화 큐레이션", followers: 2200, operatingMonths: 10, weeklyCapacity: 5, goals: ["브랜딩", "협찬"], brandKeywords: ["넷플릭스추천", "정주행"] }) },
-  { label: "③ 수제청 공방 · 수익화준비 · 주4회(문의목적)", survey: survey({ niche: "수제청·홈카페 공방", followers: 3400, operatingMonths: 18, weeklyCapacity: 4, goals: ["매출", "문의"], brandKeywords: ["수제청", "클래스"], benchmark: "동네 공방들" }) },
+  { label: "① 홈트 코치 · 초기(누적) · 주2회", survey: survey({ niche: "홈트레이닝", followers: 480, weeklyCapacity: 2, brandKeywords: ["홈트", "맨몸운동"], sensitiveDomain: "의료·건강·다이어트" }) },
+  { label: "② 드라마 큐레이터 · 성장실험 · 주5회", survey: survey({ niche: "드라마·영화 큐레이션", followers: 2200, weeklyCapacity: 5, goals: ["브랜딩", "협찬"], brandKeywords: ["넷플릭스추천", "정주행"] }) },
+  { label: "③ 수제청 공방 · 수익화준비 · 주4회(문의목적)", survey: survey({ niche: "수제청·홈카페 공방", followers: 3400, weeklyCapacity: 4, goals: ["매출", "문의"], brandKeywords: ["수제청", "클래스"] }) },
 ];
 
 async function main() {
   if (!process.env.ANTHROPIC_API_KEY) { console.error("❌ ANTHROPIC_API_KEY 없음"); process.exit(1); }
   for (const c of CASES) {
-    const s = await generateStrategy(c.survey);
+    const s = await generateStrategy(c.survey, c.survey.followers);
     console.log(`\n${"═".repeat(72)}\n▌ ${c.label}  [generatedBy=${s.generatedBy}]`);
     console.log(`${"═".repeat(72)}`);
     console.log(`단계: ${s.stage} · recommendedCount: ${s.recommendedCount} · topics 개수: ${s.topics.length}  ${s.topics.length === s.recommendedCount ? "✅ 일치" : "⚠️ 불일치"}`);

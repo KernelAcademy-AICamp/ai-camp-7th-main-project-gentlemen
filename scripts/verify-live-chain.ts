@@ -12,23 +12,23 @@ import type { ContentObjective, SurveyProfile } from "@/lib/workspace/types";
  */
 function survey(over: Partial<SurveyProfile>): SurveyProfile {
   return {
-    niche: "라이프스타일", followers: 600, operatingMonths: 5, goals: ["브랜딩"], weeklyCapacity: 3,
-    mainFormats: ["카드뉴스"], assets: "직접 만든 것", brandKeywords: ["큐레이션"], brandColor: "#2E3A59",
+    niche: "라이프스타일", followers: 600, goals: ["브랜딩"], weeklyCapacity: 3,
+    brandKeywords: ["큐레이션"],
     voiceExample: "다정한 존댓말(~예요/~해요)", forbiddenExpressions: [], captionLength: "보통",
-    hashtagStyle: "주제 관련 위주", ctaStyle: "저장해두고 보세요", visualGuide: "미니멀", sensitiveDomain: "없음", benchmark: "", ...over,
+    hashtagStyle: "주제 관련 위주", sensitiveDomain: "없음", ...over,
   };
 }
 const OBJ: ContentObjective[] = ["조회", "저장", "공유", "방문", "문의", "팔로우", "댓글"];
 const mapGoal = (g: string): ContentObjective => (OBJ.find((o) => o === g) as ContentObjective) || "저장";
 
 const CASES: { label: string; pick: string; survey: SurveyProfile }[] = [
-  { label: "① 홈트(누적·건강민감)", pick: "층간소음|무소음|하체|스트레칭|운동", survey: survey({ niche: "홈트레이닝", followers: 480, operatingMonths: 3, weeklyCapacity: 2, brandKeywords: ["홈트", "맨몸운동"], voiceExample: "활기차고 친근한 존댓말(~해요/~해봐요)", sensitiveDomain: "의료·건강·다이어트", benchmark: "땅끄부부", ctaStyle: "저장하고 오늘 한 세트 따라 하기" }) },
-  { label: "② 드라마(추천/리스트·실물환각)", pick: "완결|모음|추천|드라마|정주행", survey: survey({ niche: "드라마·영화 큐레이션", followers: 2200, operatingMonths: 10, weeklyCapacity: 5, goals: ["브랜딩", "협찬"], brandKeywords: ["넷플릭스추천", "정주행"], voiceExample: "다정하고 몰입감 있는 존댓말", ctaStyle: "저장하고 주말에 정주행" }) },
-  { label: "③ 수제청 공방(노하우·수익화)", pick: "곰팡이|실패|원인|조합|과정", survey: survey({ niche: "수제청·홈카페 공방", followers: 3400, operatingMonths: 18, weeklyCapacity: 4, goals: ["매출", "문의"], brandKeywords: ["수제청", "클래스"], voiceExample: "다정하고 솔직한 존댓말", benchmark: "동네 공방들", ctaStyle: "저장하고 클래스 문의는 프로필로" }) },
+  { label: "① 홈트(누적·건강민감)", pick: "층간소음|무소음|하체|스트레칭|운동", survey: survey({ niche: "홈트레이닝", followers: 480, weeklyCapacity: 2, brandKeywords: ["홈트", "맨몸운동"], voiceExample: "활기차고 친근한 존댓말(~해요/~해봐요)", sensitiveDomain: "의료·건강·다이어트" }) },
+  { label: "② 드라마(추천/리스트·실물환각)", pick: "완결|모음|추천|드라마|정주행", survey: survey({ niche: "드라마·영화 큐레이션", followers: 2200, weeklyCapacity: 5, goals: ["브랜딩", "협찬"], brandKeywords: ["넷플릭스추천", "정주행"], voiceExample: "다정하고 몰입감 있는 존댓말" }) },
+  { label: "③ 수제청 공방(노하우·수익화)", pick: "곰팡이|실패|원인|조합|과정", survey: survey({ niche: "수제청·홈카페 공방", followers: 3400, weeklyCapacity: 4, goals: ["매출", "문의"], brandKeywords: ["수제청", "클래스"], voiceExample: "다정하고 솔직한 존댓말" }) },
 ];
 
 async function runCase(c: (typeof CASES)[number]) {
-  const strat = await generateStrategy(c.survey);
+  const strat = await generateStrategy(c.survey, c.survey.followers);
   const re = new RegExp(c.pick);
   const topic = strat.topics.find((t) => re.test(t.title)) ?? strat.topics[0];
   if (!topic) throw new Error("전략 topics 비어 있음");

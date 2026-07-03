@@ -34,21 +34,14 @@ const usd = (u: Usage) => (u.inTok / 1e6) * IN_USD + (u.outTok / 1e6) * OUT_USD;
 const survey: SurveyProfile = {
   niche: "자취 요리",
   followers: 320,
-  operatingMonths: 4,
   goals: ["브랜딩"],
   weeklyCapacity: 3,
-  mainFormats: ["카드뉴스"],
-  assets: "직접 찍은 요리 사진",
   brandKeywords: ["자취요리", "10분요리"],
-  brandColor: "#ff7a59",
   voiceExample: "친근한 반말 섞인 존댓말, 담백하게",
   forbiddenExpressions: [],
   captionLength: "보통",
   hashtagStyle: "관련 태그 위주",
-  ctaStyle: "저장 유도",
-  visualGuide: "따뜻한 주방 톤",
   sensitiveDomain: "없음",
-  benchmark: "",
 };
 
 const input: CardGenInput = {

@@ -32,21 +32,14 @@ function musicSurvey(over: Partial<SurveyProfile> = {}): SurveyProfile {
   return {
     niche: "감성 음악 큐레이션",
     followers: 780,
-    operatingMonths: 6,
     goals: ["브랜딩"],
     weeklyCapacity: 3,
-    mainFormats: ["카드뉴스"],
-    assets: "직접 고른 플레이리스트",
     brandKeywords: ["감성플레이리스트", "음악추천"],
-    brandColor: "#2E3A59",
     voiceExample: "잔잔하고 다정한 존댓말(~예요/~해요)",
     forbiddenExpressions: [],
     captionLength: "보통",
     hashtagStyle: "음악·감성 관련 위주",
-    ctaStyle: "저장해두고 오늘 밤에 들어보세요",
-    visualGuide: "어두운 남색 배경, 미니멀 타이포",
     sensitiveDomain: "없음",
-    benchmark: "",
     ...over,
   };
 }
@@ -64,7 +57,6 @@ const SCENARIOS: Record<string, Scenario> = {
     survey: musicSurvey({
       niche: "책 큐레이션",
       brandKeywords: ["책추천", "독서기록"],
-      ctaStyle: "저장해두고 서점에서 찾아보세요",
     }),
     topicTitle: "가을 밤에 읽기 좋은 책",
     keyMessage: "쓸쓸하지만 따뜻한 가을 감성의 책을 골랐어요",
