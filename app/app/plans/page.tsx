@@ -113,6 +113,9 @@ export default function PlansPage() {
       </Card>
     );
 
+  // MVP: 주간 추천 '전략 요약' 박스 잠시 꺼둠. 재활성화하려면 true 로. (전략 생성/조회 로직은 그대로 살아 있음)
+  const SHOW_STRATEGY = false;
+
   return (
     <div className="space-y-6">
       <SectionTitle
@@ -122,8 +125,8 @@ export default function PlansPage() {
         action={plans.length > 0 ? <Button size="sm" onClick={() => openAdd()}>+ 기획 추가</Button> : undefined}
       />
 
-      {/* 전략 요약 */}
-      {strategy && (
+      {/* 전략 요약 (MVP: SHOW_STRATEGY 로 잠시 꺼둠 — 코드는 유지) */}
+      {SHOW_STRATEGY && strategy && (
         <Card className="p-5 bg-coral text-white border-transparent">
           <div className="flex items-center gap-2 flex-wrap">
             <Badge tone="coral">{strategy.stage}</Badge>

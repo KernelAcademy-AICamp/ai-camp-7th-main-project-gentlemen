@@ -8,6 +8,9 @@ import { Generating } from "@/components/workspace/Generating";
 import { SurveyForm } from "@/components/workspace/SurveyForm";
 import type { SurveyProfile } from "@/lib/workspace/types";
 
+// MVP: 주간 전략 자동 생성 토글. 전략 박스(plans SHOW_STRATEGY)와 함께 꺼둠.
+const AUTO_STRATEGY = false;
+
 // 건너뛰기 시 사용할 기본 프로필 (나중에 마이페이지에서 수정 가능)
 const DEFAULT_SURVEY: SurveyProfile = {
   niche: "내 주제",
@@ -28,9 +31,11 @@ export function OnboardingClient({ initial }: { initial: SurveyProfile | null })
   const [skipping, setSkipping] = useState(false);
 
   async function onSaved() {
-    setWorking(true);
-    // 설문 저장 직후 첫 전략 생성 → 워크스페이스(AI 기획 리스트)로
-    await api("/api/strategy", { method: "POST" }).catch(() => {});
+    // MVP: 저장 직후 주간 전략 자동 생성 잠시 꺼둠(전략 박스 비활성과 일관). 재활성화 시 AUTO_STRATEGY = true.
+    if (AUTO_STRATEGY) {
+      setWorking(true);
+      await api("/api/strategy", { method: "POST" }).catch(() => {});
+    }
     router.push("/app/home");
     router.refresh();
   }

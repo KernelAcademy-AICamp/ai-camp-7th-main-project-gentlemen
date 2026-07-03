@@ -10,6 +10,9 @@ import type { SurveyProfile } from "@/lib/workspace/types";
  * 시작 설문 모달. 홈 우측 버튼·AI콘텐츠생성 게이트에서 공용으로 띄운다.
  * 저장 직후 전략을 (재)생성해 주간 추천 리스트가 바로 채워지도록 한다.
  */
+// MVP: 주간 전략 자동 생성 토글. 전략 박스(plans SHOW_STRATEGY)와 함께 꺼둠.
+const AUTO_STRATEGY = false;
+
 export function SurveyModal({
   initial,
   onClose,
@@ -22,9 +25,12 @@ export function SurveyModal({
   const [working, setWorking] = useState(false);
 
   async function handleSaved(survey: SurveyProfile) {
-    setWorking(true);
-    // 설문 저장 직후 첫/재생성 전략 → 실패해도 설문은 저장됨(라이브 안 깨짐).
-    await api("/api/strategy", { method: "POST" }).catch(() => {});
+    // MVP: 저장 직후 주간 전략 자동 생성 잠시 꺼둠(전략 박스 비활성과 일관). 재활성화 시 AUTO_STRATEGY = true.
+    if (AUTO_STRATEGY) {
+      setWorking(true);
+      // 설문 저장 직후 첫/재생성 전략 → 실패해도 설문은 저장됨(라이브 안 깨짐).
+      await api("/api/strategy", { method: "POST" }).catch(() => {});
+    }
     onSaved?.(survey);
     onClose();
   }
