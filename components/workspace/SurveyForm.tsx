@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { api } from "@/lib/workspace/client";
 import { Button, Field, inputClass } from "@/components/workspace/ui";
 import type {
@@ -14,9 +14,10 @@ const WEEKLY = [2, 3, 4, 5, 6, 7];
 
 // 프리셋(탭 한 번). 직접 입력 텍스트로 언제든 덮어쓸 수 있음.
 const VOICE_PRESETS = ["담백한 존댓말", "다정한 반말", "활기찬 존댓말(~해요/~해봐요)", "전문적·신뢰감 있는", "위트 있는 구어체"];
-const CTA_PRESETS = ["저장 유도", "프로필 방문 유도", "공유 유도", "댓글 유도", "팔로우 유도"];
 const HASHTAG_PRESETS = ["니치 위주 8~12개", "대형+니치 혼합", "최소한만(3~5개)", "트렌드 태그 포함"];
 const FORBIDDEN_PRESETS = ["과장·보장 표현", "이모지 남발", "반말", "영어 남용", "느낌표 남발"];
+
+const STEP_LABELS = ["계정 기본", "톤앤매너", "디테일"];
 
 const EMPTY: SurveyProfile = {
   niche: "",
@@ -24,12 +25,10 @@ const EMPTY: SurveyProfile = {
   goals: [],
   weeklyCapacity: 2,
   brandKeywords: [],
-  brandColor: "#ff385c",
   voiceExample: "",
   forbiddenExpressions: [],
   captionLength: "보통",
   hashtagStyle: "",
-  ctaStyle: "",
   sensitiveDomain: "없음",
 };
 
@@ -47,11 +46,61 @@ function Chip({
       type="button"
       onClick={onClick}
       className={`px-3.5 py-1.5 rounded-full text-sm border transition ${
-        active ? "bg-coral text-white border-coral" : "bg-card text-ink-soft border-line hover:border-coral/40"
+        active
+          ? "bg-coral-soft text-[#d81e46] border-[#ffc2cd] font-medium"
+          : "bg-card text-ink-soft border-line hover:border-[#ffc2cd]"
       }`}
     >
       {children}
     </button>
+  );
+}
+
+// 상단 진행 로드맵. 각 단계는 눌러서 이동 가능(완료값 검증은 저장 시점).
+function Stepper({ current, onJump }: { current: number; onJump: (i: number) => void }) {
+  return (
+    <div className="flex items-start">
+      {STEP_LABELS.map((label, i) => {
+        const done = i < current;
+        const active = i === current;
+        return (
+          <Fragment key={label}>
+            {i > 0 && (
+              <div className="flex-1 mt-[13px] mx-1.5 h-px bg-line overflow-hidden rounded-full">
+                <div
+                  className="h-full bg-coral transition-all duration-300"
+                  style={{ width: i <= current ? "100%" : "0%" }}
+                />
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => onJump(i)}
+              className="flex flex-col items-center gap-1.5 shrink-0 w-10"
+            >
+              <span
+                className={`w-7 h-7 rounded-full grid place-items-center text-xs font-bold border transition ${
+                  active
+                    ? "bg-coral text-white border-coral"
+                    : done
+                      ? "bg-coral-soft text-[#d81e46] border-[#ffc2cd]"
+                      : "bg-card text-muted border-line"
+                }`}
+              >
+                {i + 1}
+              </span>
+              <span
+                className={`text-[10.5px] leading-tight text-center whitespace-nowrap transition ${
+                  active ? "text-ink font-semibold" : done ? "text-ink-soft" : "text-muted"
+                }`}
+              >
+                {label}
+              </span>
+            </button>
+          </Fragment>
+        );
+      })}
+    </div>
   );
 }
 
@@ -140,12 +189,32 @@ export function SurveyForm({
   const [forbiddenText, setForbiddenText] = useState((initial?.forbiddenExpressions ?? []).join(", "));
   const [err, setErr] = useState("");
   const [saving, setSaving] = useState(false);
+  const [step, setStep] = useState(0);
+  const LAST = STEP_LABELS.length - 1;
 
   function set<K extends keyof SurveyProfile>(k: K, v: SurveyProfile[K]) {
     setS((prev) => ({ ...prev, [k]: v }));
   }
   function toggle<T>(arr: T[], v: T): T[] {
     return arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
+  }
+
+  // 1단계의 필수값(주제)만 진행 전에 검증. 나머지는 자유.
+  function goNext() {
+    setErr("");
+    if (step === 0 && !s.niche.trim()) {
+      setErr("주제(카테고리)는 필수예요.");
+      return;
+    }
+    setStep((v) => Math.min(LAST, v + 1));
+  }
+  function goBack() {
+    setErr("");
+    setStep((v) => Math.max(0, v - 1));
+  }
+  function jump(i: number) {
+    setErr("");
+    setStep(i);
   }
 
   async function save() {
@@ -157,6 +226,7 @@ export function SurveyForm({
       forbiddenExpressions: forbiddenText.split(",").map((x) => x.trim()).filter(Boolean),
     };
     if (!payload.niche.trim()) {
+      setStep(0);
       setErr("주제(카테고리)는 필수예요.");
       return;
     }
@@ -175,109 +245,118 @@ export function SurveyForm({
   }
 
   return (
-    <div className="space-y-4">
-      {/* 계정 기본 — 주제·목적·업로드 횟수만 */}
-      <Field label="계정 주제(카테고리)" hint="필수">
-        <input
-          className={inputClass}
-          value={s.niche}
-          onChange={(e) => set("niche", e.target.value)}
-          placeholder="예: 퇴근 후 운동·식단 / 동네 베이커리 / 사회초년생 재테크"
-        />
-      </Field>
-      <Field label="운영 목적" hint="복수 선택">
-        <div className="flex flex-wrap gap-2">
-          {GOALS.map((g) => (
-            <Chip key={g} active={s.goals.includes(g)} onClick={() => set("goals", toggle(s.goals, g))}>
-              {g}
-            </Chip>
-          ))}
-        </div>
-      </Field>
-      <Field label="주당 업로드 가능 횟수" hint="주 2회 권장">
-        <div className="flex flex-wrap gap-2 pt-1">
-          {WEEKLY.map((n) => (
-            <Chip key={n} active={s.weeklyCapacity === n} onClick={() => set("weeklyCapacity", n)}>
-              주 {n}회
-            </Chip>
-          ))}
-        </div>
-      </Field>
+    <div>
+      <Stepper current={step} onJump={jump} />
 
-      {/* 톤앤매너 — 생성 톤의 핵심 */}
-      <div className="flex items-center gap-3 pt-2">
-        <span className="text-xs font-semibold tracking-wide text-coral uppercase">톤앤매너</span>
-        <span className="h-px flex-1 bg-line" />
-      </div>
-      <Field label="브랜드 키워드" hint="3~5개, 쉼표로 구분">
-        <input
-          className={inputClass}
-          value={keywordsText}
-          onChange={(e) => setKeywordsText(e.target.value)}
-          placeholder="담백한, 솔직한, 실용적인"
-        />
-      </Field>
-      <PresetField
-        label="문체 예시"
-        presets={VOICE_PRESETS}
-        value={s.voiceExample}
-        onChange={(v) => set("voiceExample", v)}
-        placeholder="또는 직접 입력 (예: 친구한테 말하듯 편하게, 과장 없이)"
-        textarea
-      />
-      <MultiPresetField
-        label="금지 표현/스타일"
-        hint="복수 선택 · 직접 추가 가능"
-        presets={FORBIDDEN_PRESETS}
-        value={forbiddenText}
-        onChange={setForbiddenText}
-        placeholder="또는 직접 입력 (쉼표로 구분)"
-      />
-      <div className="grid sm:grid-cols-2 gap-3">
-        <Field label="선호 캡션 길이">
-          <div className="flex gap-2 pt-1">
-            {LENGTHS.map((l) => (
-              <Chip key={l} active={s.captionLength === l} onClick={() => set("captionLength", l)}>
-                {l}
-              </Chip>
-            ))}
-          </div>
-        </Field>
-        <Field label="브랜드 컬러">
-          <input
-            type="color"
-            value={s.brandColor}
-            onChange={(e) => set("brandColor", e.target.value)}
-            className="w-14 h-11 rounded-xl border border-line bg-card cursor-pointer p-1"
-          />
-        </Field>
-      </div>
-      <PresetField
-        label="해시태그 스타일"
-        presets={HASHTAG_PRESETS}
-        value={s.hashtagStyle}
-        onChange={(v) => set("hashtagStyle", v)}
-        placeholder="또는 직접 입력"
-      />
-      <PresetField
-        label="CTA 스타일"
-        presets={CTA_PRESETS}
-        value={s.ctaStyle}
-        onChange={(v) => set("ctaStyle", v)}
-        placeholder="또는 직접 입력 (예: 저장 유도 / 프로필 방문 안내)"
-      />
-
-      {err && <p className="text-sm text-coral">{err}</p>}
-
-      <div className="flex items-center justify-end gap-2 pt-2">
-        {onCancel && (
-          <Button variant="ghost" onClick={onCancel} disabled={saving}>
-            취소
-          </Button>
+      <div className="space-y-4 mt-6">
+        {/* 1단계 · 계정 기본 */}
+        {step === 0 && (
+          <>
+            <Field label="계정 주제(카테고리)" hint="필수">
+              <input
+                className={inputClass}
+                value={s.niche}
+                onChange={(e) => set("niche", e.target.value)}
+                placeholder="예: 퇴근 후 운동·식단 / 동네 베이커리 / 사회초년생 재테크"
+              />
+            </Field>
+            <Field label="운영 목적" hint="복수 선택">
+              <div className="flex flex-wrap gap-2">
+                {GOALS.map((g) => (
+                  <Chip key={g} active={s.goals.includes(g)} onClick={() => set("goals", toggle(s.goals, g))}>
+                    {g}
+                  </Chip>
+                ))}
+              </div>
+            </Field>
+            <Field label="주당 업로드 가능 횟수" hint="주 2회 이상 권장">
+              <div className="flex flex-wrap gap-2 pt-1">
+                {WEEKLY.map((n) => (
+                  <Chip key={n} active={s.weeklyCapacity === n} onClick={() => set("weeklyCapacity", n)}>
+                    주 {n}회
+                  </Chip>
+                ))}
+              </div>
+            </Field>
+          </>
         )}
-        <Button onClick={save} disabled={saving}>
-          {saving ? "저장 중…" : mode === "onboarding" ? "설문 완료하고 전략 받기" : "저장"}
-        </Button>
+
+        {/* 2단계 · 톤앤매너 */}
+        {step === 1 && (
+          <>
+            <Field label="브랜드 키워드" hint="3~5개, 쉼표로 구분">
+              <input
+                className={inputClass}
+                value={keywordsText}
+                onChange={(e) => setKeywordsText(e.target.value)}
+                placeholder="담백한, 솔직한, 실용적인"
+              />
+            </Field>
+            <PresetField
+              label="문체 예시"
+              presets={VOICE_PRESETS}
+              value={s.voiceExample}
+              onChange={(v) => set("voiceExample", v)}
+              placeholder="또는 직접 입력 (예: 친구한테 말하듯 편하게, 과장 없이)"
+              textarea
+            />
+            <MultiPresetField
+              label="금지 표현/스타일"
+              hint="복수 선택 · 직접 추가 가능"
+              presets={FORBIDDEN_PRESETS}
+              value={forbiddenText}
+              onChange={setForbiddenText}
+              placeholder="또는 직접 입력 (쉼표로 구분)"
+            />
+          </>
+        )}
+
+        {/* 3단계 · 디테일 */}
+        {step === 2 && (
+          <>
+            <Field label="선호 캡션 길이">
+              <div className="flex gap-2 pt-1">
+                {LENGTHS.map((l) => (
+                  <Chip key={l} active={s.captionLength === l} onClick={() => set("captionLength", l)}>
+                    {l}
+                  </Chip>
+                ))}
+              </div>
+            </Field>
+            <PresetField
+              label="해시태그 스타일"
+              presets={HASHTAG_PRESETS}
+              value={s.hashtagStyle}
+              onChange={(v) => set("hashtagStyle", v)}
+              placeholder="또는 직접 입력"
+            />
+          </>
+        )}
+      </div>
+
+      {err && <p className="text-sm text-coral mt-3">{err}</p>}
+
+      <div className="flex items-center justify-between gap-2 pt-4 mt-5 border-t border-line">
+        <span className="text-xs text-muted tabular-nums">{step + 1} / {STEP_LABELS.length}</span>
+        <div className="flex items-center gap-2">
+          {step === 0 && onCancel && (
+            <Button variant="ghost" onClick={onCancel} disabled={saving}>
+              취소
+            </Button>
+          )}
+          {step > 0 && (
+            <Button variant="ghost" onClick={goBack} disabled={saving}>
+              ← 이전
+            </Button>
+          )}
+          {step < LAST ? (
+            <Button onClick={goNext}>다음 →</Button>
+          ) : (
+            <Button onClick={save} disabled={saving}>
+              {saving ? "저장 중…" : mode === "onboarding" ? "완료하고 전략 받기" : "저장"}
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

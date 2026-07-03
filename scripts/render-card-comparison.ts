@@ -28,12 +28,10 @@ const survey: SurveyProfile = {
   goals: ["브랜딩"],
   weeklyCapacity: 3,
   brandKeywords: ["감성플레이리스트", "음악추천"],
-  brandColor: "#2E3A59",
   voiceExample: "잔잔하고 다정한 존댓말(~예요/~해요)",
   forbiddenExpressions: [],
   captionLength: "보통",
   hashtagStyle: "음악·감성 관련 위주",
-  ctaStyle: "저장해두고 오늘 밤에 들어보세요",
   sensitiveDomain: "없음",
 };
 const TOPIC = "비 오는 날 듣기 좋은 감성 노래";

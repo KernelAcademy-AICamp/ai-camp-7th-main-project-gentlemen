@@ -37,12 +37,10 @@ const survey: SurveyProfile = {
   goals: ["브랜딩"],
   weeklyCapacity: 3,
   brandKeywords: ["자취요리", "10분요리"],
-  brandColor: "#ff7a59",
   voiceExample: "친근한 반말 섞인 존댓말, 담백하게",
   forbiddenExpressions: [],
   captionLength: "보통",
   hashtagStyle: "관련 태그 위주",
-  ctaStyle: "저장 유도",
   sensitiveDomain: "없음",
 };
 

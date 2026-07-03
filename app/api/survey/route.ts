@@ -25,14 +25,12 @@ export async function PUT(req: Request) {
       .map((s) => s.trim())
       .filter(Boolean)
       .slice(0, 5),
-    brandColor: (body.brandColor || "#ef5a35").trim(),
     voiceExample: (body.voiceExample || "").trim(),
     forbiddenExpressions: (Array.isArray(body.forbiddenExpressions) ? body.forbiddenExpressions : [])
       .map((s) => s.trim())
       .filter(Boolean),
     captionLength: body.captionLength === "짧게" || body.captionLength === "길게" ? body.captionLength : "보통",
     hashtagStyle: (body.hashtagStyle || "").trim(),
-    ctaStyle: (body.ctaStyle || "").trim(),
     // 설문에서 안 받고 니치로 자동 감지(안전 가드레일 유지). body 값이 오면 존중.
     sensitiveDomain: body.sensitiveDomain || detectSensitiveDomain((body.niche || "").trim()),
   };

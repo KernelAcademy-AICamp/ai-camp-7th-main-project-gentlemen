@@ -15,12 +15,10 @@ const DEFAULT_SURVEY: SurveyProfile = {
   goals: [],
   weeklyCapacity: 2,
   brandKeywords: [],
-  brandColor: "#ff385c",
   voiceExample: "",
   forbiddenExpressions: [],
   captionLength: "보통",
   hashtagStyle: "",
-  ctaStyle: "",
   sensitiveDomain: "없음",
 };
 

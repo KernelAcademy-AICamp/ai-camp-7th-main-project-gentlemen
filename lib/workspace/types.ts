@@ -27,12 +27,10 @@ export interface SurveyProfile {
   goals: OperationGoal[];
   weeklyCapacity: number;
   brandKeywords: string[];
-  brandColor: string; // 비주얼: 브랜드 컬러(템플릿+브랜드컬러)
   voiceExample: string;
   forbiddenExpressions: string[];
   captionLength: "짧게" | "보통" | "길게";
   hashtagStyle: string;
-  ctaStyle: string;
   sensitiveDomain: SensitiveDomain;
 }
 

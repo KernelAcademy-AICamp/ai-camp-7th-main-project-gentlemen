@@ -17,9 +17,9 @@ const MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-4-8";
 function baseSurvey(over: Partial<SurveyProfile>): SurveyProfile {
   return {
     niche: "라이프스타일 큐레이션", followers: 640, goals: ["브랜딩"], weeklyCapacity: 2,
-    brandKeywords: ["큐레이션"], brandColor: "#2E3A59",
+    brandKeywords: ["큐레이션"],
     voiceExample: "잔잔하고 다정한 존댓말(~예요/~해요)", forbiddenExpressions: [], captionLength: "보통",
-    hashtagStyle: "주제 관련 위주", ctaStyle: "저장해두고 천천히 보세요", sensitiveDomain: "없음", ...over,
+    hashtagStyle: "주제 관련 위주", sensitiveDomain: "없음", ...over,
   };
 }
 

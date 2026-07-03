@@ -67,7 +67,6 @@ export default function MyPage() {
                   <Row label="브랜드 키워드" value={user.survey.brandKeywords.join(", ") || "—"} />
                   <Row label="금지 표현" value={user.survey.forbiddenExpressions.join(", ") || "—"} />
                   <Row label="민감 도메인" value={user.survey.sensitiveDomain} />
-                  <Row label="브랜드 컬러" value={user.survey.brandColor} />
                 </dl>
               ) : (
                 <p className="text-ink-soft text-sm">설문값이 없어요.</p>

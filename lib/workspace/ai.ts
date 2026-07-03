@@ -273,7 +273,7 @@ export function cardSystemPrompt(survey: SurveyProfile, format: CardFormat): str
     `브랜드 키워드: ${survey.brandKeywords.join(", ") || "(없음)"}`,
     `문체 예시: ${survey.voiceExample || "(없음)"}`,
     `금지 표현: ${survey.forbiddenExpressions.join(", ") || "(없음)"}`,
-    `캡션 길이 선호: ${survey.captionLength} / 해시태그 스타일: ${survey.hashtagStyle} / CTA 스타일: ${survey.ctaStyle}`,
+    `캡션 길이 선호: ${survey.captionLength} / 해시태그 스타일: ${survey.hashtagStyle}`,
     survey.sensitiveDomain !== "없음"
       ? `민감 도메인(${survey.sensitiveDomain}): 실질 정보는 충분히 담되 권유·강요·단정·보장·효능 표현만 피한다. 캡션에 명시적 면책 한 줄 + 공식·전문 확인 권고.`
       : "",
@@ -370,7 +370,7 @@ function templateCard(survey: SurveyProfile, input: CardGenInput, outline?: Card
       pages: scenes.slice(0, Math.max(3, Math.min(n, 6))),
       caption: `${topic}\n\n${km}\n\n저장해두고 따라 해보세요 🔖`,
       hashtags: tags,
-      cta: survey.ctaStyle || "팔로우하고 다음 편 받기 ➕",
+      cta: "팔로우하고 다음 편 받기 ➕",
       generatedBy: "template",
     };
   }
@@ -404,7 +404,7 @@ function templateCard(survey: SurveyProfile, input: CardGenInput, outline?: Card
   pages.push({
     index: n - 1,
     headline: "오늘의 한 줄",
-    body: `${km}\n\n${survey.ctaStyle || ctaText}`,
+    body: `${km}\n\n${ctaText}`,
     note: "마지막 장: CTA + 계정/프로필 안내",
     photoNote: photo ? "마무리 사진" : undefined,
   });
@@ -417,7 +417,7 @@ function templateCard(survey: SurveyProfile, input: CardGenInput, outline?: Card
     : survey.captionLength === "길게" ? `${topic}\n\n${km}\n\n${ctaText}`
     : `${topic}\n\n${km}\n${ctaText}`;
 
-  return { title: topic, pages, caption: caption.trim(), hashtags, cta: survey.ctaStyle || ctaText, generatedBy: "template" };
+  return { title: topic, pages, caption: caption.trim(), hashtags, cta: ctaText, generatedBy: "template" };
 }
 
 export function aiAvailable(): boolean {

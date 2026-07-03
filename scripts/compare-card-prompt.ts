@@ -42,12 +42,10 @@ function baseSurvey(over: Partial<SurveyProfile>): SurveyProfile {
     goals: ["브랜딩"],
     weeklyCapacity: 2,
     brandKeywords: ["홈카페", "라떼아트"],
-    brandColor: "#8B5E3C",
     voiceExample: "편하게 반말 섞인 친근한 존댓말(~예요/~해요)",
     forbiddenExpressions: [],
     captionLength: "보통",
     hashtagStyle: "주제 관련 위주",
-    ctaStyle: "저장하고 따라 해보세요 🔖",
     sensitiveDomain: "없음",
     ...over,
   };
@@ -72,7 +70,6 @@ const SCENARIOS: Record<string, Scenario> = {
       brandKeywords: ["재테크", "월급관리"],
       sensitiveDomain: "금융·투자·부동산",
       voiceExample: "담백하고 정보형 존댓말",
-      ctaStyle: "저장해두고 천천히 보세요",
     }),
     input: {
       topicTitle: "사회초년생 첫 통장 쪼개기",
@@ -88,7 +85,6 @@ const SCENARIOS: Record<string, Scenario> = {
       niche: "감성 플레이리스트 큐레이션",
       brandKeywords: ["플레이리스트", "감성음악"],
       voiceExample: "잔잔하고 감성적인 존댓말",
-      ctaStyle: "저장해두고 오늘 밤에 들어보세요",
     }),
     input: {
       topicTitle: "비 오는 날 듣기 좋은 노래 추천",
@@ -118,7 +114,7 @@ function cardSystemPromptV2(survey: SurveyProfile, format: CardFormat): string {
     `브랜드 키워드: ${survey.brandKeywords.join(", ") || "(없음)"}`,
     `문체 예시: ${survey.voiceExample || "(없음)"}`,
     `금지 표현: ${survey.forbiddenExpressions.join(", ") || "(없음)"}`,
-    `캡션 길이 선호: ${survey.captionLength} / 해시태그 스타일: ${survey.hashtagStyle} / CTA 스타일: ${survey.ctaStyle}`,
+    `캡션 길이 선호: ${survey.captionLength} / 해시태그 스타일: ${survey.hashtagStyle}`,
     survey.sensitiveDomain !== "없음"
       ? `민감 도메인(${survey.sensitiveDomain}): 권유·강요·단정·보장 표현 금지, 정보 제공형 + 면책 뉘앙스.`
       : "",
@@ -169,7 +165,7 @@ function cardSystemPromptV3(survey: SurveyProfile, format: CardFormat): string {
     `브랜드 키워드: ${survey.brandKeywords.join(", ") || "(없음)"}`,
     `문체 예시: ${survey.voiceExample || "(없음)"}`,
     `금지 표현: ${survey.forbiddenExpressions.join(", ") || "(없음)"}`,
-    `캡션 길이 선호: ${survey.captionLength} / 해시태그 스타일: ${survey.hashtagStyle} / CTA 스타일: ${survey.ctaStyle}`,
+    `캡션 길이 선호: ${survey.captionLength} / 해시태그 스타일: ${survey.hashtagStyle}`,
     survey.sensitiveDomain !== "없음"
       ? `민감 도메인(${survey.sensitiveDomain}): 권유·강요·단정·보장 표현 금지, 정보 제공형 + 면책 뉘앙스.`
       : "",
