@@ -21,6 +21,6 @@ export async function GET(request: Request) {
       }
     }
   }
-  // 코드 없음/교환 실패 → 로그인으로 되돌림
-  return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent("로그인에 실패했어요")}`);
+  // 코드 없음/교환 실패 → 온보딩(홈)으로 되돌려 로그인 모달 재오픈
+  return NextResponse.redirect(`${origin}/?authError=${encodeURIComponent("로그인에 실패했어요")}`);
 }
