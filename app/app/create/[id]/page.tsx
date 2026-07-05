@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type DragEvent, type ReactNod
 import { useParams, useRouter } from "next/navigation";
 import { api, formatDate } from "@/lib/workspace/client";
 import { Badge, Button, Card, Field, inputClass } from "@/components/workspace/ui";
+import { Modal } from "@/components/workspace/WorkspaceShell";
 import { Generating } from "@/components/workspace/Generating";
 import { CardCanvas, THEMES, getTheme } from "@/components/workspace/CardCanvas";
 import { activeIgHandle, findIgAccount, type CardNews, type CardPage, type IgAccount, type PublicUser, type ReviewFlag, type SensitiveDomain } from "@/lib/workspace/types";
@@ -723,6 +724,24 @@ function ReviewTab({ card, dirty, onChange, onSaveNeeded, domain, consent, setCo
   );
 }
 
+/** 발행 완료 팝업 — 막다른 "업로드 완료" 화면에서 빠져나갈 출구. */
+function PublishDoneModal({ onClose }: { onClose: () => void }) {
+  const router = useRouter();
+  return (
+    <Modal onClose={onClose}>
+      <div className="text-center">
+        <div className="text-4xl">🎉</div>
+        <div className="font-display text-xl mt-2">발행 완료!</div>
+        <p className="text-sm text-muted mt-1">발행을 누른 건 당신이에요. 다음 100명으로!</p>
+      </div>
+      <div className="mt-5 space-y-2">
+        <Button className="w-full" onClick={() => router.push("/app/board")}>콘텐츠 관리로 가기</Button>
+        <Button variant="ghost" className="w-full" onClick={onClose}>계속 보기</Button>
+      </div>
+    </Modal>
+  );
+}
+
 function PublishTab({ card, draft, photo, photoStyle, ratio, photos, niche, handle, account, publicBase, reload }: {
   card: CardNews;
   draft: { pages: CardPage[]; theme: string; brandColor: string };
@@ -744,6 +763,8 @@ function PublishTab({ card, draft, photo, photoStyle, ratio, photos, niche, hand
   const [stage, setStage] = useState("");
   const [scheduleAt] = useState(""); // 예약 발행 미지원 — 항상 즉시 발행(추후 예약 기능 시 setter 복구)
   const [msg, setMsg] = useState("");
+  const [showDone, setShowDone] = useState(false); // 발행 완료 팝업
+  const router = useRouter();
 
   const ready = card.status === "제작완료";
   const done = card.status === "업로드완료";
@@ -803,6 +824,7 @@ function PublishTab({ card, draft, photo, photoStyle, ratio, photos, niche, hand
       await api(`/api/cards/${card.id}/publish`, { method: "POST", body });
       await reload();
       setMsg(immediate ? (live ? "인스타그램에 발행했어요! 🎉" : "발행했어요! (테스터 베타 시뮬레이션)") : "예약 발행을 등록했어요.");
+      if (immediate) setShowDone(true); // 즉시 발행 완료 → 나가기 팝업
     } catch (e) {
       setMsg((e as Error).message);
     } finally {
@@ -857,10 +879,14 @@ function PublishTab({ card, draft, photo, photoStyle, ratio, photos, niche, hand
       </Card>
 
       {done ? (
-        <Card className="p-6 bg-teal-soft/50 border-teal-soft text-center">
-          <div className="font-display text-xl text-teal">업로드 완료 ✓</div>
-          <p className="text-sm text-ink-soft mt-1">발행을 누른 건 당신이에요. 다음 100명으로!</p>
-        </Card>
+        <>
+          {showDone && <PublishDoneModal onClose={() => setShowDone(false)} />}
+          <Card className="p-6 bg-teal-soft/50 border-teal-soft text-center">
+            <div className="font-display text-xl text-teal">업로드 완료 ✓</div>
+            <p className="text-sm text-ink-soft mt-1">발행을 누른 건 당신이에요. 다음 100명으로!</p>
+            <Button className="mt-4" onClick={() => router.push("/app/board")}>콘텐츠 관리로 가기</Button>
+          </Card>
+        </>
       ) : (
         <Card className="p-5 space-y-4">
           <div className="font-medium">발행 — 내가 누르는 발행</div>
@@ -945,6 +971,8 @@ function ReelsEditor({
   const [scheduleAt] = useState(""); // 예약 발행 미지원 — 항상 즉시 발행(추후 예약 기능 시 setter 복구)
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showDone, setShowDone] = useState(false); // 발행 완료 팝업
+  const router = useRouter();
   const [consent, setConsent] = useState(false);
   const [showLegal, setShowLegal] = useState(false);
 
@@ -991,6 +1019,7 @@ function ReelsEditor({
       await api(`/api/cards/${card.id}/publish`, { method: "POST", body });
       await reload();
       setMsg(immediate ? (live ? "릴스를 인스타에 발행했어요! 🎉" : "발행했어요! (테스터 시뮬레이션)") : "예약 발행을 등록했어요.");
+      if (immediate) setShowDone(true); // 즉시 발행 완료 → 나가기 팝업
     } catch (e) {
       setMsg((e as Error).message);
     } finally {
@@ -1106,9 +1135,13 @@ function ReelsEditor({
         </Card>
 
         {done ? (
-          <Card className="p-5 bg-teal-soft/50 border-teal-soft text-center">
-            <div className="font-display text-lg text-teal">업로드 완료 ✓</div>
-          </Card>
+          <>
+            {showDone && <PublishDoneModal onClose={() => setShowDone(false)} />}
+            <Card className="p-5 bg-teal-soft/50 border-teal-soft text-center">
+              <div className="font-display text-lg text-teal">업로드 완료 ✓</div>
+              <Button className="mt-3" onClick={() => router.push("/app/board")}>콘텐츠 관리로 가기</Button>
+            </Card>
+          </>
         ) : (
           <Card className="p-5 space-y-3">
             <div className="font-medium text-sm">발행 — 내가 누르는 발행</div>
