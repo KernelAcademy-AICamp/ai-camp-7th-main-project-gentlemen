@@ -50,7 +50,7 @@ AI가 카드뉴스를 **기획·생성**하고, 사람이 빠르게 **검수·�
 | **무엇을** | 1인 인플루언서가 카드뉴스를 *빠르게 만들고 · 안전하게 검수하고 · 예약 발행하고 · 성과를 보는* 통합 도구 |
 | **누구를 위해** | 팔로워 1,000명을 목표로 하는, 혼자 운영하는 초기 크리에이터 (국내 우선) |
 | **핵심 모델** | **Co-pilot** — AI가 가속하되, 발행 최종 권한은 항상 사람에게 |
-| **현재 구현** | 컨셉 → 4단계 LLM 생성 → deck(카피) → SVG/sharp 렌더 → 카드 PNG → (선택) DB 영속화 |
+| **현재 구현** | AI **카드 생성(실 LLM)** · **검수·승인** · **인스타 실제 발행**까지 동작. 예약 발행·성과 분석은 다음 단계 |
 | **데이터 흐름** | `컨셉 → 생성 → deck → 렌더 → 저장 → (예약) 발행 → 성과·리드마그넷` |
 
 
@@ -84,11 +84,12 @@ Kup은 세 가지를 동시에 풉니다.
 
 | # | 기능 | 상태 | 한 줄 설명 |
 |---|---|---|---|
-| 1 | **AI 생성 파이프라인** | 현재 동작 | 컨셉 + 주제 → 4단계 LLM 체인으로 카드뉴스 초안 생성, SVG→PNG 렌더 |
-| 2 | **검수·승인 워크플로우** | 예정 | AI 리스크/플래그를 사람이 체크리스트로 확인, 승인해야 발행 |
-| 3 | **예약 발행** | 예정 | BullMQ + Redis 지연 작업으로 지정 시각 자동 발행 |
-| 4 | **성과 분석 · 리드마그넷** | 예정 | 인사이트 스냅샷, 도달/저장/공유 지표, 댓글 키워드 → 자동 DM |
-| 5 | **워크스페이스 UI** | 스캐폴드 | dashboard · create · review · calendar · kanban · insights 등 |
+| 1 | **AI 생성 파이프라인** | 현재 동작 | 컨셉 + 주제 → LLM 체인으로 카드뉴스 생성 (실 LLM 연동), SVG→PNG 렌더 |
+| 2 | **검수·승인 워크플로우** | 현재 동작 | AI 리스크/플래그를 사람이 확인, 승인해야 발행 |
+| 3 | **인스타 발행** | 현재 동작 | Meta Graph API로 인스타그램에 실제 게시 |
+| 4 | **예약 발행** | 예정 | BullMQ + Redis 지연 작업으로 지정 시각 자동 발행 |
+| 5 | **성과 분석 · 리드마그넷** | 예정 | 인사이트 스냅샷, 도달/저장/공유 지표, 댓글 키워드 → 자동 DM |
+| 6 | **워크스페이스 UI** | 현재 동작 | dashboard · create · review · insights 등 |
 
 ### 대표 기능 — AI 생성 파이프라인 *(현재 동작)*
 
@@ -100,8 +101,8 @@ Kup은 세 가지를 동시에 풉니다.
 
 - 각 단계마다 **Zod 스키마 검증** + 실패 시 **1회 자가 복구(repair)** 흐름
 - 결과 deck을 **SVG 템플릿 → sharp**로 1080×1350 카드 PNG로 렌더
-- **mock LLM 기본값** — API 키 없이 결정적(deterministic) 출력으로 전 과정 시연 가능
-- 실 공급자(Anthropic/OpenAI/Google)는 환경변수만 넣으면 **교체점에서 그대로 연결**
+- **실 LLM 연동** — 생성은 실제 공급자(Anthropic)로 동작
+- **mock도 지원** — API 키 없이 결정적(deterministic) 출력으로 개발·CI·시연 가능 (어댑터 교체점)
 
 
 <br/>
@@ -114,7 +115,7 @@ Kup은 세 가지를 동시에 풉니다.
 ```mermaid
 flowchart LR
     U[크리에이터] -->|컨셉/주제| FE[Next.js 15<br/>App Router<br/>프론트 + API]
-    FE -->|생성 요청| GEN[생성 엔진<br/>lib/generate]
+    FE -->|생성 요청| GEN[생성 엔진<br/>lib/workspace]
     GEN --> LLM[LLM 어댑터<br/>mock 또는 실공급자]
     GEN --> RENDER[렌더러<br/>SVG + sharp]
     RENDER -->|카드 PNG| STORE[(Supabase<br/>Storage)]
@@ -136,7 +137,7 @@ flowchart LR
 
 | 계층 | 역할 | 위치 |
 |---|---|---|
-| **생성(Generation)** | 컨셉 → deck → 카드 PNG. LLM 어댑터로 공급자 교체 | `lib/generate` · `lib/llm` · `lib/render` |
+| **생성(Generation)** | 컨셉 → deck → 카드. LLM 어댑터로 공급자 교체 | `lib/workspace`(라이브) · `lib/llm` · `lib/render` |
 | **데이터·발행(Data/Publish)** | Postgres(RLS), IG 토큰 암호화 보관, Graph API 발행 | `lib/db` · `lib/supabase` · `supabase/` |
 | **오케스트레이션(Orchestration)** | 예약 지연 작업 · cron · 인사이트 수집 | `workers/` (BullMQ + Redis) |
 
@@ -180,7 +181,7 @@ profiles ─┬─ subscriptions
 | **DB/Auth/Storage** | Supabase (Postgres) | RLS로 멀티테넌트 보안을 DB 레벨에서, Auth·Storage까지 일괄 |
 | **잡 큐/스케줄링** | BullMQ + Redis | 예약 발행의 **지연 작업**과 **cron**을 안정적으로. n8n 대비 코드 소유·테스트 용이([결정 기록](docs/tech/Kup_n8n_결정.md)) |
 | **이미지 렌더** | sharp + SVG | 외부 디자인 API 없이 서버에서 1080×1350 카드 PNG를 결정적으로 생성 |
-| **LLM** | Anthropic / OpenAI / Google (어댑터) | 공급자 종속 회피. **mock 우선**으로 키 없이 개발·시연 |
+| **LLM** | Anthropic (어댑터로 공급자 교체 가능) | 실 연동은 Anthropic. 어댑터로 공급자 종속 회피 + mock으로 키 없이 개발·시연 |
 | **배포** | Vercel(프론트+API) · Railway(워커) | 수명주기가 다른 두 워크로드를 분리 배포, 코드는 단일 레포 공유 |
 
 ### 짚고 넘어간 엔지니어링 디테일
@@ -233,13 +234,12 @@ npm run gen -- --save         # + 로컬 DB 영속화 (supabase 기동 필요)
 
 | 단계 | 내용 | 상태 |
 |---|---|---|
-| 생성 파이프라인 (컨셉 → 카드 PNG) | mock LLM으로 전 과정 동작 | 완료 |
-| 워크스페이스 UI 스캐폴드 | 주요 화면 구조 | 완료 |
-| 예약/cron 내구성 검증 | `spike-bullmq`에서 워커 크래시 복원 확인 | 완료 |
-| 실 LLM 공급자 연결 | Anthropic/OpenAI/Google 라우팅 | 예정 |
-| 인스타 OAuth + 토큰 암호화 | Meta Graph API 인증 | 예정 |
-| 검수·승인 UI | AI 플래그 기반 게이트 | 예정 |
-| 예약 발행 / 인사이트 자동 수집 | 2-step 발행 + 일별 스냅샷 | 예정 |
+| AI 생성 파이프라인 | 실 LLM 연동으로 카드뉴스 생성 | 완료 |
+| 검수·승인 워크플로우 | AI 플래그 기반 게이트 + 사람 승인 | 완료 |
+| 인스타 발행 | Meta Graph API로 실제 게시 | 완료 |
+| 워크스페이스 UI | dashboard · create · review · insights | 완료 |
+| 예약 발행 | BullMQ + Redis 지연 작업 (설계 완료, 통합 예정) | 예정 |
+| 성과 인사이트 자동 수집 | 일별 스냅샷 · 지표 수집 | 예정 |
 | 리드마그넷 (댓글 → 자동 DM) | 키워드 트리거 | 예정 |
 
 > 상세 작업 현황: [GitHub Issues](https://github.com/KernelAcademy-AICamp/ai-camp-7th-main-project-gentlemen/issues) (초기 로드맵 기록: [docs/archive/작업트랙.md](docs/archive/작업트랙.md))
@@ -251,16 +251,18 @@ npm run gen -- --save         # + 로컬 DB 영속화 (supabase 기동 필요)
 
 ```
 app/         Next.js 프론트 + API (워크스페이스 화면 + API 라우트)
+components/   워크스페이스 UI 컴포넌트
 lib/
-  generate/  생성 엔진 generateDeck() — 4단계 LLM 체인
-  llm/       LLM 어댑터 (mock + 공급자 교체점)
+  workspace/ 라이브 앱 로직 — 생성·검수·발행 (실제 MVP가 사용)
+  generate/  생성 엔진(벤치/mock) — CLI·실험용
+  llm/       LLM 어댑터 (Anthropic + mock 교체점)
   render/    카드 렌더 (SVG + sharp)
   db/        decks 저장·시드·DB 타입
   supabase/  client / server / admin 클라이언트
   deck-schema.ts · concept-schema.ts   공유 데이터 계약
-workers/     BullMQ 워커 (발행·cron·인사이트)
+workers/     BullMQ 워커 (발행·cron·인사이트) — 예정
 supabase/    config + 마이그레이션 (0001~0003)
-scripts/     생성 CLI 데모
+scripts/     생성 CLI·실험 스크립트
 spike-bullmq/ 예약/cron 내구성 스파이크 (참고)
 docs/        기획·기술 설계 문서 (SoT)
 ```
