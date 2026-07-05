@@ -2,7 +2,6 @@ import Anthropic from "@anthropic-ai/sdk";
 import { captureException } from "@/lib/sentry";
 import type {
   CardFormat,
-  CardNews,
   CardPage,
   ContentObjective,
   OperationStage,

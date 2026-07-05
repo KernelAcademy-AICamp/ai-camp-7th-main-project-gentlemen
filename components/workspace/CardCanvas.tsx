@@ -43,9 +43,7 @@ function tint(hex: string, a: number): string {
 export function CardCanvas({
   page,
   index,
-  total,
   themeKey,
-  niche,
   handle,
   photo = false,
   photoDataUrl,

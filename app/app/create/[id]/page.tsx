@@ -770,7 +770,6 @@ function PublishTab({ card, draft, photo, photoStyle, ratio, photos, niche, hand
   const done = card.status === "업로드완료";
   const reserved = card.status === "예약업로드";
   const live = account?.mode === "정식";
-  const liveReady = live && Boolean(publicBase);
 
   async function renderPage(idx: number, kind: "png" | "jpeg"): Promise<string> {
     const lib = await import("html-to-image");
