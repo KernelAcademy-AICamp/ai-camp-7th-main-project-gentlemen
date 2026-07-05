@@ -21,7 +21,10 @@
     "render-compare": "tsx scripts/render-card-comparison.ts",
     "render-prompts": "tsx scripts/render-prompt-comparison.ts",
     "reco-test": "tsx scripts/render-reco-test.ts",
-    "persona-stress": "tsx scripts/render-persona-stress.ts"
+    "persona-stress": "tsx scripts/render-persona-stress.ts",
+    "verify:strategy": "tsx scripts/verify-live-strategy.ts",
+    "verify:chain": "tsx scripts/verify-live-chain.ts",
+    "verify:review": "tsx scripts/verify-ai-review-wiring.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.1",
