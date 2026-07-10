@@ -2,22 +2,23 @@
    전역 wireframe.css 충돌 방지를 위해 .kup-site 아래로 스코프(네이티브 CSS 네스팅). */
 
 .kup-site {
-  --bg-top: #fff7fb;
-  --bg-bot: #ffe3ef;
-  --ink: #2a1520;
-  --ink-soft: #7a5766;
-  --pink: #ff3d85;
-  --pink-deep: #e5266f;
-  --card: #ffffff;
-  --line: #f4d7e4;
-  --radius: 16px;
+  /* TDS 전환: 값만 tokens.css 참조로 교체(브랜드 핑크 #e52364, Toss Grey). 구조·클래스명은 그대로. */
+  --bg-top: var(--tds-brand-50);        /* #fff1f6 */
+  --bg-bot: var(--tds-brand-100);       /* #ffe3ef */
+  --ink: var(--kup-text);               /* Grey 900 #191f28 */
+  --ink-soft: var(--tds-grey-600);      /* #6b7684 */
+  --pink: var(--kup-brand);             /* #e52364 */
+  --pink-deep: var(--kup-brand-strong); /* #c21d54 */
+  --card: var(--kup-surface);           /* White */
+  --line: var(--kup-border);            /* Grey 200 #e5e8eb */
+  --radius: var(--tds-radius-xs);       /* 16px */
   --maxw: 1180px;
-  --display: "Bricolage Grotesque", "Pretendard", sans-serif;
-  --body: "Pretendard", system-ui, sans-serif;
+  --display: "Bricolage Grotesque", var(--tds-font);  /* 헤딩 디스플레이 서체 유지 */
+  --body: var(--tds-font);              /* Pretendard (TDS) */
 
   font-family: var(--body);
   color: var(--ink);
-  background: linear-gradient(180deg, var(--bg-top) 0%, #ffe9f2 100%);
+  background: linear-gradient(180deg, var(--bg-top) 0%, var(--tds-brand-100) 100%);
   -webkit-font-smoothing: antialiased;
   overflow-x: clip;
   min-height: 100vh;
@@ -26,7 +27,7 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   a { color: inherit; text-decoration: none; }
-  ::selection { background: #ffc2dc; color: #3a0f24; }
+  ::selection { background: var(--tds-brand-200); color: #3a0f24; }
 
   h1, h2, h3 { font-family: var(--display); font-weight: 800; letter-spacing: -.03em; line-height: 1.1; }
   h4 { font-family: var(--display); font-weight: 700; letter-spacing: -.01em; }
@@ -37,7 +38,7 @@
   .gnb { position: sticky; top: 0; z-index: 40; display: block; background: rgba(255, 247, 251, .82); backdrop-filter: saturate(140%) blur(14px); border-bottom: 1px solid var(--line); }
   .gnb-inner { max-width: var(--maxw); margin: 0 auto; display: flex; align-items: center; gap: 28px; padding: 14px 24px; }
   .logo { font-family: var(--display); font-weight: 800; font-size: 24px; letter-spacing: -.02em; display: flex; align-items: center; gap: 9px; color: var(--ink); }
-  .logo .dot { width: 11px; height: 11px; border-radius: 3px; background: var(--pink); transform: rotate(-8deg); box-shadow: 0 3px 8px rgba(255, 61, 133, .45); }
+  .logo .dot { width: 11px; height: 11px; border-radius: 3px; background: var(--pink); transform: rotate(-8deg); box-shadow: 0 3px 8px rgba(229, 35, 100, .45); }
   .gnb-nav { display: flex; gap: 26px; margin-left: 8px; }
   /* padding/background/border-radius 명시: 전역 wireframe.css의 .gnb-nav a(:hover)가
      회색 배경(--bg3)+패딩+radius를 누수시켜 호버 시 회색 알약이 생기던 것을 차단.
@@ -54,13 +55,13 @@
 
   /* ---------- buttons ---------- */
   .btn { font-family: var(--body); font-weight: 600; font-size: 15px; padding: 11px 20px; border-radius: 12px; border: none; cursor: pointer; transition: transform .15s ease, box-shadow .2s ease, background .2s, border-color .2s, color .2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; }
-  .btn:focus-visible { outline: 3px solid #ffb0cf; outline-offset: 2px; }
+  .btn:focus-visible { outline: 3px solid var(--tds-brand-300); outline-offset: 2px; }
   .btn-ghost { background: transparent; color: var(--ink); }
   .btn-ghost:hover { color: var(--pink-deep); }
-  .btn-primary { background: var(--pink); color: #fff; box-shadow: 0 8px 20px -6px rgba(255, 61, 133, .6); }
-  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 26px -6px rgba(255, 61, 133, .7); }
+  .btn-primary { background: var(--pink); color: #fff; box-shadow: 0 8px 20px -6px rgba(229, 35, 100, .6); }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 26px -6px rgba(229, 35, 100, .7); }
   .btn-line { background: #fff; border: 1px solid var(--line); color: var(--ink); }
-  .btn-line:hover { border-color: #ffb3d1; }
+  .btn-line:hover { border-color: var(--tds-brand-300); }
   .btn-lg { padding: 14px 26px; font-size: 16px; border-radius: 14px; }
   .btn-sm { padding: 8px 15px; font-size: 14px; border-radius: 10px; }
   .btn-block { width: 100%; }
@@ -83,8 +84,8 @@
   .feature-tag { font-family: var(--display); font-size: 13px; font-weight: 700; color: var(--pink); margin-bottom: 12px; letter-spacing: .02em; }
   .feature-copy h3 { font-size: clamp(22px, 2.6vw, 28px); }
   .feature-copy p { margin-top: 12px; color: var(--ink-soft); line-height: 1.65; font-size: 16px; }
-  .feature-ph { position: relative; min-height: 299px; border-radius: 24px; display: grid; place-items: center; gap: 12px; overflow: hidden; border: 1px solid var(--line); background: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, .5) 1.5px, transparent 1.7px) 0 0/22px 22px, linear-gradient(135deg, #ff9ec6 0%, #ff5fa2 55%, #ff3d85 100%); box-shadow: 0 30px 60px -40px rgba(229, 38, 111, .5); }
-  .feature-ic { font-size: 40px; }
+  .feature-ph { position: relative; min-height: 299px; border-radius: 24px; display: grid; place-items: center; gap: 12px; overflow: hidden; border: 1px solid var(--line); background: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, .5) 1.5px, transparent 1.7px) 0 0/22px 22px, linear-gradient(135deg, var(--tds-brand-300) 0%, var(--tds-brand-400) 55%, var(--pink) 100%); box-shadow: 0 30px 60px -40px rgba(194, 29, 84, .5); }
+  .feature-ic { font-size: 40px; color: #fff; }
   .feature-lbl { font-weight: 600; color: #fff; background: rgba(0, 0, 0, .16); padding: 8px 16px; border-radius: 999px; font-size: 14px; backdrop-filter: blur(4px); }
   /* Vimeo 영상 슬롯: 링크가 있으면 16:9 iframe이 둥근 프레임을 꽉 채움(플레이스홀더 대체) */
   .feature-ph.has-video { min-height: 0; padding: 0; display: block; aspect-ratio: 16 / 9; background: #1a0a12; }
@@ -92,23 +93,23 @@
 
   /* ---------- pricing ---------- */
   .billing { display: flex; justify-content: center; margin: 28px 0 8px; }
-  .billing-seg { display: inline-flex; background: #ffe7f1; border: 1px solid var(--line); border-radius: 12px; padding: 4px; gap: 2px; }
+  .billing-seg { display: inline-flex; background: var(--tds-brand-100); border: 1px solid var(--line); border-radius: 12px; padding: 4px; gap: 2px; }
   .billing-seg button { border: none; background: transparent; color: var(--ink-soft); padding: 9px 18px; border-radius: 9px; font-size: 14px; font-weight: 600; cursor: pointer; transition: .2s; }
-  .billing-seg button.active { background: #fff; color: var(--ink); box-shadow: 0 2px 6px -2px rgba(229, 38, 111, .4); }
+  .billing-seg button.active { background: #fff; color: var(--ink); box-shadow: 0 2px 6px -2px rgba(194, 29, 84, .4); }
   .billing-seg .save { color: var(--pink-deep); font-weight: 700; }
 
   .plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 32px; align-items: stretch; }
   .plan { position: relative; display: flex; flex-direction: column; background: #fff; border: 1px solid var(--line); border-radius: 22px; padding: 32px 28px; transition: transform .25s ease, box-shadow .25s ease; }
-  .plan:hover { transform: translateY(-4px); box-shadow: 0 22px 40px -22px rgba(229, 38, 111, .4); }
-  .plan.featured { border-color: var(--pink); box-shadow: 0 20px 50px -26px rgba(255, 61, 133, .7); }
-  .plan-badge { position: absolute; top: -12px; left: 28px; font-size: 12px; font-weight: 700; color: #fff; background: var(--pink); padding: 5px 12px; border-radius: 999px; box-shadow: 0 6px 14px -4px rgba(255, 61, 133, .6); }
+  .plan:hover { transform: translateY(-4px); box-shadow: 0 22px 40px -22px rgba(194, 29, 84, .4); }
+  .plan.featured { border-color: var(--pink); box-shadow: 0 20px 50px -26px rgba(229, 35, 100, .7); }
+  .plan-badge { position: absolute; top: -12px; left: 28px; font-size: 12px; font-weight: 700; color: #fff; background: var(--pink); padding: 5px 12px; border-radius: 999px; box-shadow: 0 6px 14px -4px rgba(229, 35, 100, .6); }
   .plan-name { font-family: var(--display); font-weight: 700; font-size: 20px; letter-spacing: -.01em; }
   .plan-price { font-family: var(--display); font-weight: 800; font-size: 38px; letter-spacing: -.03em; margin-top: 12px; }
   .plan-price small { font-family: var(--body); font-weight: 500; font-size: 15px; color: var(--ink-soft); }
   .plan-desc { margin-top: 8px; color: var(--ink-soft); font-size: 15px; }
   .plan-feats { list-style: none; margin: 22px 0 26px; display: flex; flex-direction: column; gap: 12px; }
   .plan-feats li { display: flex; align-items: center; gap: 10px; font-size: 15px; }
-  .plan-feats .ck { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #ffe7f1; color: var(--pink-deep); font-size: 12px; font-weight: 800; flex-shrink: 0; }
+  .plan-feats .ck { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--tds-brand-100); color: var(--pink-deep); font-size: 12px; font-weight: 800; flex-shrink: 0; }
   .plan .btn { margin-top: auto; }
 
   /* 비교표 */
@@ -116,11 +117,11 @@
   .cmp { width: 100%; border-collapse: collapse; background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; font-size: 15px; }
   .cmp th, .cmp td { padding: 14px 16px; text-align: center; border-bottom: 1px solid var(--line); }
   .cmp th:first-child, .cmp td:first-child { text-align: left; color: var(--ink-soft); font-weight: 500; }
-  .cmp thead th { font-family: var(--display); font-weight: 700; background: #fff6fa; }
-  .cmp .colhi { background: #ffeef5; }
+  .cmp thead th { font-family: var(--display); font-weight: 700; background: var(--tds-grey-50); }
+  .cmp .colhi { background: var(--tds-brand-100); }
   .cmp tbody tr:last-child td { border-bottom: none; }
   .cmp .yes { color: var(--pink-deep); font-weight: 700; }
-  .cmp .no { color: #d9a6bd; }
+  .cmp .no { color: var(--tds-grey-400); }
 
   /* ---------- FAQ (에어비앤비식 가로 디바이더 리스트) ---------- */
   /* border/radius/margin/background/overflow 명시 리셋: 전역 wireframe.css의
@@ -138,7 +139,7 @@
   .faq-a { padding: 0 4px 14px; margin-top: -2px; color: var(--ink-soft); line-height: 1.6; font-size: 15px; max-width: 68ch; max-height: none; overflow: visible; }
 
   /* ---------- contact 이메일 카드 ---------- */
-  .contact-card { max-width: 640px; margin: 56px auto 0; text-align: center; background: #fff; border: 1px solid var(--line); border-radius: 24px; padding: 44px 32px; box-shadow: 0 30px 60px -44px rgba(229, 38, 111, .5); }
+  .contact-card { max-width: 640px; margin: 56px auto 0; text-align: center; background: #fff; border: 1px solid var(--line); border-radius: 24px; padding: 44px 32px; box-shadow: 0 30px 60px -44px rgba(194, 29, 84, .5); }
   .contact-card h3 { font-size: 22px; }
   .contact-card p { margin: 12px 0 20px; color: var(--ink-soft); line-height: 1.65; }
   .contact-email { font-family: var(--display); font-weight: 800; font-size: clamp(22px, 3vw, 30px); color: var(--pink-deep); letter-spacing: -.02em; display: inline-block; margin-bottom: 24px; }
@@ -152,7 +153,7 @@
   .policy-sec p { color: var(--ink-soft); line-height: 1.75; font-size: 15px; }
 
   /* ---------- CTA 밴드 ---------- */
-  .cta-band { text-align: center; margin-top: 72px; padding: 64px 24px; border-radius: 28px; background: radial-gradient(120% 120% at 50% 0%, #ffd7e8 0%, transparent 62%), #fff; border: 1px solid var(--line); }
+  .cta-band { text-align: center; margin-top: 72px; padding: 64px 24px; border-radius: 28px; background: radial-gradient(120% 120% at 50% 0%, var(--tds-brand-100) 0%, transparent 62%), #fff; border: 1px solid var(--line); }
   .cta-band h2 { margin-bottom: 24px; }
 
   /* ---------- footer ---------- */

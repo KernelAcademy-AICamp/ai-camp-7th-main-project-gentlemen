@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/workspace/client";
@@ -67,7 +68,7 @@ export default function WorkspacesPage() {
 
       {/* safe-note */}
       <p className="mt-5 rounded-lg bg-paper-2/60 px-4 py-3 text-xs text-muted">
-        🔒 인스타그램 공식 연동(OAuth)을 사용해요. KUP는 비밀번호를 보관하지 않으며, 권한은 콘텐츠 발행·인사이트 조회에만 쓰입니다.
+        <Lock size={13} className="inline align-[-2px] mr-1" />인스타그램 공식 연동(OAuth)을 사용해요. KUP는 비밀번호를 보관하지 않으며, 권한은 콘텐츠 발행·인사이트 조회에만 쓰입니다.
       </p>
     </div>
   );

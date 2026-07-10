@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { Menu } from "lucide-react";
 import { AuthButton } from "./auth-modal";
 
 /**
@@ -67,7 +68,7 @@ export function Gnb({ loggedIn }: { loggedIn: boolean }) {
           <Cta loggedIn={loggedIn} />
         </div>
         <button className="gnb-burger" onClick={() => setOpen((v) => !v)} aria-label="메뉴">
-          ☰
+          <Menu size={22} />
         </button>
       </div>
       {open && (

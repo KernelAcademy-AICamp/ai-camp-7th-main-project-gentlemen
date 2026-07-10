@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { createContext, Suspense, useContext, useEffect, useState, type ReactNode } from "react";
+import { X } from "lucide-react";
 import { continueAsGuest, signInWithGoogle, signInWithPassword, signUpWithPassword } from "./auth-actions";
 
 /**
@@ -110,9 +111,9 @@ function AuthModalOverlay({ error, onClose }: { error: string | null; onClose: (
           type="button"
           onClick={onClose}
           aria-label="닫기"
-          style={{ position: "absolute", top: 14, right: 16, border: "none", background: "none", fontSize: 18, color: "var(--ink3)", cursor: "pointer" }}
+          style={{ position: "absolute", top: 14, right: 16, border: "none", background: "none", color: "var(--ink3)", cursor: "pointer", display: "inline-flex" }}
         >
-          ✕
+          <X size={18} />
         </button>
 
         <h2 style={{ fontSize: 22, fontWeight: 800, textAlign: "center" }}>Kup 시작하기</h2>
@@ -121,7 +122,7 @@ function AuthModalOverlay({ error, onClose }: { error: string | null; onClose: (
         </p>
 
         {error && (
-          <p style={{ background: "var(--coral-soft, #fdecec)", color: "var(--coral, #ff385c)", fontSize: 13, borderRadius: 8, padding: "9px 12px", marginBottom: 16, textAlign: "center" }}>
+          <p style={{ background: "var(--coral-soft, #fdecec)", color: "var(--color-coral, #e52364)", fontSize: 13, borderRadius: 8, padding: "9px 12px", marginBottom: 16, textAlign: "center" }}>
             {error}
           </p>
         )}

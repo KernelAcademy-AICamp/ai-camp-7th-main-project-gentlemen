@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Wand2, Sparkles, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { api, formatDay } from "@/lib/workspace/client";
 import { Badge, Button, Card } from "@/components/workspace/ui";
@@ -123,9 +124,9 @@ export default function HomePage() {
   const recentCards = [...cards].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 4);
 
   const quickActions = [
-    { icon: "≣", label: "AI로 콘텐츠 기획하기", href: "/app/plans" },
-    { icon: "✦", label: "카드뉴스 제작하기", href: "/app/create" },
-    { icon: "↗", label: "이번 주 성과 보기", href: "/app/insights" },
+    { Icon: Wand2, label: "AI로 콘텐츠 기획하기", href: "/app/plans" },
+    { Icon: Sparkles, label: "카드뉴스 제작하기", href: "/app/create" },
+    { Icon: TrendingUp, label: "이번 주 성과 보기", href: "/app/insights" },
   ];
 
   return (
@@ -170,7 +171,7 @@ export default function HomePage() {
           <div className="space-y-2">
             {quickActions.map((a) => (
               <Link key={a.href} href={a.href} className="flex items-center gap-3 rounded-xl border border-line bg-card px-4 py-3 hover:bg-paper-2 transition">
-                <span className="w-7 h-7 grid place-items-center rounded-lg bg-coral-soft text-coral text-sm">{a.icon}</span>
+                <span className="w-7 h-7 grid place-items-center rounded-lg bg-coral-soft text-coral"><a.Icon size={16} /></span>
                 <span className="text-sm font-medium">{a.label}</span>
               </Link>
             ))}
@@ -309,7 +310,7 @@ function WeeklyUploadGraph({ jobs }: { jobs: PublishJob[] }) {
     }
   }
   // Airbnb Rausch 톤 시퀀셜 스케일 (연분홍 → Rausch)
-  const levels = ["#ffe8ec", "#ffc2ce", "#ff8fa6", "#ff5c7e", "#ff385c"];
+  const levels = ["#ffe3ef", "#ffc2da", "#f992b8", "#ef5590", "#e52364"];
   const cell = (n: number) => levels[n >= 4 ? 4 : n];
   const labels = ["월", "화", "수", "목", "금", "토", "일"];
 

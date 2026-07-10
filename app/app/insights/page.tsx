@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Target } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/workspace/client";
 import { Badge, Button, Card, SectionTitle } from "@/components/workspace/ui";
@@ -207,7 +208,7 @@ export default function InsightsPage() {
           {followers >= 1000 ? (
             "1,000명 달성! 다음 여정도 함께해요 🎉"
           ) : (
-            <>다음 목표 <span className="font-semibold text-ink">{nextTarget}명</span>까지 <span className="font-semibold text-coral">{(nextTarget - followers).toLocaleString()}명</span> 남았어요 🎯</>
+            <>다음 목표 <span className="font-semibold text-ink">{nextTarget}명</span>까지 <span className="font-semibold text-coral">{(nextTarget - followers).toLocaleString()}명</span> 남았어요 <Target size={14} className="inline align-[-2px] text-coral" /></>
           )}
         </p>
       </Card>
@@ -281,7 +282,7 @@ function ContributionsGraph({ jobs }: { jobs: PublishJob[] }) {
   const start = new Date(today);
   start.setDate(start.getDate() - ((today.getDay() + 6) % 7) - (WEEKS - 1) * 7); // 월요일 정렬
   // Airbnb Rausch 톤 시퀀셜 스케일 (연분홍 → Rausch)
-  const levels = ["#ffe8ec", "#ffc2ce", "#ff8fa6", "#ff5c7e", "#ff385c"];
+  const levels = ["#ffe3ef", "#ffc2da", "#f992b8", "#ef5590", "#e52364"];
   const cellColor = (n: number) => levels[n >= 4 ? 4 : n];
 
   const cols: { date: Date; n: number }[][] = [];
