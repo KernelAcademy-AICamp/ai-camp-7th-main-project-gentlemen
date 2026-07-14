@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { X } from "lucide-react";
 import { api } from "@/lib/workspace/client";
 import { Badge, Button, Card, EmptyState, Field, inputClass, SectionTitle } from "@/components/workspace/ui";
 import { DM_LIMITS, DM_TEMPLATE, renderDmMessage, type DmRule, type PublicUser } from "@/lib/workspace/types";
@@ -187,7 +188,7 @@ function RuleHelp() {
           <div className="absolute right-0 top-full mt-2 w-[360px] max-w-[88vw] rounded-xl border border-line bg-card shadow-xl z-40 p-4">
             <div className="flex items-center justify-between mb-1">
               <div className="text-sm font-medium">이렇게 작성해요</div>
-              <button type="button" onClick={() => setOpen(false)} className="text-muted hover:text-ink">✕</button>
+              <button type="button" onClick={() => setOpen(false)} className="text-muted hover:text-ink"><X size={16} /></button>
             </div>
             <p className="text-xs text-muted mb-3">대상 게시물에 키워드 댓글이 달리면 → 작성한 DM이 자동 발송돼요.</p>
             <div className="space-y-3">
@@ -297,7 +298,7 @@ function RuleForm({ onCreated, onCancel }: { onCreated: (r: DmRule) => void; onC
         </div>
 
         <label className="flex items-start gap-2.5 text-sm bg-paper-2/50 rounded-xl p-3">
-          <input type="checkbox" checked={optIn} onChange={(e) => setOptIn(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#008489]" />
+          <input type="checkbox" checked={optIn} onChange={(e) => setOptIn(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#03b26c]" />
           <span className="text-ink-soft"><b>옵트인 동의</b> — 동의(키워드 댓글)한 사용자에게만 발송하며, 콜드 DM·자동팔로우·대량 발송을 하지 않는다는 정책에 동의합니다. (필수)</span>
         </label>
 

@@ -1,0 +1,202 @@
+/* ============================================================================
+   KUP 디자인 토큰 — Toss Design System(TDS) 추출본
+   Figma: 9yqB6igAnuBQrSG5xirzIq · Foundations(55077:9661) + Variables(Spacing/Radius)
+   3계층: 원시 --tds-*  →  시맨틱 --kup-*  (컴포넌트/페이지는 --kup-* 참조)
+   브랜드 메인 컬러 = 핑크 #e52364 (Figma에서 지정)
+   ============================================================================ */
+
+:root {
+  /* ── 원시: Grey (50→900) ── */
+  --tds-grey-50: #f9fafb;
+  --tds-grey-100: #f2f4f6;
+  --tds-grey-200: #e5e8eb;
+  --tds-grey-300: #d1d6db;
+  --tds-grey-400: #b0b8c1;
+  --tds-grey-500: #8b95a1;
+  --tds-grey-600: #6b7684;
+  --tds-grey-700: #4e5968;
+  --tds-grey-800: #333d4b;
+  --tds-grey-900: #191f28;
+  --tds-white: #ffffff;
+
+  /* ── 원시: Blue (info/link) ── */
+  --tds-blue-50: #e8f3ff;
+  --tds-blue-100: #c9e2ff;
+  --tds-blue-200: #90c2ff;
+  --tds-blue-300: #64a8ff;
+  --tds-blue-400: #4593fc;
+  --tds-blue-500: #3182f6;
+  --tds-blue-600: #2272eb;
+  --tds-blue-700: #1b64da;
+  --tds-blue-800: #1957c2;
+  --tds-blue-900: #194aa6;
+
+  /* ── 원시: Red (danger/error) ── */
+  --tds-red-50: #ffeeee;
+  --tds-red-100: #ffd4d6;
+  --tds-red-200: #feafb4;
+  --tds-red-300: #fb8890;
+  --tds-red-400: #f66570;
+  --tds-red-500: #f04452;
+  --tds-red-600: #e42939;
+  --tds-red-700: #d22030;
+  --tds-red-800: #bc1b2a;
+  --tds-red-900: #a51926;
+
+  /* ── 원시: Green (success) ── */
+  --tds-green-50: #f0faf6;
+  --tds-green-100: #aeefd5;
+  --tds-green-200: #76e4b8;
+  --tds-green-300: #3fd599;
+  --tds-green-400: #15c47e;
+  --tds-green-500: #03b26c;
+  --tds-green-600: #02a262;
+  --tds-green-700: #029359;
+  --tds-green-800: #028450;
+  --tds-green-900: #027648;
+
+  /* ── 원시: Orange (warning) ── */
+  --tds-orange-50: #fff3e0;
+  --tds-orange-100: #ffe0b0;
+  --tds-orange-200: #ffcd80;
+  --tds-orange-300: #ffbd51;
+  --tds-orange-400: #ffa927;
+  --tds-orange-500: #fe9800;
+  --tds-orange-600: #fb8800;
+  --tds-orange-700: #f57800;
+  --tds-orange-800: #ed6700;
+  --tds-orange-900: #e45600;
+
+  /* ── 원시: Yellow ── */
+  --tds-yellow-50: #fff9e7;
+  --tds-yellow-100: #ffefbf;
+  --tds-yellow-200: #ffe69b;
+  --tds-yellow-300: #ffdd78;
+  --tds-yellow-400: #ffd158;
+  --tds-yellow-500: #ffc342;
+  --tds-yellow-600: #ffb331;
+  --tds-yellow-700: #faa131;
+  --tds-yellow-800: #ee8f11;
+  --tds-yellow-900: #dd7d02;
+
+  /* ── 원시: Teal ── */
+  --tds-teal-50: #edf8f8;
+  --tds-teal-100: #bce9e9;
+  --tds-teal-200: #89d8d8;
+  --tds-teal-300: #58c7c7;
+  --tds-teal-400: #30b6b6;
+  --tds-teal-500: #18a5a5;
+  --tds-teal-600: #109595;
+  --tds-teal-700: #0c8585;
+  --tds-teal-800: #097575;
+  --tds-teal-900: #076565;
+
+  /* ── 원시: Purple ── */
+  --tds-purple-50: #f9f0fc;
+  --tds-purple-100: #edccf8;
+  --tds-purple-200: #da9bef;
+  --tds-purple-300: #c770e4;
+  --tds-purple-400: #b44bd7;
+  --tds-purple-500: #a234c7;
+  --tds-purple-600: #9128b4;
+  --tds-purple-700: #8222a2;
+  --tds-purple-800: #73228e;
+  --tds-purple-900: #65237b;
+
+  /* ── 원시: Brand 핑크 ──
+     500 = Figma 실측 #e52364. 나머지 단계는 동일 색상 명도 파생(TDS엔 Pink 패밀리 없음).
+     soft 계열은 랜딩 kup-hero 핑크 틴트를 재사용해 톤 일치. */
+  --tds-brand-50: #fff1f6;
+  --tds-brand-100: #ffe3ef;
+  --tds-brand-200: #ffc2da;
+  --tds-brand-300: #f992b8;
+  --tds-brand-400: #ef5590;
+  --tds-brand-500: #e52364;
+  --tds-brand-600: #c21d54;
+  --tds-brand-700: #9e1745;
+  --tds-brand-800: #7a1235;
+  --tds-brand-900: #560c26;
+
+  /* ── 원시: Grey Opacity (시맨틱 텍스트/아이콘 알파, Figma 실측) ── */
+  --tds-alpha-text: rgba(0, 12, 30, 0.8);    /* Text/Primary  #000c1e cc */
+  --tds-alpha-icon: rgba(0, 19, 43, 0.58);   /* Icon/Primary  #00132b 94 */
+
+  /* ── 원시: Spacing (Figma 전체 고유값) ── */
+  --tds-space-4: 4px;
+  --tds-space-6: 6px;
+  --tds-space-8: 8px;
+  --tds-space-10: 10px;
+  --tds-space-12: 12px;
+  --tds-space-14: 14px;
+  --tds-space-16: 16px;
+  --tds-space-18: 18px;
+  --tds-space-20: 20px;
+  --tds-space-22: 22px;
+  --tds-space-24: 24px;
+  --tds-space-32: 32px;
+  --tds-space-48: 48px;
+
+  /* ── 원시: Radius (Figma Semantic) ── */
+  --tds-radius-xxs: 14px;
+  --tds-radius-xs: 16px;
+  --tds-radius-s: 18px;
+  --tds-radius-m: 20px;
+  --tds-radius-l: 24px;
+  --tds-radius-full: 999px;
+
+  /* ── 원시: Typography ──
+     서체: TDS(한글)는 Pretendard 기준. size / line-height 는 Figma 실측 쌍. */
+  --tds-font: "Pretendard", system-ui, -apple-system, "Apple SD Gothic Neo", "Segoe UI", sans-serif;
+
+  --tds-display-size: 30px;   --tds-display-lh: 40px;   /* 30/40 */
+  --tds-h1-size: 24px;        --tds-h1-lh: 33px;        /* 24/33 */
+  --tds-h2-size: 20px;        --tds-h2-lh: 29px;        /* 20/29 */
+  --tds-h3-size: 18px;        --tds-h3-lh: 27px;        /* 18/27 */
+  --tds-title-size: 17px;     --tds-title-lh: 25.5px;   /* 17/25.5 */
+  --tds-body-size: 15px;      --tds-body-lh: 22.5px;    /* 15/22.5 */
+  --tds-body-sm-size: 14px;   --tds-body-sm-lh: 21px;   /* 14/21 */
+  --tds-label-size: 13px;     --tds-label-lh: 19.5px;   /* 13/19.5 */
+  --tds-caption-size: 12px;   --tds-caption-lh: 18px;   /* 12/18 */
+  --tds-caption-sm-size: 11px;--tds-caption-sm-lh: 16.5px; /* 11/16.5 */
+
+  /* ============================================================
+     시맨틱 --kup-*  (컴포넌트/페이지는 되도록 이걸 참조)
+     ============================================================ */
+  /* 표면·배경 */
+  --kup-bg: var(--tds-white);
+  --kup-bg-soft: var(--tds-grey-50);
+  --kup-surface: var(--tds-white);
+  --kup-surface-soft: var(--tds-grey-100);
+
+  /* 텍스트 */
+  --kup-text: var(--tds-grey-900);
+  --kup-text-soft: var(--tds-grey-700);
+  --kup-text-muted: var(--tds-grey-600);
+  --kup-text-on-brand: var(--tds-white);
+
+  /* 보더 */
+  --kup-border: var(--tds-grey-200);
+  --kup-border-strong: var(--tds-grey-300);
+
+  /* 브랜드(핑크) */
+  --kup-brand: var(--tds-brand-500);        /* #e52364 */
+  --kup-brand-strong: var(--tds-brand-600); /* hover/active */
+  --kup-brand-soft: var(--tds-brand-100);   /* 연한 배경 */
+  --kup-brand-softer: var(--tds-brand-50);
+
+  /* 상태 */
+  --kup-success: var(--tds-green-500);
+  --kup-success-soft: var(--tds-green-50);
+  --kup-warning: var(--tds-orange-600);
+  --kup-warning-soft: var(--tds-orange-50);
+  --kup-danger: var(--tds-red-500);
+  --kup-danger-soft: var(--tds-red-50);
+  --kup-info: var(--tds-blue-500);
+  --kup-info-soft: var(--tds-blue-50);
+
+  /* 라운드(자주 쓰는 별칭) */
+  --kup-radius-sm: var(--tds-radius-xxs);   /* 14 — 버튼/칩 */
+  --kup-radius-md: var(--tds-radius-m);     /* 20 — 카드 */
+  --kup-radius-lg: var(--tds-radius-l);     /* 24 — 큰 카드/시트 */
+  --kup-radius-pill: var(--tds-radius-full);
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Lock, X } from "lucide-react";
 import { api, formatDate } from "@/lib/workspace/client";
 import { Badge, Button, Card, EmptyState, Field, inputClass, SectionTitle } from "@/components/workspace/ui";
 import type { PublicUser } from "@/lib/workspace/types";
@@ -69,12 +70,12 @@ export default function AccountsPage() {
       {notice && (
         <Card className={`p-4 text-sm flex items-center justify-between gap-3 ${notice.tone === "ok" ? "bg-teal-soft/40 border-teal-soft text-ink" : "bg-coral/10 border-coral/30 text-coral"}`}>
           <span>{notice.msg}</span>
-          <button onClick={() => setNotice(null)} className="text-muted hover:text-ink">✕</button>
+          <button onClick={() => setNotice(null)} className="text-muted hover:text-ink"><X size={16} /></button>
         </Card>
       )}
 
       <Card className="p-5 bg-teal-soft/40 border-teal-soft flex gap-3">
-        <span className="text-lg">🔒</span>
+        <span className="text-lg"><Lock size={16} /></span>
         <p className="text-sm text-ink-soft">
           공식 Graph API로 연결되며 <b>비밀번호는 저장하지 않아요.</b> 토큰은 발행 목적에만 사용됩니다.
           실제 발행은 인스타 비즈니스/크리에이터 계정 + 발행 권한 토큰이 필요해요.

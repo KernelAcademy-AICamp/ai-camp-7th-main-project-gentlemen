@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Check, Minus } from "lucide-react";
 import { PricingPlans } from "./_plans";
 
 /** 요금제 — 플랜 3종 + 비교표. */
@@ -16,6 +17,13 @@ function cellClass(v: string): string {
   if (v === "✓") return "yes";
   if (v === "—") return "no";
   return "";
+}
+
+/** 셀 값 렌더: ✓/— 는 아이콘, 그 외는 텍스트 그대로 */
+function cellContent(v: string) {
+  if (v === "✓") return <Check size={18} strokeWidth={2.5} aria-label="지원" />;
+  if (v === "—") return <Minus size={16} aria-label="미지원" />;
+  return v;
 }
 
 export default function PricingPage() {
@@ -46,9 +54,9 @@ export default function PricingPage() {
             {COMPARE.map((row) => (
               <tr key={row[0]}>
                 <td>{row[0]}</td>
-                <td className={cellClass(row[1])}>{row[1]}</td>
-                <td className={`colhi ${cellClass(row[2])}`}>{row[2]}</td>
-                <td className={cellClass(row[3])}>{row[3]}</td>
+                <td className={cellClass(row[1])}>{cellContent(row[1])}</td>
+                <td className={`colhi ${cellClass(row[2])}`}>{cellContent(row[2])}</td>
+                <td className={cellClass(row[3])}>{cellContent(row[3])}</td>
               </tr>
             ))}
           </tbody>

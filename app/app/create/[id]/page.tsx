@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type DragEvent, type ReactNode } from "react";
+import { Lock, Lightbulb, Shield, Film } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { api, formatDate } from "@/lib/workspace/client";
 import { Badge, Button, Card, Field, inputClass } from "@/components/workspace/ui";
@@ -514,7 +515,7 @@ function EditLeft({ draft, photo, photos, activePage, hashtagsText, setHashtagsT
                 <input className={inputClass} value={pg.photoNote ?? ""} onChange={(e) => patchPage(activePage, { photoNote: e.target.value })} placeholder="예: 신메뉴 클로즈업" />
               </Field>
             )}
-            {pg.note && <p className="text-xs text-muted">💡 {pg.note}</p>}
+            {pg.note && <p className="text-xs text-muted"><Lightbulb size={13} className="inline align-[-2px] mr-1" />{pg.note}</p>}
           </div>
         )}
       </Card>
@@ -592,7 +593,7 @@ function ReviewTab({ card, dirty, onChange, onSaveNeeded, domain, consent, setCo
           const warn = hit.some((f) => f.level === "warn");
           return (
             <Card key={ax} className="p-3 flex items-center justify-between gap-2">
-              <span className="text-sm font-medium">🔒 {ax}</span>
+              <span className="text-sm font-medium"><Lock size={13} className="inline align-[-2px] mr-1" />{ax}</span>
               <Badge tone={fail ? "rose" : warn ? "amber" : "teal"}>{fail ? "차단" : warn ? "경고" : "이상 없음"}</Badge>
             </Card>
           );
@@ -616,7 +617,7 @@ function ReviewTab({ card, dirty, onChange, onSaveNeeded, domain, consent, setCo
             <Card key={f.id} className="p-4">
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge tone={f.level === "fail" ? "rose" : f.mustPass ? "amber" : "muted"}>{f.axis ?? f.type}</Badge>
-                {f.mustPass && <span className="text-xs text-muted">🔒 필수통과</span>}
+                {f.mustPass && <span className="text-xs text-muted"><Lock size={12} className="inline align-[-2px] mr-0.5" />필수통과</span>}
                 {f.excerpt && <span className="text-xs text-muted">“{f.excerpt}”</span>}
               </div>
               <p className="text-sm text-ink-soft mt-1.5">{f.message}</p>
@@ -697,7 +698,7 @@ function ReviewTab({ card, dirty, onChange, onSaveNeeded, domain, consent, setCo
       {/* 신뢰 장치 (ISO 원칙) */}
       <div>
         <button type="button" onClick={() => setShowIso((v) => !v)} className="text-xs text-muted hover:text-ink">
-          🛡 국제표준 원칙 기반 3단 점검 {showIso ? "▲" : "▼"}
+          <Shield size={13} className="inline align-[-2px] mr-1" />국제표준 원칙 기반 3단 점검 {showIso ? "▲" : "▼"}
         </button>
         {showIso && (
           <p className="text-xs text-ink-soft leading-relaxed mt-2">
@@ -853,7 +854,7 @@ function PublishTab({ card, draft, photo, photoStyle, ratio, photos, niche, hand
 
       {!ready && !done && !reserved && (
         <Card className="p-5 bg-amber-soft/40 border-amber-soft">
-          <p className="text-sm text-ink-soft">🔒 아직 발행할 수 없어요. <b>검수 탭에서 게이트를 통과(사용자 승인)</b>해야 발행 버튼이 켜집니다.</p>
+          <p className="text-sm text-ink-soft"><Lock size={13} className="inline align-[-2px] mr-1" />아직 발행할 수 없어요. <b>검수 탭에서 게이트를 통과(사용자 승인)</b>해야 발행 버튼이 켜집니다.</p>
         </Card>
       )}
 
@@ -1056,7 +1057,7 @@ function ReelsEditor({
                   onChange={(e) => patchPage(i, { body: e.target.value })}
                   placeholder="대사 / 화면 자막"
                 />
-                {p.note && <p className="text-xs text-muted mt-1.5">🎬 {p.note}</p>}
+                {p.note && <p className="text-xs text-muted mt-1.5"><Film size={13} className="inline align-[-2px] mr-1" />{p.note}</p>}
               </div>
             ))}
           </div>

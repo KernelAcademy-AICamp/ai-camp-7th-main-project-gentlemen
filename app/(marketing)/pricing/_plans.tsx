@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Check } from "lucide-react";
 import { AuthButton } from "../_components/auth-modal";
 
 /** 요금제 플랜 + 월/연 토글. 연 결제 -30%(홈 요금제 미리보기와 동일 3종). */
@@ -39,7 +40,7 @@ export function PricingPlans() {
             <ul className="plan-feats">
               {p.feats.map((f) => (
                 <li key={f}>
-                  <span className="ck">✓</span>
+                  <span className="ck"><Check size={13} strokeWidth={3} /></span>
                   {f}
                 </li>
               ))}
