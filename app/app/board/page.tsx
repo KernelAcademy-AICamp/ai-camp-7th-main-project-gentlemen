@@ -8,12 +8,12 @@ import { Badge, Button, Card, EmptyState, SectionTitle } from "@/components/work
 import { KANBAN_COLUMNS, kanbanColumnOf, type CardNews, type CardStatus, type PublishJob } from "@/lib/workspace/types";
 
 const COLUMN_TONE: Record<CardStatus, string> = {
-  기획중: "#6a6a6a",
-  기획완료: "#a8710a",
-  제작중: "#a8710a",
-  제작완료: "#008489",
-  예약업로드: "#a8710a",
-  업로드완료: "#008489",
+  기획중: "#6b7684",
+  기획완료: "#fb8800",
+  제작중: "#fb8800",
+  제작완료: "#03b26c",
+  예약업로드: "#fb8800",
+  업로드완료: "#03b26c",
 };
 
 // 칸반 카드용 짧은 날짜 — 연도 생략(스캔 뷰라 M/D 로 충분)

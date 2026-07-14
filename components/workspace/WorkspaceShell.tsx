@@ -5,14 +5,15 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/lib/workspace/client";
 import { Badge, Button, Logo } from "@/components/workspace/ui";
+import { Home, Sparkles, LayoutGrid, BarChart3, Mail } from "lucide-react";
 import { activeIgHandle, type PublicUser } from "@/lib/workspace/types";
 
 const NAV = [
-  { href: "/app/home", label: "홈", icon: "⌂", desc: "워크스페이스 개요" },
-  { href: "/app/plans", label: "AI 콘텐츠 생성", icon: "✦", desc: "주제 기획·제작" },
-  { href: "/app/board", label: "콘텐츠 관리", icon: "▦", desc: "칸반 보드" },
-  { href: "/app/insights", label: "콘텐츠 성과", icon: "◆", desc: "인사이트·챌린지" },
-  { href: "/app/dm", label: "DM 리드마그넷", icon: "✉", desc: "자동화 설정" },
+  { href: "/app/home", label: "홈", Icon: Home, desc: "워크스페이스 개요" },
+  { href: "/app/plans", label: "AI 콘텐츠 생성", Icon: Sparkles, desc: "주제 기획·제작" },
+  { href: "/app/board", label: "콘텐츠 관리", Icon: LayoutGrid, desc: "칸반 보드" },
+  { href: "/app/insights", label: "콘텐츠 성과", Icon: BarChart3, desc: "인사이트·챌린지" },
+  { href: "/app/dm", label: "DM 리드마그넷", Icon: Mail, desc: "자동화 설정" },
 ];
 
 export function WorkspaceShell({
@@ -145,7 +146,7 @@ export function WorkspaceShell({
                 active ? "bg-coral-soft text-coral font-medium" : "text-ink-soft hover:bg-paper-2"
               }`}
             >
-              <span className="w-5 text-center opacity-80">{n.icon}</span>
+              <span className="w-5 flex justify-center opacity-80"><n.Icon size={18} strokeWidth={1.9} /></span>
               <span className="flex-1">{n.label}</span>
             </Link>
           );

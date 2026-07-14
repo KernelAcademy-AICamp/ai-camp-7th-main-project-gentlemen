@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;   /* Airbnb: 순백 캔버스 */
-  --foreground: #222222;   /* ink */
+  --background: var(--kup-bg);      /* White */
+  --foreground: var(--kup-text);    /* Grey 900 #191f28 */
 }
 
 @theme inline {
@@ -16,8 +16,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: "Inter", "Pretendard", -apple-system, BlinkMacSystemFont,
-    "Apple SD Gothic Neo", "Segoe UI", sans-serif;
+  font-family: var(--tds-font);
 }
 
 /* 홍보 카드 hover 강조 — 마우스 올리면 살짝 떠오르며 강조 (와이어프레임 기본 위 우리 추가) */
@@ -44,30 +43,31 @@ body {
    ⚠️ body 배경은 전역으로 덮지 않음 — 배경은 각 루트의 bg-paper 유틸로만.
    ────────────────────────────────────────────────────────────────────────── */
 @theme {
-  --color-paper: #ffffff;        /* canvas — 순백 */
-  --color-paper-2: #f7f7f7;      /* surface-soft — hover/보조 필 */
-  --color-card: #ffffff;         /* 카드 표면 */
-  --color-ink: #222222;          /* ink — 헤드라인·본문 (순검정 아님) */
-  --color-ink-soft: #3f3f3f;     /* body — 보조 본문 */
-  --color-muted: #6a6a6a;        /* muted — 서브라벨·비활성 */
-  --color-line: #dddddd;         /* hairline — 기본 1px 보더 */
-  /* 단일 브랜드 볼티지 — Rausch. 모든 주요 액센트가 이 색 하나로. */
-  --color-coral: #ff385c;        /* Rausch — 액센트/브랜드 */
-  --color-coral-soft: #ffe8ec;   /* pale Rausch — soft 배경 */
-  /* 상태 시맨틱(에어비앤비 계열) — Rausch는 브랜드 전용, 상태 색은 별도로 분리 */
-  --color-teal: #008489;         /* Babu — 완료/성공 */
-  --color-teal-soft: #e6f2f2;
-  --color-amber: #a8710a;        /* 진행중 */
-  --color-amber-soft: #f6ecd6;
-  --color-rose: #92174d;         /* Plus magenta — 릴스 */
-  --color-rose-soft: #fbe4ee;
+  /* Airbnb → TDS(Toss) 전환: 토큰 이름은 그대로, 값만 tokens.css 토큰(--kup 계열) 참조로 교체.
+     이 블록 하나로 --color-* Tailwind 유틸을 쓰는 팀 컴포넌트 전체가 코드 무수정 리스킨. */
+  --color-paper: var(--kup-surface);          /* White */
+  --color-paper-2: var(--kup-bg-soft);        /* Grey 50 */
+  --color-card: var(--kup-surface);           /* White */
+  --color-ink: var(--kup-text);               /* Grey 900 #191f28 */
+  --color-ink-soft: var(--kup-text-soft);     /* Grey 700 #4e5968 */
+  --color-muted: var(--kup-text-muted);       /* Grey 600 #6b7684 */
+  --color-line: var(--kup-border);            /* Grey 200 #e5e8eb */
+  /* 단일 브랜드 — TDS 메인 핑크 #e52364. 모든 주요 액센트가 이 색 하나로. */
+  --color-coral: var(--kup-brand);            /* #e52364 */
+  --color-coral-soft: var(--kup-brand-soft);  /* brand 100 #ffe3ef */
+  /* 상태 시맨틱(TDS) */
+  --color-teal: var(--kup-success);           /* Green 500 #03b26c — 완료/성공 */
+  --color-teal-soft: var(--kup-success-soft); /* Green 50 */
+  --color-amber: var(--kup-warning);          /* Orange 600 #fb8800 — 진행중/경고 */
+  --color-amber-soft: var(--kup-warning-soft);/* Orange 50 */
+  --color-rose: var(--tds-purple-700);        /* Purple 700 #8222a2 — 릴스 */
+  --color-rose-soft: var(--tds-purple-50);    /* Purple 50 */
 
-  /* Airbnb Cereal은 상용 폰트 → Inter로 대체(DESIGN-airbnb.md 권장).
-     한글 글리프는 Pretendard로 폴백(글리프 단위 폴백). */
-  --font-display: "Inter", "Pretendard", system-ui, -apple-system, sans-serif;
-  --font-sans: "Inter", "Pretendard", system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+  /* TDS(한글) 서체 = Pretendard */
+  --font-display: var(--tds-font);
+  --font-sans: var(--tds-font);
 
-  --radius-xl: 0.5rem;           /* Airbnb 버튼 radius(8px) */
+  --radius-xl: var(--tds-radius-xxs);         /* 14px (TDS 최소 라운드) */
 }
 
 /* 워크스페이스 유틸/애니메이션 (이식) */

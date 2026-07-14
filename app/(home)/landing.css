@@ -2,18 +2,19 @@
    위해 .kup-landing 아래로 스코프(네이티브 CSS 네스팅). 클래스명·값은 원본 그대로 유지. */
 
 .kup-landing {
-  --bg-top: #fff7fb;
-  --bg-bot: #ffe3ef;
-  --ink: #2a1520;
-  --ink-soft: #7a5766;
-  --pink: #ff3d85;
-  --pink-deep: #e5266f;
-  --card: #ffffff;
-  --line: #f4d7e4;
-  --radius: 16px;
+  /* TDS 전환: 값만 tokens.css 참조로 교체(브랜드 핑크 #e52364, Toss Grey). 히어로 구조·클래스명은 그대로. */
+  --bg-top: var(--tds-brand-50);        /* #fff1f6 */
+  --bg-bot: var(--tds-brand-100);       /* #ffe3ef */
+  --ink: var(--kup-text);               /* Grey 900 #191f28 */
+  --ink-soft: var(--tds-grey-600);      /* #6b7684 */
+  --pink: var(--kup-brand);             /* #e52364 */
+  --pink-deep: var(--kup-brand-strong); /* #c21d54 */
+  --card: var(--kup-surface);           /* White */
+  --line: var(--kup-border);            /* Grey 200 #e5e8eb */
+  --radius: var(--tds-radius-xs);       /* 16px */
   --maxw: 1180px;
-  --display: "Bricolage Grotesque", "Pretendard", sans-serif;
-  --body: "Pretendard", system-ui, sans-serif;
+  --display: "Bricolage Grotesque", var(--tds-font);  /* 히어로 디스플레이 서체 유지 */
+  --body: var(--tds-font);              /* Pretendard (TDS) */
 
   font-family: var(--body);
   color: var(--ink);
@@ -25,7 +26,7 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   a { color: inherit; text-decoration: none; }
-  ::selection { background: #ffc2dc; color: #3a0f24; }
+  ::selection { background: var(--tds-brand-200); color: #3a0f24; }
 
   /* ---------- header ---------- */
   header {
@@ -40,19 +41,19 @@
   }
   .nav { width: 100%; max-width: var(--maxw); display: flex; align-items: center; gap: 28px; padding: 16px 24px; }
   .logo { font-family: var(--display); font-weight: 800; font-size: 24px; letter-spacing: -.02em; display: flex; align-items: center; gap: 9px; }
-  .logo .dot { width: 11px; height: 11px; border-radius: 3px; background: var(--pink); transform: rotate(-8deg); box-shadow: 0 3px 8px rgba(255, 61, 133, .45); }
+  .logo .dot { width: 11px; height: 11px; border-radius: 3px; background: var(--pink); transform: rotate(-8deg); box-shadow: 0 3px 8px rgba(229, 35, 100, .45); }
   .nav-links { display: flex; gap: 26px; margin-left: 14px; }
   .nav-links a { font-size: 15px; color: var(--ink-soft); font-weight: 500; transition: color .2s; }
   .nav-links a:hover { color: var(--ink); }
   .nav-cta { margin-left: auto; display: flex; gap: 10px; align-items: center; }
   .btn { font-family: var(--body); font-weight: 600; font-size: 15px; padding: 11px 20px; border-radius: 12px; border: none; cursor: pointer; transition: transform .15s ease, box-shadow .2s ease, background .2s; display: inline-flex; align-items: center; justify-content: center; }
-  .btn:focus-visible { outline: 3px solid #ffb0cf; outline-offset: 2px; }
+  .btn:focus-visible { outline: 3px solid var(--tds-brand-300); outline-offset: 2px; }
   .btn-ghost { background: transparent; color: var(--ink); }
   .btn-ghost:hover { color: var(--pink-deep); }
-  .btn-primary { background: var(--pink); color: #fff; box-shadow: 0 8px 20px -6px rgba(255, 61, 133, .6); }
-  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 26px -6px rgba(255, 61, 133, .7); }
+  .btn-primary { background: var(--pink); color: #fff; box-shadow: 0 8px 20px -6px rgba(229, 35, 100, .6); }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 26px -6px rgba(229, 35, 100, .7); }
   .btn-line { background: #fff; border: 1px solid var(--line); color: var(--ink); }
-  .btn-line:hover { border-color: #ffb3d1; }
+  .btn-line:hover { border-color: var(--tds-brand-300); }
 
   /* ---------- hero scroll section ---------- */
   /* display/padding/min-height 명시: 전역 wireframe.css의 .hero(display:flex;align-items:center)가
@@ -65,7 +66,7 @@
   .eyebrow { display: inline-flex; align-items: center; gap: 8px; width: max-content; font-size: 13.5px; font-weight: 600; letter-spacing: .02em; color: var(--pink-deep); background: rgba(255, 255, 255, .7); border: 1px solid var(--line); padding: 7px 13px; border-radius: 999px; margin-bottom: 22px; backdrop-filter: blur(6px); }
   .eyebrow .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--pink); }
   h1 { font-family: var(--display); font-weight: 800; font-size: clamp(27px, 5.04vw, 60px); line-height: 1.02; letter-spacing: -.03em; max-width: 12ch; }
-  h1 .hl { color: var(--pink-deep); background: linear-gradient(180deg, transparent 62%, #ffd0e2 62%); padding: 0 .06em; }
+  h1 .hl { color: var(--pink-deep); background: linear-gradient(180deg, transparent 62%, var(--tds-brand-200) 62%); padding: 0 .06em; }
   .sub { margin-top: 24px; max-width: 34ch; font-size: clamp(16px, 1.7vw, 20px); line-height: 1.6; color: var(--ink-soft); font-weight: 500; }
   .hero-cta { margin-top: 34px; display: flex; gap: 12px; pointer-events: auto; flex-wrap: wrap; }
   .hero-cta .btn { padding: 14px 24px; font-size: 16px; border-radius: 14px; }
@@ -78,8 +79,8 @@
   .endline small { display: block; font-family: var(--body); font-weight: 500; font-size: 15px; color: var(--ink-soft); margin-top: 8px; letter-spacing: 0; }
 
   .scrollhint { position: absolute; left: 50%; bottom: 30px; transform: translateX(-50%); z-index: 6; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-soft); font-weight: 500; letter-spacing: .06em; }
-  .mouse { width: 22px; height: 34px; border: 2px solid #d9a6bd; border-radius: 12px; position: relative; }
-  .mouse::after { content: ""; position: absolute; top: 6px; left: 50%; transform: translateX(-50%); width: 3px; height: 6px; border-radius: 2px; background: #d9a6bd; animation: sc 1.5s infinite; }
+  .mouse { width: 22px; height: 34px; border: 2px solid var(--tds-grey-400); border-radius: 12px; position: relative; }
+  .mouse::after { content: ""; position: absolute; top: 6px; left: 50%; transform: translateX(-50%); width: 3px; height: 6px; border-radius: 2px; background: var(--tds-grey-400); animation: sc 1.5s infinite; }
 
   /* ---------- content ---------- */
   .section { max-width: var(--maxw); margin: 0 auto; padding: 120px 24px; }
@@ -88,37 +89,37 @@
   .lead { margin-top: 18px; max-width: 46ch; font-size: 18px; line-height: 1.65; color: var(--ink-soft); }
 
   .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 56px; }
-  .feat { background: linear-gradient(180deg, #fff, #fff6fa); border: 1px solid var(--line); border-radius: 22px; padding: 30px 26px; transition: transform .25s ease, box-shadow .25s ease; }
-  .feat:hover { transform: translateY(-4px); box-shadow: 0 22px 40px -22px rgba(229, 38, 111, .4); }
+  .feat { background: linear-gradient(180deg, #fff, var(--tds-grey-50)); border: 1px solid var(--line); border-radius: 22px; padding: 30px 26px; transition: transform .25s ease, box-shadow .25s ease; }
+  .feat:hover { transform: translateY(-4px); box-shadow: 0 22px 40px -22px rgba(194, 29, 84, .4); }
   .feat .no { font-family: var(--display); font-weight: 700; font-size: 15px; color: var(--pink); }
   .feat h3 { font-size: 21px; margin-top: 16px; letter-spacing: -.01em; }
   .feat p { margin-top: 12px; color: var(--ink-soft); line-height: 1.6; font-size: 15.5px; }
-  .chip { display: inline-block; margin-top: 18px; font-size: 13px; font-weight: 600; color: var(--pink-deep); background: #ffe7f1; padding: 6px 12px; border-radius: 999px; }
+  .chip { display: inline-block; margin-top: 18px; font-size: 13px; font-weight: 600; color: var(--pink-deep); background: var(--tds-brand-100); padding: 6px 12px; border-radius: 999px; }
 
   .note { margin-top: 34px; font-size: 14.5px; color: var(--ink-soft); display: flex; align-items: center; gap: 9px; }
   .note b { color: var(--ink); font-weight: 700; }
 
   /* ---------- showcase (tabbed) ---------- */
-  .showcase-card { background: #fff; border: 1px solid var(--line); border-radius: 28px; padding: clamp(24px, 3.5vw, 44px); margin-top: 52px; box-shadow: 0 30px 60px -40px rgba(229, 38, 111, .45); }
+  .showcase-card { background: #fff; border: 1px solid var(--line); border-radius: 28px; padding: clamp(24px, 3.5vw, 44px); margin-top: 52px; box-shadow: 0 30px 60px -40px rgba(194, 29, 84, .45); }
   .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 30px; }
-  .tab { font-family: var(--display); font-weight: 800; letter-spacing: -.02em; font-size: clamp(26px, 3.8vw, 50px); line-height: 1; color: #ecc4d7; background: transparent; border: none; cursor: pointer; padding: 8px 18px; border-radius: 16px; transition: color .2s, background .2s; }
-  .tab:hover { color: #cf83a6; }
-  .tab.active { color: var(--ink); background: #ffe7f1; }
-  .tab:focus-visible { outline: 3px solid #ffb0cf; outline-offset: 2px; }
+  .tab { font-family: var(--display); font-weight: 800; letter-spacing: -.02em; font-size: clamp(26px, 3.8vw, 50px); line-height: 1; color: var(--tds-grey-300); background: transparent; border: none; cursor: pointer; padding: 8px 18px; border-radius: 16px; transition: color .2s, background .2s; }
+  .tab:hover { color: var(--tds-grey-500); }
+  .tab.active { color: var(--ink); background: var(--tds-brand-100); }
+  .tab:focus-visible { outline: 3px solid var(--tds-brand-300); outline-offset: 2px; }
   .showcase-body { display: grid; grid-template-columns: .85fr 1.3fr; gap: clamp(24px, 4vw, 56px); align-items: center; }
   .showcase-copy h3 { font-family: var(--display); font-weight: 800; letter-spacing: -.02em; font-size: clamp(22px, 2.6vw, 30px); line-height: 1.22; }
   .showcase-copy p { margin-top: 16px; color: var(--ink-soft); line-height: 1.65; font-size: 16.5px; max-width: 38ch; }
   .sc-link { display: inline-flex; align-items: center; gap: 8px; margin-top: 24px; font-weight: 700; color: var(--pink-deep); transition: gap .2s; }
   .sc-link:hover { gap: 13px; }
   .showcase-visual { position: relative; }
-  .media-frame { display: none; place-items: center; aspect-ratio: 16/10; border-radius: 20px; overflow: hidden; background: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, .5) 1.5px, transparent 1.7px) 0 0/22px 22px, linear-gradient(135deg, #ff9ec6 0%, #ff5fa2 55%, #ff3d85 100%); }
+  .media-frame { display: none; place-items: center; aspect-ratio: 16/10; border-radius: 20px; overflow: hidden; background: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, .5) 1.5px, transparent 1.7px) 0 0/22px 22px, linear-gradient(135deg, var(--tds-brand-300) 0%, var(--tds-brand-400) 55%, var(--pink) 100%); }
   .media-frame.active { display: grid; }
   .media-frame > video, .media-frame > img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .media-hint { font-weight: 600; color: #fff; background: rgba(0, 0, 0, .16); padding: 8px 16px; border-radius: 999px; font-size: 14px; backdrop-filter: blur(4px); }
 
   /* ---------- stats (지표) ---------- */
   .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; text-align: center; margin-top: 52px; }
-  .stat { background: linear-gradient(180deg, #fff, #fff6fa); border: 1px solid var(--line); border-radius: 22px; padding: 40px 24px; }
+  .stat { background: linear-gradient(180deg, #fff, var(--tds-grey-50)); border: 1px solid var(--line); border-radius: 22px; padding: 40px 24px; }
   .stat-big { font-family: var(--display); font-weight: 800; font-size: clamp(34px, 4.5vw, 52px); letter-spacing: -.03em; color: var(--pink-deep); }
   .stat-cap { margin-top: 8px; color: var(--ink-soft); font-size: 15px; }
   .stats-note { text-align: center; margin-top: 18px; font-size: 13px; color: var(--ink-soft); }
@@ -126,19 +127,19 @@
   /* ---------- pricing preview (요금제) ---------- */
   .plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 52px; align-items: stretch; }
   .plan { position: relative; display: flex; flex-direction: column; background: #fff; border: 1px solid var(--line); border-radius: 22px; padding: 32px 28px; transition: transform .25s ease, box-shadow .25s ease; }
-  .plan:hover { transform: translateY(-4px); box-shadow: 0 22px 40px -22px rgba(229, 38, 111, .4); }
-  .plan.featured { border-color: var(--pink); box-shadow: 0 20px 50px -26px rgba(255, 61, 133, .7); }
-  .plan-badge { position: absolute; top: -12px; left: 28px; font-size: 12px; font-weight: 700; color: #fff; background: var(--pink); padding: 5px 12px; border-radius: 999px; box-shadow: 0 6px 14px -4px rgba(255, 61, 133, .6); }
+  .plan:hover { transform: translateY(-4px); box-shadow: 0 22px 40px -22px rgba(194, 29, 84, .4); }
+  .plan.featured { border-color: var(--pink); box-shadow: 0 20px 50px -26px rgba(229, 35, 100, .7); }
+  .plan-badge { position: absolute; top: -12px; left: 28px; font-size: 12px; font-weight: 700; color: #fff; background: var(--pink); padding: 5px 12px; border-radius: 999px; box-shadow: 0 6px 14px -4px rgba(229, 35, 100, .6); }
   .plan-name { font-family: var(--display); font-weight: 700; font-size: 20px; letter-spacing: -.01em; }
   .plan-price { font-family: var(--display); font-weight: 800; font-size: 38px; letter-spacing: -.03em; margin-top: 12px; }
   .plan-price small { font-family: var(--body); font-weight: 500; font-size: 15px; color: var(--ink-soft); }
   .plan-desc { margin-top: 8px; color: var(--ink-soft); font-size: 15px; }
   .plan-feats { list-style: none; margin: 22px 0 26px; display: flex; flex-direction: column; gap: 12px; }
   .plan-feats li { display: flex; align-items: center; gap: 10px; font-size: 15px; }
-  .plan-feats .ck { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #ffe7f1; color: var(--pink-deep); font-size: 12px; font-weight: 800; flex-shrink: 0; }
+  .plan-feats .ck { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--tds-brand-100); color: var(--pink-deep); font-size: 12px; font-weight: 800; flex-shrink: 0; }
   .plan .btn { margin-top: auto; width: 100%; padding: 13px 20px; border-radius: 14px; }
 
-  .final { text-align: center; padding: 130px 24px; background: radial-gradient(120% 120% at 50% 0%, #ffd7e8 0%, transparent 60%); }
+  .final { text-align: center; padding: 130px 24px; background: radial-gradient(120% 120% at 50% 0%, var(--tds-brand-100) 0%, transparent 60%); }
   .final .h2 { margin: 0 auto; }
   .final .hero-cta { justify-content: center; margin-top: 34px; }
 
@@ -160,7 +161,7 @@
 
 /* WebGL 폴백 — IIFE가 document.body 에 no-webgl 을 붙이므로 body 기준(전역) */
 body.no-webgl .kup-landing #scene { display: none; }
-body.no-webgl .kup-landing .stage { background: radial-gradient(50% 60% at 72% 45%, #ff7fb0 0%, #ff9ec4 30%, transparent 70%); }
+body.no-webgl .kup-landing .stage { background: radial-gradient(50% 60% at 72% 45%, var(--tds-brand-400) 0%, var(--tds-brand-300) 30%, transparent 70%); }
 
 @keyframes sc {
   0% { opacity: 0; transform: translate(-50%, 0); }

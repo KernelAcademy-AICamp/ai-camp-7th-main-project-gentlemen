@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "./tokens.css"; // TDS 디자인 토큰(원시 --tds-* → 시맨틱 --kup-*). globals/wireframe/landing/marketing가 참조
 import "./globals.css";
 import "./wireframe.css"; // 와이어프레임 디자인 시스템(비주얼 SoT, 1차 초안)
 
