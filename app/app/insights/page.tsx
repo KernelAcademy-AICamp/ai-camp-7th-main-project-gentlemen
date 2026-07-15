@@ -80,6 +80,10 @@ export default function InsightsPage() {
   // 계정 단위 기여 팔로우 합 — 게시물별 최신 스냅샷 기준(중복합산 방지)
   const followsTotal = postRows.reduce((s, r) => s + r.m.follows, 0);
   const dmSent = dm.reduce((s, r) => s + r.sentCount, 0);
+  // 밀도 프록시(저장율·공유율). 계정 평균은 "합으로"(Σ저장÷Σ도달) 계산해 작은 글 왜곡을 막는다.
+  const sumReach = postRows.reduce((s, r) => s + r.m.reach, 0);
+  const savePctAgg = sumReach > 0 ? `${((postRows.reduce((s, r) => s + r.m.saves, 0) / sumReach) * 100).toFixed(1)}%` : "–";
+  const sharePctAgg = sumReach > 0 ? `${((postRows.reduce((s, r) => s + r.m.shares, 0) / sumReach) * 100).toFixed(1)}%` : "–";
   const latest = metrics[0];
   const nextActions = computeNextActions(latest);
 
@@ -115,15 +119,13 @@ export default function InsightsPage() {
       )}
 
       {/* 계정 단위 인사이트 */}
-      <div className="grid sm:grid-cols-4 gap-3">
+      <div className="grid sm:grid-cols-3 gap-3">
         <Stat label="총 팔로워" value={followers.toLocaleString()} tone="ink" />
-        {followers >= 100 ? (
-          <Stat label="유입 / 이탈" value={`+${followsTotal} / -${Math.max(0, Math.round(followsTotal * 0.2))}`} tone="teal" />
-        ) : (
-          <Stat label="유입 / 이탈" value="🔒" tone="muted" tip={<>Meta 정책상 팔로워 <b className="font-semibold text-ink">100명</b> 이상부터 유입·이탈 데이터를 볼 수 있어요.</>} />
-        )}
+        <Stat label="기여 팔로우" value={followsTotal > 0 ? `+${followsTotal}` : "0"} tone="teal" tip={<>이 계정 <b className="font-semibold text-ink">게시물이 데려온 팔로우</b> 합이에요. 게시물별 값은 아래 표 ‘기여 팔로우’ 열에서 볼 수 있어요.</>} />
         <Stat label="DM 리드마그넷" value={`${dmSent}건`} tone="amber" />
         <Stat label="발행 콘텐츠" value={`${cards.filter((c) => c.status === "업로드완료").length}건`} tone="ink" />
+        <Stat label="평균 저장율" value={savePctAgg} tone="teal" tip={<>내 글을 <b className="font-semibold text-ink">본 사람(도달) 대비 저장</b> 비율이에요. 저장을 모두 더해 도달 합으로 나눠 작은 글이 지표를 흔드는 걸 막아요.</>} />
+        <Stat label="평균 공유율" value={sharePctAgg} tone="teal" tip={<>내 글을 <b className="font-semibold text-ink">본 사람 대비 공유</b> 비율이에요. 인스타가 성장에 특히 중요하게 보는 신호예요.</>} />
       </div>
 
       {/* 게시물 단위 인사이트 — 게시물별 누적(최신 스냅샷) 표 */}
@@ -143,7 +145,7 @@ export default function InsightsPage() {
                 <thead>
                   <tr className="text-muted bg-paper-2/50 border-b border-line">
                     <th className="py-3 px-4 font-medium text-left">게시물</th>
-                    {["조회", "도달", "저장", "공유", "좋아요", "댓글", "프로필 방문", "기여 팔로우"].map((h) => (
+                    {["조회", "도달", "저장", "저장율", "공유", "공유율", "좋아요", "댓글", "프로필 방문", "기여 팔로우"].map((h) => (
                       <th key={h} className="py-3 px-3 font-medium text-right">{h}</th>
                     ))}
                   </tr>
@@ -155,7 +157,9 @@ export default function InsightsPage() {
                       <td className="py-3 px-3 text-right text-ink-soft">{r.m.views.toLocaleString()}</td>
                       <td className="py-3 px-3 text-right text-ink-soft">{r.m.reach.toLocaleString()}</td>
                       <td className="py-3 px-3 text-right text-ink-soft">{r.m.saves.toLocaleString()}</td>
+                      <td className="py-3 px-3 text-right"><span className={r.m.reach >= 30 ? "text-teal font-semibold" : "text-muted"}>{r.m.reach > 0 ? `${((r.m.saves / r.m.reach) * 100).toFixed(1)}%` : "–"}</span></td>
                       <td className="py-3 px-3 text-right text-ink-soft">{r.m.shares.toLocaleString()}</td>
+                      <td className="py-3 px-3 text-right"><span className={r.m.reach >= 30 ? "text-teal font-semibold" : "text-muted"}>{r.m.reach > 0 ? `${((r.m.shares / r.m.reach) * 100).toFixed(1)}%` : "–"}</span></td>
                       <td className="py-3 px-3 text-right text-ink-soft">{r.m.likes.toLocaleString()}</td>
                       <td className="py-3 px-3 text-right text-ink-soft">{r.m.comments.toLocaleString()}</td>
                       <td className="py-3 px-3 text-right text-ink-soft">{r.m.profileVisits.toLocaleString()}</td>
