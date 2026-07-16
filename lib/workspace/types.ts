@@ -62,12 +62,29 @@ export interface Strategy {
 export type ContentObjective = "조회" | "저장" | "공유" | "방문" | "문의" | "팔로우" | "댓글";
 export type TopicSource = "추천" | "직접입력";
 
+// 카드 템플릿(2차 리디자인) — 6종. 각 장(page)의 레이아웃.
+//  표지=cover · 리스트=list · 비교=compare · 인용=quote · 강조=emphasis(구 통계형) · CTA=cta
+export type CardLayout = "cover" | "list" | "compare" | "quote" | "emphasis" | "cta";
+
+export interface CardComparePair {
+  leftLabel?: string;
+  left: string;
+  rightLabel?: string;
+  right: string;
+}
+
 export interface CardPage {
   index: number;
   headline: string; // 서브 타이틀(각 장 제목)
   body: string; // 본문
   note?: string; // 비주얼/이미지 메모
   photoNote?: string; // 사진첨부형: 들어갈 사진 설명
+  // ── 카드 템플릿(2차) — 모두 옵셔널(옛 카드 호환). 없으면 위치로 레이아웃 추론, 구조 데이터는 body에서 파생. ──
+  layout?: CardLayout;
+  tag?: string; // 헤드라인 위 태그. 숫자면 번호뱃지, 글자면 칩. 화이트·블랙 테마는 핑크 대신 글자색.
+  items?: string[]; // list 레이아웃 항목(없으면 body 줄바꿈에서 파생)
+  compare?: CardComparePair; // compare 레이아웃 좌/우
+  bigNumber?: string; // emphasis(구 통계형) 큰 숫자 — 단위·캡션 없이
 }
 
 // 카드 수명주기 상태(6). '기획완료'·'제작완료'는 수명주기 게이트다 —

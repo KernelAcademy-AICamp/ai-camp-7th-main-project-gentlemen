@@ -8,11 +8,21 @@ import { Badge, Button, Card, Field, inputClass } from "@/components/workspace/u
 import { Modal } from "@/components/workspace/WorkspaceShell";
 import { Generating } from "@/components/workspace/Generating";
 import { CardCanvas, THEMES, getTheme } from "@/components/workspace/CardCanvas";
-import { activeIgHandle, findIgAccount, type CardNews, type CardPage, type IgAccount, type PublicUser, type ReviewFlag, type SensitiveDomain } from "@/lib/workspace/types";
+import { activeIgHandle, findIgAccount, type CardLayout, type CardNews, type CardPage, type IgAccount, type PublicUser, type ReviewFlag, type SensitiveDomain } from "@/lib/workspace/types";
 import { decideVerdict, verdictGate, VERDICT_META, isChecklist, LEGAL_BASIS_NOTE } from "@/lib/workspace/verdict";
 
 const STEPS = ["편집", "검수", "업로드"] as const;
 type Step = 0 | 1 | 2;
+
+// 카드 템플릿 6종 — 에디터 선택기용
+const LAYOUTS: { key: CardLayout; label: string }[] = [
+  { key: "cover", label: "표지" },
+  { key: "list", label: "리스트" },
+  { key: "compare", label: "비교" },
+  { key: "quote", label: "인용" },
+  { key: "emphasis", label: "강조" },
+  { key: "cta", label: "CTA" },
+];
 
 function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((res, rej) => {
@@ -460,16 +470,42 @@ function EditLeft({ draft, photo, photos, activePage, hashtagsText, setHashtagsT
 }) {
   const pg = draft.pages[activePage];
   const [uploadWarn, setUploadWarn] = useState("");
+  const curLayout: CardLayout = pg ? (pg.layout ?? (activePage === 0 ? "cover" : activePage === draft.pages.length - 1 ? "cta" : "list")) : "cover";
   return (
     <div className="space-y-5">
       <Card className="p-5">
         <div className="text-sm font-medium mb-3">{activePage + 1}장 내용</div>
         {pg && (
           <div className="space-y-3">
+            <Field label="템플릿" hint="이 장의 레이아웃">
+              <div className="grid grid-cols-3 gap-1.5">
+                {LAYOUTS.map((l) => {
+                  const cur = curLayout === l.key;
+                  return (
+                    <button
+                      key={l.key}
+                      type="button"
+                      onClick={() => patchPage(activePage, { layout: l.key })}
+                      className={`px-2 py-2 rounded-xl border text-xs font-medium transition ${cur ? "border-coral bg-coral-soft text-coral" : "border-line text-ink-soft hover:border-coral/40"}`}
+                    >
+                      {l.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </Field>
+            <Field label="태그" hint="헤드라인 위 · 숫자면 번호뱃지 / 글자면 칩 (선택)">
+              <input className={inputClass} value={pg.tag ?? ""} onChange={(e) => patchPage(activePage, { tag: e.target.value })} placeholder="예: 01  또는  AI" />
+            </Field>
+            {curLayout === "emphasis" && (
+              <Field label="큰 숫자" hint="강조형 — 단위·캡션 없이 (예: 3배, 70%)">
+                <input className={inputClass} value={pg.bigNumber ?? ""} onChange={(e) => patchPage(activePage, { bigNumber: e.target.value })} placeholder="예: 70%" />
+              </Field>
+            )}
             <Field label="헤드라인" hint="엔터로 줄바꿈하면 카드에도 그대로 적용돼요">
               <textarea className={inputClass} rows={2} value={pg.headline} onChange={(e) => patchPage(activePage, { headline: e.target.value })} />
             </Field>
-            <Field label="본문">
+            <Field label="본문" hint={curLayout === "list" ? "줄바꿈으로 항목 구분 (리스트)" : curLayout === "compare" ? "‘↔’ 또는 줄바꿈으로 좌/우 구분 (비교)" : undefined}>
               <textarea className={inputClass} rows={3} value={pg.body} onChange={(e) => patchPage(activePage, { body: e.target.value })} />
             </Field>
             <Field label="사진 업로드" hint={photo ? "이 장의 메인 사진 (정사각/세로 권장)" : "이 장에 넣을 사진 (선택)"}>
