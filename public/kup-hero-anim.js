@@ -182,6 +182,7 @@
 
   const heroEl=document.getElementById('hero');
   const heroBlock=document.getElementById('heroBlock');
+  const scrim=document.getElementById('heroScrim');
   const endline=document.getElementById('endline');
   const hint=document.getElementById('hint');
   const hd=document.getElementById('hd');
@@ -193,6 +194,8 @@
     // overlay text choreography
     heroBlock.style.opacity = 1 - smoothstep(0.42,0.66,progress);
     heroBlock.style.transform = `translateY(${-progress*40}px)`;
+    // 스크림은 텍스트보다 살짝 먼저 걷어내 조립되는 구가 깨끗하게 보이도록
+    if(scrim) scrim.style.opacity = String(1 - smoothstep(0.34,0.58,progress));
     endline.style.opacity = smoothstep(0.6,0.9,progress);
     hint.style.opacity = 1 - smoothstep(0.02,0.12,progress);
     hd.classList.toggle('solid', window.scrollY>40);

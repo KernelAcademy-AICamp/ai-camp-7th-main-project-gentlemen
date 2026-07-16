@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Script from "next/script";
-import { Sparkles, ArrowRight, Check } from "lucide-react";
+import { Sparkles, ArrowRight, Check, ShieldCheck, BadgeCheck, UserCheck } from "lucide-react";
 import { AuthButton, useAuthModal } from "@/app/(marketing)/_components/auth-modal";
 import "./landing.css";
 
@@ -56,6 +56,7 @@ export default function HomePage() {
       <section className="hero" id="hero">
         <div className="stage">
           <canvas id="scene" />
+          <div className="hero-scrim" id="heroScrim" aria-hidden="true" />
           <div className="overlay">
             <div className="hero-block" id="heroBlock">
               <span className="eyebrow"><span className="pulse" />0–1,000 팔로워를 위한 콘텐츠 엔진</span>
@@ -136,16 +137,32 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* stats */}
-      <section className="section" id="stats">
-        <span className="kicker">숫자로 보는 KUP</span>
-        <h2 className="h2">꾸준함이 만드는 변화</h2>
-        <div className="stats">
-          <div className="stat"><div className="stat-big">+12%</div><div className="stat-cap">평균 주간 팔로워 증가</div></div>
-          <div className="stat"><div className="stat-big">70%</div><div className="stat-cap">콘텐츠 제작 시간 단축</div></div>
-          <div className="stat"><div className="stat-big">12,000+</div><div className="stat-cap">누적 발행 콘텐츠</div></div>
+      {/* 정직 원칙 — 가짜 성과 지표 대신 (PRD "지어낸 수치 금지") */}
+      <section className="section" id="promise">
+        <span className="kicker">정직이 먼저</span>
+        <h2 className="h2">성과 숫자를 지어내지 않습니다</h2>
+        <p className="lead">
+          보여줄 만한 성과 데이터가 아직 충분치 않아, 그럴듯한 수치를 만들어 붙이지 않았어요.
+          대신 KUP가 지금 지키는 원칙을 그대로 적습니다.
+        </p>
+        <div className="anchors">
+          <div className="anchor">
+            <span className="anchor-ic"><ShieldCheck size={26} strokeWidth={1.8} /></span>
+            <h3>지어낸 통계는 없음</h3>
+            <p>수치·순위·효능처럼 검증이 필요한 사실은 AI가 만들어내지 못하도록 막습니다.</p>
+          </div>
+          <div className="anchor">
+            <span className="anchor-ic"><BadgeCheck size={26} strokeWidth={1.8} /></span>
+            <h3>AI 생성물은 늘 표기</h3>
+            <p>모든 초안에 ‘AI 생성’을 표기하고, 당신이 직접 손대면 표기가 해제됩니다.</p>
+          </div>
+          <div className="anchor">
+            <span className="anchor-ic"><UserCheck size={26} strokeWidth={1.8} /></span>
+            <h3>결정은 언제나 당신</h3>
+            <p>AI는 초안까지. 무엇을, 언제 올릴지 최종 결정은 늘 사람이 합니다.</p>
+          </div>
         </div>
-        <p className="stats-note">* 베타 참여자 기준 예시 수치 (실제 데이터로 교체 예정)</p>
+        <p className="stats-note">* KUP는 베타예요. 팔로워·발행 성과 같은 숫자는 실제 데이터가 쌓이면 정직하게 공개합니다.</p>
       </section>
 
       {/* pricing */}
