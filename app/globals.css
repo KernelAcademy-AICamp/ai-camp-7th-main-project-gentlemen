@@ -10,8 +10,8 @@
   --color-foreground: var(--foreground);
 }
 
-/* Airbnb 퍼블릭 웹은 다크모드가 없다 — OS 다크 설정이 순백 캔버스를 뒤집지 않도록
-   prefers-color-scheme 오버라이드를 두지 않는다(DESIGN-airbnb.md). */
+/* 다크모드 미지원 — OS 다크 설정이 순백 캔버스를 뒤집지 않도록
+   prefers-color-scheme 오버라이드를 두지 않는다. */
 
 body {
   background: var(--background);
@@ -30,20 +30,43 @@ body {
 .plan:hover {
   transform: translateY(-2px);
   border-color: var(--color-line);
-  /* Airbnb 단일 섀도우 티어 (DESIGN-airbnb.md Elevation) */
+  /* 단일 섀도우 티어 (TDS Elevation) */
   box-shadow: rgba(0, 0, 0, 0.02) 0 0 0 1px, rgba(0, 0, 0, 0.04) 0 2px 6px 0,
     rgba(0, 0, 0, 0.1) 0 4px 8px 0;
 }
 
+/* 클릭 가능한 행 — hover 시 핑크 틴트 + 우측 화살표 슬라이드 (워크스페이스 리스트 마이크로인터랙션).
+   마크업: <a class="kup-row">…<span class="kup-row-arrow">→</span></a> */
+.kup-row {
+  transition: background-color 0.16s ease, border-color 0.16s ease;
+}
+.kup-row:hover {
+  background-color: var(--kup-brand-softer);
+  border-color: var(--kup-brand-soft);
+}
+.kup-row .kup-row-arrow {
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  color: var(--kup-brand);
+}
+.kup-row:hover .kup-row-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .kup-row .kup-row-arrow { transition: none; }
+}
+
 /* ──────────────────────────────────────────────────────────────────────────
-   디자인 시스템 토큰 — Airbnb 아트디렉션 (DESIGN-airbnb.md).
-   순백 캔버스 + 잉크 + 단일 Rausch(#ff385c) 액센트.
+   디자인 시스템 토큰 — TDS(Toss) 아트디렉션 (app/tokens.css).
+   순백 캔버스 + 잉크(Grey 900) + 단일 브랜드 핑크(#e52364) 액센트.
    ⚠️ 토큰 '이름'은 팀원 컴포넌트가 쓰는 그대로 두고 '값'만 교체 →
       코드 무수정으로 전체 디자인 통일(팀이 설계해둔 교체점).
    ⚠️ body 배경은 전역으로 덮지 않음 — 배경은 각 루트의 bg-paper 유틸로만.
    ────────────────────────────────────────────────────────────────────────── */
 @theme {
-  /* Airbnb → TDS(Toss) 전환: 토큰 이름은 그대로, 값만 tokens.css 토큰(--kup 계열) 참조로 교체.
+  /* 토큰 이름은 그대로, 값만 tokens.css 토큰(--kup 계열) 참조로 매핑.
      이 블록 하나로 --color-* Tailwind 유틸을 쓰는 팀 컴포넌트 전체가 코드 무수정 리스킨. */
   --color-paper: var(--kup-surface);          /* White */
   --color-paper-2: var(--kup-bg-soft);        /* Grey 50 */

@@ -285,8 +285,8 @@ function ContributionsGraph({ jobs }: { jobs: PublishJob[] }) {
   today.setHours(0, 0, 0, 0);
   const start = new Date(today);
   start.setDate(start.getDate() - ((today.getDay() + 6) % 7) - (WEEKS - 1) * 7); // 월요일 정렬
-  // Airbnb Rausch 톤 시퀀셜 스케일 (연분홍 → Rausch)
-  const levels = ["#ffe3ef", "#ffc2da", "#f992b8", "#ef5590", "#e52364"];
+  // 브랜드 핑크 시퀀셜 스케일 (연분홍 → 브랜드, tds-brand 100→500)
+  const levels = ["var(--tds-brand-100)", "var(--tds-brand-200)", "var(--tds-brand-300)", "var(--tds-brand-400)", "var(--tds-brand-500)"];
   const cellColor = (n: number) => levels[n >= 4 ? 4 : n];
 
   const cols: { date: Date; n: number }[][] = [];

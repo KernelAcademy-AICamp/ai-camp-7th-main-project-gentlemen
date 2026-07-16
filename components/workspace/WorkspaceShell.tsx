@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/lib/workspace/client";
 import { Badge, Button, Logo } from "@/components/workspace/ui";
-import { Home, Sparkles, LayoutGrid, BarChart3, Mail } from "lucide-react";
+import { Home, House, Sparkles, LayoutGrid, BarChart3, Mail, Menu } from "lucide-react";
 import { activeIgHandle, type PublicUser } from "@/lib/workspace/types";
 
 const NAV = [
@@ -170,13 +170,20 @@ export function WorkspaceShell({
       <header className="sticky top-0 z-30 border-b border-line bg-paper/95 backdrop-blur">
         <div className="px-4 sm:px-6 h-14 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <button onClick={() => setMenuOpen((o) => !o)} className="lg:hidden text-ink-soft">
-              ☰
+            <button onClick={() => setMenuOpen((o) => !o)} className="lg:hidden text-ink-soft" aria-label="메뉴">
+              <Menu size={22} strokeWidth={1.9} />
             </button>
             <Logo size="md" href="/app/home" />
             {user.guest && <Badge tone="amber">비회원</Badge>}
           </div>
           <div className="flex items-center gap-2">
+            {/* 메인 홈페이지(랜딩)로 나가기 — 워크스페이스 어디서든 마케팅 홈으로 */}
+            <Link href="/" title="KUP 홈페이지" aria-label="KUP 홈페이지로 이동">
+              <Button variant="ghost" size="sm">
+                <House size={16} strokeWidth={1.9} />
+                <span className="hidden sm:inline">홈페이지</span>
+              </Button>
+            </Link>
             {/* 연동 계정이 없을 때만: 이 제품의 핵심 첫 액션인 인스타 연동 CTA.
                 연동되면 좌측바 '연동 인스타 계정'(카운트 배지 포함)이 관리를 담당한다. */}
             {user.igAccounts.length === 0 && (
@@ -264,9 +271,9 @@ export function Modal({ children, onClose }: { children: React.ReactNode; onClos
 }
 
 const SLIDES = [
-  { c: "#ff385c", t: "설문 한 번이면 전략까지", d: "사람·계정·톤·금지표현을 받아 계정에 맞는 전략과 주제를 제안해요." },
-  { c: "#008489", t: "AI 기획 → 제작 → 검수", d: "주제를 고르면 카드뉴스 초안이 한 번에. 발행 전 검수 게이트는 필수예요." },
-  { c: "#a8710a", t: "발행은 내가, 성장은 함께", d: "최종 승인·발행은 언제나 나. 칸반·챌린지로 꾸준함을 이어가요." },
+  { c: "var(--kup-brand)", t: "설문 한 번이면 전략까지", d: "사람·계정·톤·금지표현을 받아 계정에 맞는 전략과 주제를 제안해요." },
+  { c: "var(--tds-teal-600)", t: "AI 기획 → 제작 → 검수", d: "주제를 고르면 카드뉴스 초안이 한 번에. 발행 전 검수 게이트는 필수예요." },
+  { c: "var(--tds-orange-600)", t: "발행은 내가, 성장은 함께", d: "최종 승인·발행은 언제나 나. 칸반·챌린지로 꾸준함을 이어가요." },
 ];
 
 function OnboardingCarousel({ onClose, name }: { onClose: () => void; name: string }) {
