@@ -14,13 +14,10 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
-        {/* Airbnb Cereal 대체 서체 Inter(DESIGN-airbnb.md 권장). 한글은 Pretendard(wireframe.css). */}
+        {/* 서체는 Pretendard로 통일(wireframe.css CDN). 디스플레이용 Bricolage Grotesque는
+            (home)/(marketing) 레이아웃에서 로드 — 아래 preconnect가 그 요청을 앞당긴다. */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
       </head>
       <body>{children}</body>
     </html>

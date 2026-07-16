@@ -61,6 +61,10 @@
   .hero { position: relative; height: 340vh; display: block; padding: 0; min-height: 0; }
   .stage { position: sticky; top: 0; height: 100vh; width: 100%; overflow: hidden; }
   #scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  /* 히어로 텍스트 가독성 스크림 — 좌측(텍스트 영역)만 은은히 밝혀 대비 확보, 우측 구는 선명하게 유지.
+     스크롤 시 텍스트와 함께 페이드(kup-hero-anim.js). */
+  .hero-scrim { position: absolute; inset: 0; z-index: 1; pointer-events: none; will-change: opacity;
+    background: linear-gradient(105deg, rgba(255,246,250,.94) 0%, rgba(255,246,250,.70) 24%, rgba(255,246,250,.30) 44%, rgba(255,246,250,0) 62%); }
 
   .overlay { position: absolute; inset: 0; z-index: 5; pointer-events: none; display: flex; flex-direction: column; justify-content: center; max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
   .eyebrow { display: inline-flex; align-items: center; gap: 8px; width: max-content; font-size: 13.5px; font-weight: 600; letter-spacing: .02em; color: var(--pink-deep); background: rgba(255, 255, 255, .7); border: 1px solid var(--line); padding: 7px 13px; border-radius: 999px; margin-bottom: 22px; backdrop-filter: blur(6px); }
@@ -75,7 +79,8 @@
 
   .hero-block { transition: opacity .1s linear; }
 
-  .endline { position: absolute; left: 50%; bottom: 12%; transform: translateX(-50%); text-align: center; z-index: 6; opacity: 0; pointer-events: none; font-family: var(--display); font-weight: 700; font-size: clamp(20px, 3vw, 34px); letter-spacing: -.02em; color: var(--ink); }
+  /* 엔드라인은 조립된 구 위(중앙)에 뜨므로, 화이트 헤일로로 핑크 카드와 분리해 가독성 확보 */
+  .endline { position: absolute; left: 50%; bottom: 12%; transform: translateX(-50%); text-align: center; z-index: 6; opacity: 0; pointer-events: none; font-family: var(--display); font-weight: 700; font-size: clamp(20px, 3vw, 34px); letter-spacing: -.02em; color: var(--ink); text-shadow: 0 2px 24px rgba(255,247,251,.95), 0 1px 2px rgba(255,247,251,.9); }
   .endline small { display: block; font-family: var(--body); font-weight: 500; font-size: 15px; color: var(--ink-soft); margin-top: 8px; letter-spacing: 0; }
 
   .scrollhint { position: absolute; left: 50%; bottom: 30px; transform: translateX(-50%); z-index: 6; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-soft); font-weight: 500; letter-spacing: .06em; }
@@ -117,12 +122,14 @@
   .media-frame > video, .media-frame > img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .media-hint { font-weight: 600; color: #fff; background: rgba(0, 0, 0, .16); padding: 8px 16px; border-radius: 999px; font-size: 14px; backdrop-filter: blur(4px); }
 
-  /* ---------- stats (지표) ---------- */
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; text-align: center; margin-top: 52px; }
-  .stat { background: linear-gradient(180deg, #fff, var(--tds-grey-50)); border: 1px solid var(--line); border-radius: 22px; padding: 40px 24px; }
-  .stat-big { font-family: var(--display); font-weight: 800; font-size: clamp(34px, 4.5vw, 52px); letter-spacing: -.03em; color: var(--pink-deep); }
-  .stat-cap { margin-top: 8px; color: var(--ink-soft); font-size: 15px; }
-  .stats-note { text-align: center; margin-top: 18px; font-size: 13px; color: var(--ink-soft); }
+  /* ---------- 정직 원칙 (가짜 지표 대신) ---------- */
+  .anchors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 52px; }
+  .anchor { background: linear-gradient(180deg, #fff, var(--tds-grey-50)); border: 1px solid var(--line); border-radius: 22px; padding: 34px 28px; transition: transform .25s ease, box-shadow .25s ease; }
+  .anchor:hover { transform: translateY(-4px); box-shadow: 0 22px 40px -22px rgba(194, 29, 84, .4); }
+  .anchor-ic { display: inline-grid; place-items: center; width: 52px; height: 52px; border-radius: 15px; background: var(--tds-brand-100); color: var(--pink-deep); }
+  .anchor h3 { font-size: 20px; margin-top: 20px; letter-spacing: -.01em; }
+  .anchor p { margin-top: 12px; color: var(--ink-soft); line-height: 1.65; font-size: 15.5px; }
+  .stats-note { text-align: center; margin-top: 22px; font-size: 13px; color: var(--ink-soft); }
 
   /* ---------- pricing preview (요금제) ---------- */
   .plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 52px; align-items: stretch; }
@@ -151,7 +158,7 @@
     .hero { height: 300vh; }
     h1 { font-size: clamp(24px, 7vw, 36px); }
     .grid { grid-template-columns: 1fr; }
-    .stats, .plans { grid-template-columns: 1fr; }
+    .anchors, .plans { grid-template-columns: 1fr; }
     .section { padding: 90px 20px; }
     .foot { justify-content: center; text-align: center; }
     .showcase-body { grid-template-columns: 1fr; }
