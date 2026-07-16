@@ -5,6 +5,7 @@ import { Wand2, Sparkles, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { api, formatDay } from "@/lib/workspace/client";
 import { Badge, Button, Card } from "@/components/workspace/ui";
+import { IgProfilePreview, CardThumb } from "@/components/workspace/IgProfilePreview";
 import { SurveyModal } from "@/components/workspace/SurveyModal";
 import { findIgAccount, DM_LIMITS, type CardNews, type CardStatus, type DmRule, type MetricEntry, type PublicUser, type PublishJob, type SurveyProfile } from "@/lib/workspace/types";
 import { resolveFollowerCount } from "@/lib/workspace/followers";
@@ -163,6 +164,39 @@ export default function HomePage() {
         <StatCard k="DM 발송" v={<>{dmSent}<span className="text-sm text-muted">/{dmLimit === Infinity ? "∞" : dmLimit}</span></>} d={`${user.plan} 한도`} dTone="muted" />
       </div>
 
+      {/* 인스타 프로필 미리보기 — 연동 계정이 인스타에서 어떻게 보이는지 폰 화면 그대로 */}
+      <Card className="p-5 sm:p-6">
+        <div className="grid lg:grid-cols-[auto_1fr] gap-6 lg:gap-8 items-center">
+          <div className="justify-self-center">
+            <IgProfilePreview
+              handle={account?.handle ? `@${account.handle}` : "@my_account"}
+              displayName={user.name}
+              bio={user.survey ? [user.survey.niche, user.survey.brandKeywords.slice(0, 3).join(" · ")].filter(Boolean).join("\n") : ""}
+              followers={followers}
+              cards={cards}
+              connected={Boolean(account)}
+              account={account}
+            />
+          </div>
+          <div>
+            <div className="text-xs font-semibold tracking-wide text-coral uppercase mb-1">인스타 미리보기</div>
+            <h2 className="font-display text-xl">내 계정, 인스타에선 이렇게 보여요</h2>
+            <p className="text-sm text-ink-soft mt-2 max-w-md">
+              연동한 계정의 프로필과 게시물을 실제 인스타 화면 그대로 확인해요. 지금은 KUP로 만든 카드가 게시물로 채워지고,
+              정식 연동하면 실제 피드가 실시간으로 반영돼요.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link href="/app/accounts">
+                <Button variant={account ? "outline" : "primary"} size="sm">{account ? "계정 관리" : "계정 연동하기"}</Button>
+              </Link>
+              <Link href="/app/create">
+                <Button variant="soft" size="sm">카드 만들기</Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </Card>
+
       {/* 2단 — 좌: 빠른 시작(+이번 주 업로드) / 우: 이번 주 콘텐츠 흐름(+최근 콘텐츠) */}
       <div className="grid lg:grid-cols-2 gap-4">
         {/* 빠른 시작 */}
@@ -170,9 +204,10 @@ export default function HomePage() {
           <div className="text-sm font-medium mb-3">빠른 시작</div>
           <div className="space-y-2">
             {quickActions.map((a) => (
-              <Link key={a.href} href={a.href} className="flex items-center gap-3 rounded-xl border border-line bg-card px-4 py-3 hover:bg-paper-2 transition">
+              <Link key={a.href} href={a.href} className="kup-row flex items-center gap-3 rounded-xl border border-line bg-card px-4 py-3 transition">
                 <span className="w-7 h-7 grid place-items-center rounded-lg bg-coral-soft text-coral"><a.Icon size={16} /></span>
-                <span className="text-sm font-medium">{a.label}</span>
+                <span className="text-sm font-medium flex-1">{a.label}</span>
+                <span className="kup-row-arrow text-sm">→</span>
               </Link>
             ))}
           </div>
@@ -212,13 +247,16 @@ export default function HomePage() {
               {recentCards.map((c) => {
                 const pill = statusPill(c.status);
                 return (
-                  <Link key={c.id} href="/app/board" className="flex items-center gap-3 rounded-xl px-2 py-2 -mx-2 hover:bg-paper-2/60 transition">
-                    <span className="w-10 h-10 rounded-lg bg-paper-2 shrink-0" style={{ background: c.brandColor || undefined }} />
+                  <Link key={c.id} href="/app/board" className="kup-row flex items-center gap-3 rounded-xl px-2 py-2 -mx-2 border border-transparent transition">
+                    <span className="w-10 h-10 rounded-lg overflow-hidden shrink-0 border border-line">
+                      <CardThumb card={c} handle={account?.handle ? `@${account.handle}` : "@my"} size={40} />
+                    </span>
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-medium truncate">{c.title}</div>
                       <div className="text-xs text-muted truncate">{statusSub(c.status)}</div>
                     </div>
                     <Badge tone={pill.tone}>{pill.label}</Badge>
+                    <span className="kup-row-arrow text-sm">→</span>
                   </Link>
                 );
               })}
@@ -309,8 +347,8 @@ function WeeklyUploadGraph({ jobs }: { jobs: PublishJob[] }) {
       counts.set(k, (counts.get(k) ?? 0) + 1);
     }
   }
-  // Airbnb Rausch 톤 시퀀셜 스케일 (연분홍 → Rausch)
-  const levels = ["#ffe3ef", "#ffc2da", "#f992b8", "#ef5590", "#e52364"];
+  // 브랜드 핑크 시퀀셜 스케일 (연분홍 → 브랜드, tds-brand 100→500)
+  const levels = ["var(--tds-brand-100)", "var(--tds-brand-200)", "var(--tds-brand-300)", "var(--tds-brand-400)", "var(--tds-brand-500)"];
   const cell = (n: number) => levels[n >= 4 ? 4 : n];
   const labels = ["월", "화", "수", "목", "금", "토", "일"];
 

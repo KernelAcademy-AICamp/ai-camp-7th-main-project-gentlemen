@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 
 // 공용 UI 프리미티브 (프레젠테이션 전용 — 클라/서버 양쪽에서 사용 가능)
@@ -15,15 +16,15 @@ export function Button({
   size?: "sm" | "md" | "lg";
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const base =
-    "inline-flex items-center justify-center gap-2 font-medium rounded-full transition disabled:opacity-45 disabled:cursor-not-allowed select-none";
+    "inline-flex items-center justify-center gap-2 font-medium rounded-full transition active:scale-[0.97] disabled:opacity-45 disabled:cursor-not-allowed disabled:active:scale-100 select-none";
   const sizes = {
     sm: "text-sm px-3.5 py-1.5",
     md: "text-sm px-5 py-2.5",
     lg: "text-base px-6 py-3",
   };
   const variants = {
-    primary: "bg-coral text-white hover:brightness-95",
-    danger: "bg-coral text-white hover:brightness-95",
+    primary: "bg-coral text-white shadow-[0_4px_14px_-6px_rgba(229,35,100,.5)] hover:brightness-95 hover:shadow-[0_8px_20px_-8px_rgba(229,35,100,.6)]",
+    danger: "bg-coral text-white shadow-[0_4px_14px_-6px_rgba(229,35,100,.5)] hover:brightness-95 hover:shadow-[0_8px_20px_-8px_rgba(229,35,100,.6)]",
     soft: "bg-coral-soft text-coral hover:brightness-95",
     outline: "border border-line bg-card text-ink hover:bg-paper-2",
     ghost: "text-ink-soft hover:text-ink hover:bg-paper-2",
@@ -43,7 +44,7 @@ export function Card({
   className?: string;
 }) {
   return (
-    <div className={`bg-card border border-line rounded-2xl ${className}`}>{children}</div>
+    <div className={`bg-card border border-line rounded-2xl shadow-[0_1px_2px_rgba(16,24,40,.04),0_10px_30px_-20px_rgba(16,24,40,.16)] ${className}`}>{children}</div>
   );
 }
 
@@ -163,8 +164,8 @@ export function EmptyState({
 }) {
   return (
     <div className="text-center py-14 px-6">
-      <div className="mx-auto w-12 h-12 rounded-2xl bg-paper-2 grid place-items-center mb-3 text-xl">
-        ✦
+      <div className="mx-auto w-14 h-14 rounded-2xl bg-coral-soft grid place-items-center mb-3 text-coral">
+        <Sparkles size={24} strokeWidth={1.8} />
       </div>
       <h3 className="font-display text-lg text-ink">{title}</h3>
       {desc && <p className={`text-sm text-ink-soft mt-1 ${nowrapDesc ? "whitespace-nowrap" : "max-w-sm mx-auto"}`}>{desc}</p>}
